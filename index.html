@@ -286,6 +286,14 @@ footer{display:none}
 .ap{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;color:var(--ink);line-height:1.15;text-align:center;padding:0}
 .ap .e{width:56px;height:56px;border-radius:16px;background:#fff;display:grid;place-items:center;font-size:28px}
 .csearch{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;height:46px;padding:0 12px;margin:0 0 10px}
+.hsres{background:#fff;border-radius:12px;margin:-4px 0 12px;padding:4px 10px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.hsres[hidden]{display:none}
+.hsrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #EEF0F3}
+.hsrow:last-of-type{border-bottom:0}
+.hse{flex:none;width:40px;height:40px;border-radius:10px;background:color-mix(in srgb,var(--c) 18%,#fff);display:flex;align-items:center;justify-content:center;font-size:22px}
+.hsm{flex:1;min-width:0}.hsm b{display:block;font-size:15px}.hsm small{display:block;color:#6B7280;font-size:12px}
+.hsadd{width:auto;flex:none;padding:8px 10px;font-size:13px}
+.hsempty{padding:12px 4px;color:#6B7280}.hsall{display:block;margin:6px auto 4px}
 .csearch svg{width:20px;height:20px;stroke:#8A9099;fill:none;stroke-width:1.8;flex:none}
 .csearch input{flex:1;min-width:0;border:0;outline:none;background:transparent;font:inherit;font-size:16px;padding:0;height:100%}
 main.home{padding-top:6px;padding-bottom:72px}
@@ -699,7 +707,7 @@ function stepper(id){
 }
 function listHTML(){
   const q = S.q.trim().toLowerCase();
-  const items = P.filter(p => p.cat !== "work" && (q ? (p.n + " " + p.s).toLowerCase().includes(q)
+  const items = P.filter(p => p.cat !== "work" && (q ? sHit(p, q)
     : S.cat !== "all" ? p.cat === S.cat : (S.grp === "all" || grpCats(S.grp).includes(p.cat))));
   if (!items.length) return `<div class="empty">Ничего не найдено. Попробуйте другое слово или категорию.</div>`;
   return `<div class="grid">` + items.map(p => `
@@ -893,7 +901,8 @@ function renderHome(){
   const ap = (id) => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${t.e}</span>${t.name}</button>`; };
   const active = (S.orders || []).filter(o => o.stage < stagesFor(o).length - 1).length;
   document.getElementById("view").innerHTML = `<div class="app wide">
-    <form class="csearch" id="homesearch" style="margin:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="homeq" type="search" placeholder="Найти: цемент, плитка, краска…" aria-label="Поиск по каталогу"></form>
+    <form class="csearch" id="homesearch" style="margin:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="homeq" type="search" placeholder="Найти: цемент, плитка, краска…" aria-label="Поиск по каталогу" autocomplete="off"></form>
+    <div id="hsres" class="hsres" hidden></div>
     ${m && !S.mkOpen ? `<div class="th"><h2 class="t">Ваш рынок</h2><button class="lnk" data-mkopen>Другой рынок ›</button></div>
     <div class="mkl">${mkCard(m)}</div>`
     : `<h2 class="t">Выберите рынок</h2>
@@ -1730,8 +1739,31 @@ document.addEventListener("click", async e => {
 
 // ===== Общая отрисовка =====
 function updateBadge(){ const b = document.getElementById("badge"), n = cartCount(); b.hidden = !n; b.textContent = n; const b2 = document.getElementById("badge2"); if (b2) b2.textContent = n; }
+const sNorm = s => String(s || "").toLowerCase().replace(/ё/g, "е").replace(/[ʼ'`ʻ’]/g, "");
+function sHit(p, q){
+  const w = sNorm(q).split(/\s+/).filter(Boolean); if (!w.length) return true;
+  let h = p.n + " " + p.s; if (window.tUz) { try { h += " " + window.tUz(p.n) + " " + window.tUz(p.s); } catch(e){} }
+  h = sNorm(h); return w.every(x => h.includes(x));
+}
+function homeFind(q){ return q.trim() ? P.filter(p => p.cat !== "work" && sHit(p, q)) : []; }
+function homeResHTML(){
+  const el = document.getElementById("homeq"); const q = el ? el.value.trim() : "";
+  if (!q) return "";
+  const items = homeFind(q);
+  if (!items.length) return `<div class="hsempty">Ничего не найдено. Попробуйте другое слово.</div>`;
+  return items.slice(0, 8).map(p => `<div class="hsrow">
+    <span class="hse" style="--c:${catColor(p.cat)}">${p.e}</span>
+    <div class="hsm"><b>${p.n}</b><small>${p.s}${p.nop ? "" : " · " + fmt(p.p) + " " + CURRENCY + " / " + p.u}</small></div>
+    ${qty(p.id) ? stepper(p.id) : `<button class="btn hsadd" data-add="${p.id}">+ В корзину</button>`}
+  </div>`).join("") + (items.length > 8 ? `<button class="lnk hsall" data-hsall>Все результаты (${items.length}) ›</button>` : "");
+}
+function homeRes(){
+  const box = document.getElementById("hsres"); if (!box) return;
+  const h = homeResHTML(); box.innerHTML = h; box.hidden = !h;
+}
 function refresh(){
   updateBadge();
+  if (S.tab === "home") homeRes();
   if (S.tab === "catalog"){ const l = document.getElementById("list"); if (l) l.innerHTML = listHTML(); }
   else if (S.tab === "cart") renderCart();
 }
@@ -1754,6 +1786,7 @@ document.addEventListener("click", e => {
   if (t.hasAttribute("data-logout")) { doLogout(); return; }
   if (t.dataset.tab) { if (t.dataset.tab === "calc" && S.tab === "calc") { S.task = null; S.view = "home"; } if (t.dataset.tab === "home") { S.mkOpen = S.mkOpen && S.tab === "home"; S.view = "home"; } return show(t.dataset.tab); }
   if (t.dataset.scroll) { const el = document.getElementById(t.dataset.scroll); if (el) el.scrollIntoView({ behavior:"smooth", block:"start" }); return; }
+  if (t.hasAttribute("data-hsall")) { S.q = document.getElementById("homeq").value.trim(); S.cat = "all"; S.grp = "all"; show("catalog"); logSearch(); return; }
   if (t.dataset.add) { setQty(+t.dataset.add, 1); return; }
   if (t.dataset.inc) { setQty(+t.dataset.inc, qty(+t.dataset.inc) + 1); return; }
   if (t.dataset.dec) { setQty(+t.dataset.dec, qty(+t.dataset.dec) - 1); return; }
@@ -1818,6 +1851,7 @@ document.addEventListener("submit", e => { if (e.target.id === "homesearch") { e
 document.addEventListener("submit", e => { if (e.target.id === "hsearch") { e.preventDefault(); S.q = document.getElementById("hq").value; S.cat = "all"; document.getElementById("hq").blur(); logSearch(); const b = document.getElementById("catbody"); if (b) b.innerHTML = catBody(); } });
 document.addEventListener("input", e => {
   const t = e.target;
+  if (t.id === "homeq") { S.q = t.value; homeRes(); return; }
   if (t.id === "hq") { clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); S.q = t.value; const b = document.getElementById("catbody"); if (S.tab === "catalog" && b) b.innerHTML = catBody(); return; }
   if (t.dataset.sz) { S.size[t.dataset.sz] = t.value; return; }
   if (t.dataset.form) S.form[t.dataset.form] = (t.dataset.form === "day" || t.dataset.form === "slot") ? +t.value : t.value;

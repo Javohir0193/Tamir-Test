@@ -99,9 +99,10 @@ const unitOf = p => UNIT[p.unit] || p.unit;
 const suggest = p => { const b = p.best || (UZ.get(p.id) || {}).base || 0; return b ? Math.max(100, Math.round(b * (1 + S.pct / 100) / 100) * 100) : 0; };
 
 function filtered(){
-  const q = S.q.trim().toLowerCase();
+  const sNorm = s => String(s || "").toLowerCase().replace(/ё/g, "е").replace(/[ʼ'`ʻ’]/g, ""), sHit = (hay, q) => { const w = sNorm(q).split(/\s+/).filter(Boolean), h = sNorm(hay); return w.every(x => h.includes(x)); };
+  const q = S.q.trim();
   return S.data.products.filter(p => (S.cat === "all" || p.cat === S.cat)
-    && (!q || (nameOf(p) + " " + p.name + " " + specOf(p)).toLowerCase().includes(q))
+    && (!q || sHit(nameOf(p) + " " + p.name + " " + specOf(p), q))
     && (S.st === "all" || (S.st === "none" ? !cur(p) : !!cur(p))));
 }
 function itemHTML(p){

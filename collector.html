@@ -164,8 +164,9 @@ const curPrice = l => (l.product_id && S.shopOffers && S.shopOffers[l.product_id
 
 // ---------- Нархлар ----------
 function pricesHTML(){
-  const q = S.pq.trim().toLowerCase();
-  const list = S.pshop ? S.d.products.filter(p => !q || (pname(p.id, p.name) + " " + p.name).toLowerCase().includes(q)).slice(0, 80) : [];
+  const sNorm = s => String(s || "").toLowerCase().replace(/ё/g, "е").replace(/[ʼ'`ʻ’]/g, ""), sHit = (hay, q) => { const w = sNorm(q).split(/\s+/).filter(Boolean), h = sNorm(hay); return w.every(x => h.includes(x)); };
+  const q = S.pq.trim();
+  const list = S.pshop ? S.d.products.filter(p => !q || sHit(pname(p.id, p.name) + " " + p.name, q)).slice(0, 80) : [];
   return `<h1>🏷 Нархлар</h1><div class="card"><label class="field" style="margin:0">Дўкон<select id="pshopSel"><option value="">— дўконни танланг —</option>
     ${S.d.shops.map(s => `<option value="${s.id}" ${+S.pshop === s.id ? "selected" : ""}>${esc(s.name)} · ${esc(s.row)}</option>`).join("")}</select></label></div>
     ${S.pshop ? `<label class="search"><input id="pq" type="search" placeholder="Товар қидириш…" value="${esc(S.pq)}"></label>
