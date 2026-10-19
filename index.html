@@ -95,6 +95,8 @@ label input,label select,label textarea{display:block;width:100%;margin-top:4px;
 .order .meta{color:var(--muted);font-size:13px;margin:2px 0 10px}
 .pill{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:13px;white-space:nowrap}
 .pill.done{background:var(--steel);color:var(--bg)}
+.paybox{border:2px solid var(--accent);border-radius:12px;padding:10px 12px;margin:8px 0;background:#FFFBEA}.paybox.exp{border-color:#B3261E;background:#FDECEA}
+.payrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
 .tl{list-style:none;margin:8px 0 10px;padding:0}
 .tl li{position:relative;padding:0 0 16px 32px;color:var(--muted)}
 .tl li::before{content:"";position:absolute;left:8px;top:20px;bottom:0;width:2px;background:var(--line)}
@@ -1190,6 +1192,9 @@ function renderCart(){
       ${t.n > 0 ? `<div class="sumrow" id="qDelRow" ${f.mode === "delivery" ? "" : "hidden"}><span>Доставка</span><span id="qDel">…</span></div>
       <div class="sumrow" id="qSvcRow"><span>Услуга сервиса</span><span id="qSvc">…</span></div>` : ""}
       <div class="total"><span>${t.nop ? "Итого (без уточняемых)" : "Итого"}</span><span><span id="qTotal">${fmt(t.total)}</span> ${CURRENCY}</span></div>
+      <div class="sumrow" id="qResRow" hidden><span>Запас на цену</span><span id="qRes"></span></div>
+      <div class="total" id="qPayRow" hidden><span>К оплате сейчас</span><span><span id="qPay"></span> ${CURRENCY}</span></div>
+      <p class="note" id="qResNote" hidden>Запас нужен, если цена в магазине окажется выше. Что останется — вернём вам.</p>
       <div id="carBox"></div><div id="zoneBox"></div><p class="note" id="qNote" hidden></p><p class="note" id="qMin" hidden style="color:#B3261E;font-weight:600"></p>
       ${t.nop ? `<p class="note">${t.nop} <span>${t.nop === 1 ? "товар" : "товара"}</span> — <span>цена уточняется. Сборщик купит по цене рынка, сумма заказа обновится.</span></p>` : ""}
     </section>
@@ -1239,7 +1244,8 @@ const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mod
   name:r.customer_name, phone:r.phone, addr:r.address, note:r.note,
   lat:r.delivery_lat, lng:r.delivery_lng, driver:r.driver_info || null, dlat:r.driver_lat, dlng:r.driver_lng, dat:r.driver_at ? Date.parse(r.driver_at) : 0,
   eta:r.eta_min, received:r.received_at ? Date.parse(r.received_at) : 0, receivedOk:r.received_ok,
-  picker:r.picker_info || null, picked:r.picked || 0, pickTotal:r.pick_total || 0 });
+  picker:r.picker_info || null, picked:r.picked || 0, pickTotal:r.pick_total || 0,
+  payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null });
 async function loadOrders(){
   if (!dbReady) return;
   try {
@@ -1331,8 +1337,12 @@ function applyQuote(){
   const dr = document.getElementById("qDelRow"); if (dr) dr.hidden = mode === "pickup";
   if (!ok) return;
   set("qDel", fmt(q.delivery)); set("qSvc", fmt(q.service)); set("qTotal", fmt(q.total));
+  const rr = document.getElementById("qResRow"), pr = document.getElementById("qPayRow"), rn = document.getElementById("qResNote");
+  const res = S.payOn && !car ? Number(q.reserve) || 0 : 0;
+  if (rr) rr.hidden = !(res > 0); if (pr) pr.hidden = !(res > 0); if (rn) rn.hidden = !(res > 0);
+  if (res > 0){ set("qRes", fmt(res)); set("qPay", fmt(q.pay_total)); }
   const b = document.getElementById("copyOrder");
-  if (b && !needLogin()) b.textContent = `Оформить заказ · ${fmt(q.total)} ${CURRENCY}`;
+  if (b && !needLogin()) b.textContent = `${S.payOn ? "Оплатить заказ" : "Оформить заказ"} · ${fmt(S.payOn ? Number(q.pay_total) || q.total : q.total)} ${CURRENCY}`;
   const g = document.getElementById("qGoods"); if (g && !car) g.textContent = fmt(q.goods);
   const mn = document.getElementById("qMin"), short = Number(q.short) || 0;
   if (mn){ mn.hidden = !(short > 0 && !car); if (short > 0) mn.textContent = `Минимальный заказ на товары — ${fmt(q.min_order)} сум. Добавьте ещё на ${fmt(short)} сум.`; }
@@ -1354,6 +1364,7 @@ async function loadSettings(){
       r.data.bodies.forEach(b => CARS.push({ id:b.id, e:b.e || "🚚", n:b.n, cap:"до " + b.cap + " кг", capKg:+b.cap, hint:hint[b.id] || "", near:+b.near, mid:+b.mid, far:+b.far, p:+b.near }));
       if (!CARS.some(c => c.id === S.car)) S.car = (CARS.find(c => c.id === "l") || CARS[0]).id;
     }
+    S.payOn = r.data.payments_on === "true"; S.payTest = r.data.pay_test_mode === "true"; S.providers = Array.isArray(r.data.providers) ? r.data.providers : [];
     if (r.data.require_login) S.reqLogin = r.data.require_login !== "false";
     rerender();
   } catch(e){ console.warn("settings", e); }
@@ -1505,6 +1516,34 @@ function sellerBox(){
     <label>Код<input type="password" id="adminCode" autocomplete="off"></label><p class="msg">${esc(S.adminMsg || "")}</p>
     <button class="btn dark" data-adminin>Войти</button></section>`;
 }
+function payHtml(o){
+  if (o.payStatus === "expired") return `<div class="paybox exp"><b>Время оплаты истекло</b><p class="note">Заказ отменён автоматически. Оформите его заново.</p></div>`;
+  if (o.payStatus !== "unpaid") return "";
+  const pv = (S.providers && S.providers.length ? S.providers : [{ code:"click", n:"Click" }, { code:"payme", n:"Payme" }]);
+  const btns = S.seller ? "" : `<div class="payrow">${pv.map(p => `<button class="btn lg" data-pay="${esc(p.code)}" data-no="${o.no}">${esc(p.n)}</button>`).join("")}</div>
+    ${S.payTest ? `<button class="btn alt" data-pay="test" data-no="${o.no}">🧪 Тестовая оплата (без денег)</button>` : ""}`;
+  return `<div class="paybox"><div class="sumrow"><span>К оплате</span><b>${fmt(o.payAmount || o.total)} ${CURRENCY}</b></div>
+    ${o.reserve > 0 ? `<p class="note">В сумму входит запас на цену: ${fmt(o.reserve)} ${CURRENCY}. Что останется — вернём вам.</p>` : ""}
+    <p class="note">Осталось: <b data-due="${o.payDue}">--:--</b></p>${btns}</div>`;
+}
+const PAYERR = { not_configured:"Оплата скоро заработает", expired:"Время оплаты истекло", paid:"Заказ уже оплачен", already_paid:"Заказ уже оплачен", not_found:"Заказ не найден", test_off:"Тестовая оплата выключена" };
+async function payNow(no, prov){
+  if (prov === "test"){
+    const r = await sb.rpc("pay_test", { p_no:no }), d = r.data || {};
+    if (r.error || !d.ok){ toast(PAYERR[d.error] || "Не удалось оплатить"); return; }
+    toast("✅ Оплата прошла"); await loadOrders(); return;
+  }
+  const r = await sb.rpc("pay_start", { p_no:no, p_provider:prov }), d = r.data || {};
+  if (r.error || d.error || !d.url){ toast(PAYERR[d.error] || "Оплата сейчас недоступна"); return; }
+  logEvent("pay_start", { no, prov }); location.href = d.url;
+}
+setInterval(() => {
+  document.querySelectorAll("[data-due]").forEach(el => {
+    const ms = Number(el.dataset.due) - Date.now(), s = Math.max(0, Math.floor(ms / 1000));
+    el.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  });
+}, 1000);
+setInterval(() => { if (dbReady && S.orders && S.orders.some(o => o.payStatus === "unpaid")) loadOrders(); }, 4000);
 function renderOrders(){
   const v = document.getElementById("view");
   if (!S.orders.length){
@@ -1513,19 +1552,20 @@ function renderOrders(){
   }
   const keep = new Map(); document.querySelectorAll(".mapbox[data-map]").forEach(el => keep.set(el.dataset.map, el));
   v.innerHTML = syncNote() + accountBar() + S.orders.map(o => {
-      const st = stagesFor(o), last = o.stage >= st.length - 1;
+      const st = stagesFor(o), last = o.stage >= st.length - 1, unp = o.payStatus === "unpaid", exp = o.payStatus === "expired";
       return `<section class="order">
-        <div class="top"><h2>Заказ №${o.no}</h2><span class="pill ${last ? "done" : ""}">${st[o.stage][0]}</span></div>
+        <div class="top"><h2>Заказ №${o.no}</h2><span class="pill ${last ? "done" : ""}">${unp ? "Ожидает оплаты" : exp ? "Не оплачен" : st[o.stage][0]}</span></div>
+        ${payHtml(o)}
         <p class="meta">${dt(o.ts)} · ${fmt(o.total)} ${CURRENCY}${o.slot ? `<br>Время: ${o.slot}` : ""}${S.seller && o.name ? `<br><b>${esc(o.name)}</b> · ${esc(o.phone || "")}${o.addr ? "<br>" + esc(o.addr) : ""}${o.note ? "<br>Комментарий: " + esc(o.note) : ""}` : ""}</p>
         ${deliveryCard(o)}
-        <ol class="tl">${st.map((s, i) => {
+        ${unp || exp ? "" : `<ol class="tl">${st.map((s, i) => {
           const cls = i < o.stage ? "done" : i === o.stage ? (last ? "done" : "now") : "";
           const when = i <= o.stage && o.times[i] ? dt(o.times[i]) : "";
           const sub = [when, i === o.stage ? s[1] : ""].filter(Boolean).join(" · ");
           return `<li class="${cls}"><i></i>${s[0]}${sub ? `<small>${sub}</small>` : ""}</li>`;
-        }).join("")}</ol>
+        }).join("")}</ol>`}
         <p class="note">${o.items.map(i => `${esc(i.n)} × ${i.q}`).join(", ")}</p>
-        ${S.seller && !last ? `<button class="btn dark" data-advance="${o.no}">Перевести в статус «${st[o.stage + 1][0]}»</button>` : ""}
+        ${S.seller && !last && !unp && !exp ? `<button class="btn dark" data-advance="${o.no}">Перевести в статус «${st[o.stage + 1][0]}»</button>` : ""}
       </section>`;
     }).join("") + sellerBox();
   mountMaps(keep);
@@ -1617,13 +1657,14 @@ document.addEventListener("click", async e => {
   if (t.closest && t.closest("[data-dbody]")) { const b = t.closest("[data-dbody]"); if (!b.disabled) { S.form.body = (S.form.body === b.dataset.dbody) ? "" : b.dataset.dbody; refreshQuote(); } return; }
   if (t.dataset.zone) { S.form.zone = t.dataset.zone; applyQuote(); refreshQuote(); return; }
   if (t.hasAttribute("data-carback")) { S.view = "home"; renderHome(); window.scrollTo(0, 0); return; }
+  if (t.dataset.pay) { t.disabled = true; payNow(+t.dataset.no, t.dataset.pay).finally(() => { t.disabled = false; }); return; }
   if (t.id === "carOrder") {
     if (!carValidate()) return;
     if (needLogin()) { openLogin(); return; }
     t.disabled = true;
     createCarOrder().then(({ no, err }) => {
       if (!no){ t.disabled = false; document.getElementById("msg").textContent = err; return; }
-      S.view = "home"; S.carFrom = ""; S.form.note = ""; toast("🚚 Заказ №" + no + " принят — ищем машину"); show("orders");
+      S.view = "home"; S.carFrom = ""; S.form.note = ""; const o1 = S.orders.find(x => x.no === no); toast(o1 && o1.payStatus === "unpaid" ? "🚚 Заказ №" + no + " создан. Оплатите его" : "🚚 Заказ №" + no + " принят — ищем машину"); show("orders");
     });
     return;
   }
@@ -1732,7 +1773,7 @@ document.addEventListener("click", e => {
     createOrder().then(({ no, err }) => {
       const m = document.getElementById("msg");
       if (!no){ t.disabled = false; m.textContent = err; return; }
-      afterOrder(no); toast("Заказ №" + no + " оформлен"); show("orders");
+      afterOrder(no); const o0 = S.orders.find(x => x.no === no); toast(o0 && o0.payStatus === "unpaid" ? "Заказ №" + no + " создан. Оплатите его" : "Заказ №" + no + " оформлен"); show("orders");
     });
     return;
   }
@@ -1762,6 +1803,7 @@ document.addEventListener("change", e => {
 
 show("home");
 initDB();
+if (/[?&]pay=\d+/.test(location.search)) { try { history.replaceState(null, "", location.pathname); } catch(e){} setTimeout(() => { show("orders"); toast("Проверяем оплату…"); }, 400); }
 if (SHOP_TG) { const f = document.getElementById("footTg"); if (f) f.innerHTML = `Telegram: <a href="https://t.me/${SHOP_TG}">@${SHOP_TG}</a>`; }
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
 </script>
