@@ -1249,12 +1249,15 @@ const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mod
   picker:r.picker_info || null, picked:r.picked || 0, pickTotal:r.pick_total || 0,
   payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null,
   paidAt:r.paid_at ? Date.parse(r.paid_at) : 0, goodsSum:r.goods_sum == null ? null : Number(r.goods_sum), deliverySum:Number(r.delivery_sum) || 0, serviceFee:Number(r.service_fee) || 0 });
-async function loadOrders(){
+async function loadOrders(quiet){
   if (!dbReady) return;
   try {
     const q = S.seller && adminCode ? await sb.rpc("admin_list_orders", { p_code:adminCode }) : await sb.from("orders").select("*").order("no", { ascending:false });
     if (q.error) throw q.error;
+    const prev = JSON.stringify((S.orders || []).map(o => [o.no, o.status, o.payStatus, o.payDue]));
     S.orders = q.data.map(fromRow);
+    const same = prev === JSON.stringify(S.orders.map(o => [o.no, o.status, o.payStatus, o.payDue]));
+    if (quiet && same) return;
     if (S.tab === "orders") { const y = window.scrollY; renderOrders(); window.scrollTo(0, y); }
     else if (S.tab === "home" && S.view === "home") renderHome();
   } catch(e){ console.error("loadOrders", e); }
@@ -1571,7 +1574,7 @@ setInterval(() => {
     el.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
   });
 }, 1000);
-setInterval(() => { if (dbReady && S.orders && S.orders.some(o => o.payStatus === "unpaid")) loadOrders(); }, 4000);
+setInterval(() => { if (dbReady && S.orders && S.orders.some(o => o.payStatus === "unpaid")) loadOrders(true); }, 4000);
 function renderOrders(){
   const v = document.getElementById("view");
   if (!S.orders.length){
