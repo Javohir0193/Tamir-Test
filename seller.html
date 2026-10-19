@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Нархларим — Ta'mir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="config.js"></script>
+
+<script src="catalog.js"></script>
+<style>
+:root{--bg:#F0F2F5;--card:#fff;--ink:#222;--muted:#7A808A;--line:#E3E6EB;--accent:#FFD92F;--ok:#1E9E5A;--warn:#D9822B;--no:#C9CDD3}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.35 Rubik,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+input,button{font:inherit;color:inherit}
+input{font-size:16px!important}
+.wrap{max-width:680px;margin:0 auto;padding:10px 12px 110px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin:2px 0 10px}
+header h1{font-size:20px;margin:0;font-weight:700}
+header small{display:block;color:var(--muted);font-size:13px}
+.stat{font-size:13px;color:var(--muted);text-align:right}
+.stat b{display:block;font-size:17px;color:var(--ink)}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:12px;height:42px;padding:0 12px}
+.search input{flex:1;border:0;outline:0;background:transparent;min-width:0}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:0;border-radius:999px;background:var(--card);padding:6px 11px;font-size:13px;font-weight:500;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:#fff}
+.fast{background:#FFF7CC;border-radius:14px;padding:12px;margin:10px 0}
+.fast b{font-size:15px}
+.fast p{margin:4px 0 8px;font-size:13px;color:#5b5b5b}
+.fast .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pct{border:1.5px solid #E2D58A;background:#fff;border-radius:999px;padding:5px 10px;font-size:13px;font-weight:600}
+.pct[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.go{border:0;background:var(--ink);color:#fff;border-radius:10px;padding:8px 14px;font-weight:600;margin-left:auto}
+.go:disabled{opacity:.4}
+.list{background:var(--card);border-radius:14px;overflow:hidden}
+.item{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 12px;border-bottom:1px solid #EEF0F3}
+.item:last-child{border-bottom:0}
+.item.off .nm{color:var(--muted)}
+.nm{font-weight:600;font-size:14.5px;line-height:1.25;min-width:0}
+.nm small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.price{display:flex;align-items:center;gap:5px}
+.price input{width:104px;height:40px;border:1.5px solid var(--line);border-radius:10px;padding:0 9px;text-align:right;background:#FAFBFC;outline:0}
+.price input:focus{border-color:var(--ink);background:#fff}
+.price input.set{border-color:#BFE3CC;background:#F2FBF5}
+.price span{color:var(--muted);font-size:12px;white-space:nowrap;min-width:38px}
+.row2{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:12px;flex-wrap:wrap}
+.hint{color:var(--muted)} .hint.ok{color:var(--ok)} .hint.warn{color:var(--warn)}
+.sug{border:1px dashed #C9CDD3;background:#fff;border-radius:8px;padding:3px 8px;font-size:12.5px;font-weight:500;color:var(--ink)}
+.sw{display:flex;border-radius:999px;background:#EEF0F3;padding:2px;margin-left:auto}
+.sw button{border:0;background:transparent;border-radius:999px;padding:4px 11px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.sw button[aria-pressed="true"].y{background:var(--ok);color:#fff}
+.sw button[aria-pressed="true"].n{background:var(--no);color:var(--ink)}
+.more{display:block;width:100%;border:0;background:var(--card);border-radius:12px;padding:12px;margin-top:8px;font-weight:600}
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 35%)}
+.bar button{display:block;width:100%;max-width:680px;margin:0 auto;height:52px;border:0;border-radius:14px;background:var(--accent);font-weight:700;font-size:16px}
+.bar button:disabled{background:#E2E5EA;color:var(--muted)}
+.msg{background:var(--card);border-radius:14px;padding:20px;text-align:center;color:var(--muted);margin-top:24px}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="msg">Юкланмоқда…</div></div>
+<div class="bar" id="bar" hidden><button id="save" disabled>Сақлаш</button></div>
+<div class="toast" id="toast"></div>
+<script>
+// Кабинет дўкона: быстрый ввод цен. Открывается кнопкой «🏷 Нархларим» в боте @tamir_sotuvchi_bot.
+const API = (window.TAMIR_CONFIG || {}).botApi || "https://agajmytkjpkihvaurqij.supabase.co/functions/v1/tg-bot";
+const TG = window.Telegram && window.Telegram.WebApp;
+const TC = window.TAMIR_CATALOG || { core:[], items:[], units:{} };
+// узбекские названия и примерная цена из каталога
+const UZ = new Map();
+(TC.core || []).forEach(([id, base, n, s]) => UZ.set(id, { base, n, s }));
+(TC.items || []).forEach(x => UZ.set(x[0], { base:x[5], n:x[7] || x[3], s:x[8] || x[4] }));
+const UNIT = Object.assign({ "мешок":"қоп", "шт":"дона", "упак.":"қадоқ", "ведро":"челак", "набор":"тўплам", "пачка":"пачка" }, TC.units || {});
+const PAGE = 60;
+const S = { data:null, cat:"all", st:"all", q:"", pct:0, edits:{}, shown:PAGE };
+const fmt = n => Math.round(n).toLocaleString("ru-RU").replace(/ /g, " ");
+const num = s => +String(s).replace(/[^\d]/g, "") || 0;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const $ = id => document.getElementById(id);
+function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2200); }
+
+async function call(body){
+  const r = await fetch(API, { method:"POST", headers:{ "content-type":"application/json", "x-init-data":TG.initData }, body:JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || "Хато. Қайта уриниб кўринг.");
+  return j;
+}
+const cur = p => S.edits[p.id] ?? S.data.offers[p.id] ?? null;
+const nameOf = p => (UZ.get(p.id) || {}).n || p.name;
+const specOf = p => (UZ.get(p.id) || {}).s || p.spec;
+const unitOf = p => UNIT[p.unit] || p.unit;
+// тавсия: бошқа дўконлардаги энг арзон нарх, бўлмаса каталогдаги тахминий нарх
+const suggest = p => { const b = p.best || (UZ.get(p.id) || {}).base || 0; return b ? Math.max(100, Math.round(b * (1 + S.pct / 100) / 100) * 100) : 0; };
+
+function filtered(){
+  const q = S.q.trim().toLowerCase();
+  return S.data.products.filter(p => (S.cat === "all" || p.cat === S.cat)
+    && (!q || (nameOf(p) + " " + p.name + " " + specOf(p)).toLowerCase().includes(q))
+    && (S.st === "all" || (S.st === "none" ? !cur(p) : !!cur(p))));
+}
+function itemHTML(p){
+  const o = cur(p), on = o ? o.in_stock : true, sg = suggest(p);
+  const hint = !o ? (p.best ? `Бошқаларда энг арзон: ${fmt(p.best)}` : "Ҳали ҳеч ким сотмаяпти")
+    : p.best == null ? "Фақат сизда" : o.price <= p.best ? `✓ Сизники энг арзон` : `Бошқаларда арзонроқ: ${fmt(p.best)}`;
+  const cls = !o ? "" : (p.best == null || o.price <= p.best) ? "ok" : "warn";
+  return `<div class="item ${o && !on ? "off" : ""}" data-item="${p.id}">
+    <div class="nm">${esc(nameOf(p))}<small>${esc(specOf(p))}</small></div>
+    <div class="price"><input inputmode="numeric" enterkeyhint="next" data-id="${p.id}" class="${o ? "set" : ""}" value="${o ? fmt(o.price) : ""}" placeholder="нарх" aria-label="Нарх: ${esc(nameOf(p))}"><span>/${esc(unitOf(p))}</span></div>
+    <div class="row2"><span class="hint ${cls}">${hint}</span>
+      ${!o && sg ? `<button class="sug" data-sug="${p.id}">⤵ ${fmt(sg)}</button>` : ""}
+      ${o ? `<span class="sw"><button class="y" data-st="${p.id}:1" aria-pressed="${on}">Бор</button><button class="n" data-st="${p.id}:0" aria-pressed="${!on}">Йўқ</button></span>` : ""}</div>
+  </div>`;
+}
+function render(keepFocus){
+  const d = S.data, list = filtered(), priced = d.products.filter(p => cur(p)).length;
+  const empty = list.filter(p => !cur(p)).length;
+  const cats = [{ id:"all", name:"Ҳаммаси" }, ...d.cats.filter(c => d.products.some(p => p.cat === c.id))];
+  $("app").innerHTML = `
+    <header><div><h1>🏷 Нархларим</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small></div>
+      <div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div></header>
+    <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9099" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Товар қидириш…" value="${esc(S.q)}"></label>
+    <div class="chips">${cats.map(c => `<button class="chip" data-cat="${c.id}" aria-pressed="${S.cat === c.id}">${esc(c.name)}</button>`).join("")}</div>
+    <div class="chips">${[["all", "Барча товарлар"], ["none", "Нархсиз"], ["set", "Нархланган"]].map(([id, n]) => `<button class="chip" data-stf="${id}" aria-pressed="${S.st === id}">${n}</button>`).join("")}</div>
+    ${empty ? `<div class="fast"><b>⚡ Тез тўлдириш</b>
+      <p>Пастдаги ${empty} та нархсиз товарга тавсия нарх бир босишда қўйилади (бозордаги энг арзон ёки тахминий нарх). Кейин фақат керакларини тузатасиз.</p>
+      <div class="row">${[-10, -5, 0, 5, 10].map(v => `<button class="pct" data-pct="${v}" aria-pressed="${S.pct === v}">${v > 0 ? "+" : ""}${v}%</button>`).join("")}
+      <button class="go" data-fill>Қўйиш (${empty})</button></div></div>` : ""}
+    <p class="hint" style="margin:6px 2px 8px">Нарх ёзиб, «Кейинги» ни босинг — кейинги товарга ўтади. Сотмаган товарни бўш қолдиринг.</p>
+    <div class="list">${list.slice(0, S.shown).map(itemHTML).join("") || `<div class="msg">Ҳеч нарса топилмади.</div>`}</div>
+    ${list.length > S.shown ? `<button class="more" data-more>Яна кўрсатиш (${list.length - S.shown})</button>` : ""}`;
+  updateBar();
+  if (keepFocus) { const q = $("q"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+}
+// обновляем строку на месте, не пересоздавая поле ввода (иначе на телефоне закрывается клавиатура)
+function refresh(id){
+  const p = S.data.products.find(x => x.id === id), el = document.querySelector(`[data-item="${id}"]`);
+  if (p && el) {
+    const t = document.createElement("div"); t.innerHTML = itemHTML(p); const n = t.firstElementChild;
+    el.className = n.className;
+    el.querySelector(".row2").replaceWith(n.querySelector(".row2"));
+    const inp = el.querySelector("input"), ni = n.querySelector("input");
+    inp.className = ni.className; if (document.activeElement !== inp) inp.value = ni.value;
+  }
+  updateBar();
+}
+function updateBar(){
+  const n = Object.keys(S.edits).length;
+  $("bar").hidden = false; $("save").disabled = !n;
+  $("save").textContent = n ? `Сақлаш (${n} та ўзгариш)` : "Ўзгаришлар йўқ";
+}
+function setEdit(id, patch){
+  const base = S.data.offers[id] ?? null, now = { ...(S.edits[id] ?? base ?? { price:0, in_stock:true }), ...patch };
+  if (base && now.price === base.price && now.in_stock === base.in_stock) delete S.edits[id];
+  else if (!base && !now.price) delete S.edits[id];
+  else S.edits[id] = now;
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.cat) { S.cat = b.dataset.cat; S.shown = PAGE; render(); }
+  else if (b.dataset.stf) { S.st = b.dataset.stf; S.shown = PAGE; render(); }
+  else if (b.dataset.pct) { S.pct = +b.dataset.pct; render(); }
+  else if ("more" in b.dataset) { S.shown += PAGE; render(); }
+  else if (b.dataset.sug) { const p = S.data.products.find(x => x.id === +b.dataset.sug); setEdit(p.id, { price:suggest(p), in_stock:true }); refresh(p.id); }
+  else if (b.dataset.st) { const [id, v] = b.dataset.st.split(":"); setEdit(+id, { in_stock: v === "1" }); refresh(+id); }
+  else if ("fill" in b.dataset) {
+    let n = 0; for (const p of filtered()) if (!cur(p)) { const v = suggest(p); if (v) { setEdit(p.id, { price:v, in_stock:true }); n++; } }
+    render(); toast(`⚡ ${n} та товарга нарх қўйилди. Текширинг ва «Сақлаш» ни босинг.`);
+  }
+});
+document.addEventListener("input", e => { if (e.target.id === "q") { S.q = e.target.value; S.shown = PAGE; render(true); } });
+document.addEventListener("change", e => { const id = e.target.dataset.id; if (!id) return; setEdit(+id, { price:num(e.target.value) }); refresh(+id); });
+document.addEventListener("keydown", e => {   // Enter / «Кейинги» → следующее поле цены
+  const id = e.target.dataset && e.target.dataset.id; if (!id || e.key !== "Enter") return;
+  e.preventDefault();
+  const ins = [...document.querySelectorAll("input[data-id]")], i = ins.indexOf(e.target), next = ins[i + 1];
+  setEdit(+id, { price:num(e.target.value) }); refresh(+id);
+  if (next) { next.focus(); next.scrollIntoView({ block:"center", behavior:"smooth" }); } else e.target.blur();
+});
+$("save").addEventListener("click", async () => {
+  const a = document.activeElement; if (a && a.dataset && a.dataset.id) { setEdit(+a.dataset.id, { price:num(a.value) }); a.blur(); }
+  const offers = Object.entries(S.edits).map(([id, o]) => ({ product_id:+id, price:o.price, in_stock:o.in_stock }));
+  if (!offers.length) return;
+  $("save").disabled = true; $("save").textContent = "Сақланмоқда…";
+  try {
+    await call({ action:"save", offers });
+    for (const o of offers) { if (o.price) S.data.offers[o.product_id] = { price:o.price, in_stock:o.in_stock }; else delete S.data.offers[o.product_id]; }
+    S.edits = {}; render(); toast(`✓ ${offers.length} та нарх сақланди`);
+    if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success");
+  } catch (err) { toast(err.message); updateBar(); }
+});
+
+(async () => {
+  if (!TG || !TG.initData) { $("app").innerHTML = `<div class="msg">Бу саҳифа Telegram'даги <b>@tamir_sotuvchi_bot</b> ботида «🏷 Нархларим» тугмаси орқали очилади.</div>`; return; }
+  TG.ready(); TG.expand();
+  try { S.data = await call({ action:"load" }); render(); }
+  catch (err) { $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Йиғувчи кабинети — Ta'mir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="config.js"></script>
+
+<script src="catalog.js"></script>
+<style>
+:root{--bg:#F0F2F5;--card:#fff;--ink:#222;--muted:#7A808A;--line:#E3E6EB;--accent:#FFD92F;--ok:#1E9E5A;--warn:#D9822B;--bad:#C8463D}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.35 Rubik,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+input,button,select{font:inherit;color:inherit}
+input,select{font-size:16px!important}
+.wrap{max-width:680px;margin:0 auto;padding:10px 12px 150px}
+h1{font-size:20px;margin:4px 0 10px}
+h2{font-size:15px;margin:16px 2px 8px;color:var(--muted);font-weight:600}
+.card{background:var(--card);border-radius:14px;padding:12px;margin:0 0 8px}
+.row{display:flex;align-items:center;gap:8px}
+.sp{flex:1;min-width:0}
+.muted{color:var(--muted);font-size:13px}
+.btn{border:0;border-radius:12px;background:var(--accent);font-weight:600;padding:11px 14px}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.ghost{background:#EEF0F3}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.45}
+.bar{height:6px;border-radius:99px;background:#E2E5EA;overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.pill{display:inline-block;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:600;background:#EEF0F3}
+.pill.y{background:var(--accent)} .pill.g{background:#DDF3E6;color:#13693B} .pill.r{background:#FBE1DF;color:var(--bad)}
+.field{display:block;margin:0 0 10px;font-size:13px;color:var(--muted)}
+.field input,.field select{display:block;width:100%;margin-top:4px;height:44px;border:1.5px solid var(--line);border-radius:10px;padding:0 10px;background:#fff;outline:0}
+.field input:focus,.field select:focus{border-color:var(--ink)}
+.ln{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;padding:10px 0;border-bottom:1px solid #EEF0F3;align-items:start}
+.ln:last-child{border-bottom:0}
+.ln input[type=checkbox]{width:22px;height:22px;margin:2px 0 0;accent-color:var(--ok)}
+.ln .nm{font-weight:600;font-size:14.5px}
+.ln .in{grid-column:2;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ln .in input{width:84px;height:38px;border:1.5px solid var(--line);border-radius:9px;padding:0 8px;text-align:right;background:#FAFBFC}
+.ln .in input.pr{width:110px}
+.done-ln{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:14px;border-bottom:1px dashed #EEF0F3}
+.done-ln:last-child{border-bottom:0}
+.sticky{position:fixed;left:0;right:0;bottom:62px;padding:8px 12px;background:linear-gradient(transparent,var(--bg) 30%);z-index:5}
+.sticky .btn{display:block;width:100%;max-width:680px;margin:0 auto;height:52px;font-size:16px}
+nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding-bottom:env(safe-area-inset-bottom,0px);z-index:6}
+nav button{border:0;background:none;padding:9px 0 8px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button b{font-size:20px;line-height:1}
+nav button[aria-current="page"]{color:var(--ink);font-weight:600}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:12px;height:42px;padding:0 12px;margin-bottom:8px}
+.search input{flex:1;border:0;outline:0;background:transparent;min-width:0}
+.pitem{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px solid #EEF0F3}
+.pitem:last-child{border-bottom:0}
+.pitem input{width:104px;height:40px;border:1.5px solid var(--line);border-radius:10px;padding:0 9px;text-align:right;background:#FAFBFC}
+.pitem input.set{border-color:#BFE3CC;background:#F2FBF5}
+.sw{display:flex;border-radius:999px;background:#EEF0F3;padding:2px}
+.sw button{border:0;background:transparent;border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.sw button[aria-pressed="true"].y{background:var(--ok);color:#fff}
+.sw button[aria-pressed="true"].n{background:#C9CDD3;color:var(--ink)}
+.toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.msg{background:var(--card);border-radius:14px;padding:20px;text-align:center;color:var(--muted);margin-top:24px}
+a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="msg">Юкланмоқда…</div></div>
+<div class="sticky" id="sticky" hidden></div>
+<nav id="nav" hidden>
+  <button data-tab="orders"><b>🧺</b>Буюртмалар</button>
+  <button data-tab="prices"><b>🏷</b>Нархлар</button>
+  <button data-tab="shops"><b>🏪</b>Дўконлар</button>
+</nav>
+<div class="toast" id="toast"></div>
+<script>
+// Кабинет йиғувчи (сборщика рынка). Открывается из бота @tamir_sotuvchi_bot.
+const API = (window.TAMIR_CONFIG || {}).botApi || "https://agajmytkjpkihvaurqij.supabase.co/functions/v1/tg-bot";
+const TG = window.Telegram && window.Telegram.WebApp;
+const TC = window.TAMIR_CATALOG || { core:[], items:[], units:{} };
+const UZ = new Map();
+(TC.core || []).forEach(([id, base, n, s]) => UZ.set(id, { n, s }));
+(TC.items || []).forEach(x => UZ.set(x[0], { n:x[7] || x[3], s:x[8] || x[4] }));
+const UNIT = Object.assign({ "мешок":"қоп", "шт":"дона", "упак.":"қадоқ", "ведро":"челак", "набор":"тўплам" }, TC.units || {});
+const S = { tab:"orders", d:null, open:null, shop:"", sel:{}, qty:{}, price:{}, pshop:"", poff:{}, pq:"", form:null };
+const fmt = n => Math.round(n).toLocaleString("ru-RU").replace(/ /g, " ");
+const num = s => +String(s).replace(",", ".").replace(/[^\d.]/g, "") || 0;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const $ = id => document.getElementById(id);
+const pname = (id, n) => (UZ.get(id) || {}).n || n;
+const unit = u => UNIT[u] || u;
+function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2400); }
+async function call(body){
+  const r = await fetch(API, { method:"POST", headers:{ "content-type":"application/json", "x-init-data":TG.initData }, body:JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || "Хато. Қайта уриниб кўринг.");
+  return j;
+}
+async function load(){ S.d = await call({ action:"c_load" }); }
+const shopById = id => S.d.shops.find(s => s.id === +id);
+const STG = ["Қабул қилинди", "Олинди", "Йиғилмоқда", "Йўлда", "Етказилди"];
+
+// ---------- Буюртмалар ----------
+function ordersHTML(){
+  const d = S.d;
+  return `<h1>🧺 Салом, ${esc(d.me.name)}!</h1>${d.me.market ? `<div class="muted" style="margin:-6px 0 8px">🏬 ${esc(d.me.market)}</div>` : ""}
+    <h2>Янги буюртмалар (${d.open.length})</h2>
+    ${d.open.map(o => `<div class="card"><div class="row"><div class="sp"><b>№${o.no}</b> · ${o.n} та товар · ${fmt(o.total)} сўм
+      <div class="muted">🕒 ${esc(o.slot)}${o.address ? " · 📍 " + esc(o.address) : ""}</div></div>
+      <button class="btn" data-claim="${o.no}">🙋 Мен оламан</button></div></div>`).join("") || `<div class="card muted">Ҳозирча янги буюртма йўқ.</div>`}
+    <h2>Менинг буюртмаларим (${d.my.length})</h2>
+    ${d.my.map(o => { const act = o.lines.filter(l => l.status !== "missing"), got = act.filter(l => l.status === "ready").length;
+      return `<div class="card" data-openo="${o.no}" role="button"><div class="row"><div class="sp"><b>№${o.no}</b> · ${esc(o.customer)}
+        <div class="muted">🕒 ${esc(o.slot)}</div></div><span class="pill ${o.stage >= 3 ? "g" : "y"}">${o.driver_id ? "Топширилди" : STG[o.stage]}</span></div>
+        <div class="bar"><i style="width:${act.length ? Math.round(got / act.length * 100) : 0}%"></i></div><div class="muted" style="margin-top:4px">${got} / ${act.length} та олинди</div></div>`; }).join("") || `<div class="card muted">Сизда фаол буюртма йўқ.</div>`}`;
+}
+function orderHTML(o){
+  const pend = o.lines.filter(l => l.status === "pending"), wait = o.purchases.filter(p => p.status === "pending");
+  const ready = o.lines.filter(l => l.status === "ready"), miss = o.lines.filter(l => l.status === "missing");
+  const act = o.lines.filter(l => l.status !== "missing");
+  const offShop = S.shop ? (S.shopOffers || {}) : {};
+  const map = o.lat ? `https://yandex.uz/maps/?pt=${o.lng},${o.lat}&z=17&l=map` : null;
+  const byShop = {}; ready.forEach(l => (byShop[l.shop_id] = byShop[l.shop_id] || []).push(l));
+  const allDone = !pend.length && !wait.length && ready.length;
+  return `<button class="btn ghost sm" data-back>← Буюртмалар</button>
+    <h1 style="margin-top:10px">№${o.no} · ${esc(o.customer)}</h1>
+    <div class="card"><div>📱 <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></div>
+      ${o.address ? `<div>📍 ${esc(o.address)}${map ? ` · <a href="${map}" target="_blank">харита</a>` : ""}</div>` : ""}
+      <div>🕒 ${esc(o.slot)}</div>${o.note ? `<div>💬 ${esc(o.note)}</div>` : ""}
+      <div class="bar"><i style="width:${act.length ? Math.round(ready.length / act.length * 100) : 0}%"></i></div>
+      <div class="muted" style="margin-top:4px">${ready.length} / ${act.length} та олинди${miss.length ? ` · ${miss.length} та топилмади` : ""}</div></div>
+    ${pend.length ? `<h2>🛒 Олиш керак (${pend.length})</h2><div class="card">
+      <label class="field">Қайси дўкондасиз?<select id="shopSel"><option value="">— дўконни танланг —</option>
+        ${S.d.shops.map(s => `<option value="${s.id}" ${+S.shop === s.id ? "selected" : ""}>${esc(s.name)} · ${esc(s.row)}</option>`).join("")}
+        <option value="new">➕ Янги дўкон қўшиш</option></select></label>
+      ${pend.map(l => { const pr = S.price[l.line_no] ?? (l.product_id && offShop[l.product_id] ? offShop[l.product_id].price : l.client_price);
+        return `<div class="ln"><input type="checkbox" data-sel="${l.line_no}" ${S.sel[l.line_no] ? "checked" : ""} aria-label="Танлаш">
+        <div><div class="nm">${esc(pname(l.product_id, l.name))}</div><div class="muted">керак: ${fmt(l.qty)} ${esc(unit(l.unit))} · мижоз нархи ${fmt(l.client_price)}</div></div>
+        <div class="in"><input inputmode="decimal" data-qty="${l.line_no}" value="${S.qty[l.line_no] ?? l.qty}" aria-label="Сони"><span class="muted">${esc(unit(l.unit))} ×</span>
+          <input class="pr" inputmode="numeric" data-pr="${l.line_no}" value="${fmt(pr)}" aria-label="Нарх"><span class="muted">сўм</span>
+          <button class="btn ghost sm" data-miss="${l.line_no}">❌ Топилмади</button></div></div>`; }).join("")}</div>` : ""}
+    ${wait.length ? `<h2>⏳ Тўлов кутилмоқда</h2>${wait.map(p => `<div class="card"><b>${esc((shopById(p.shop_id) || {}).name)}</b> · ${fmt(p.total)} сўм · ${p.items.length} та
+      <div class="muted">Админ тўлашини кутинг — тўланса, ботга хабар келади.</div></div>`).join("")}` : ""}
+    ${ready.length ? `<h2>✅ Олинди (${ready.length})</h2>${Object.entries(byShop).map(([sid, ls]) => `<div class="card"><b>🏪 ${esc((shopById(sid) || {}).name)}</b>
+      ${ls.map(l => `<div class="done-ln"><span>${esc(pname(l.product_id, l.name))} — ${fmt(l.qty)} ${esc(unit(l.unit))}</span><span>${fmt(l.price * l.qty)}</span></div>`).join("")}</div>`).join("")}` : ""}
+    ${miss.length ? `<h2>❌ Топилмади (${miss.length})</h2><div class="card">${miss.map(l => `<div class="done-ln"><span>${esc(pname(l.product_id, l.name))} — ${fmt(l.qty)} ${esc(unit(l.unit))}</span>
+      <button class="btn ghost sm" data-unmiss="${l.line_no}">Қайтариш</button></div>`).join("")}</div>` : ""}
+    ${o.driver_id ? `<div class="card"><span class="pill g">🚚 Топширилди</span> <span class="muted">Чек-лист ва йўл — ботда.</span></div>`
+      : allDone ? `<h2>📦 Ҳаммаси олинди — кимга топширасиз?</h2><div class="card">
+      ${S.d.drivers.map(dr => `<button class="btn dark" style="width:100%;margin-bottom:8px" data-hand="${dr.id}">🚚 ${esc(dr.name)} · ${esc(dr.car || "")}</button>`).join("")}
+      <button class="btn" style="width:100%" data-hand="self">🚗 Ўзим олиб бораман</button></div>` : ""}`;
+}
+function stickyOrder(o){
+  const pend = o ? o.lines.filter(l => l.status === "pending" && S.sel[l.line_no]) : [];
+  const el = $("sticky");
+  if (!o || S.tab !== "orders" || !o.lines.some(l => l.status === "pending")) { el.hidden = true; return; }
+  const sum = pend.reduce((a, l) => a + num(S.qty[l.line_no] ?? l.qty) * num(S.price[l.line_no] ?? curPrice(l)), 0);
+  el.hidden = false;
+  el.innerHTML = `<button class="btn dark" data-buy ${!S.shop || S.shop === "new" || !pend.length ? "disabled" : ""}>💳 Тўловга юбориш${pend.length ? ` · ${pend.length} та · ${fmt(sum)} сўм` : ""}</button>`;
+}
+const curPrice = l => (l.product_id && S.shopOffers && S.shopOffers[l.product_id]) ? S.shopOffers[l.product_id].price : l.client_price;
+
+// ---------- Нархлар ----------
+function pricesHTML(){
+  const q = S.pq.trim().toLowerCase();
+  const list = S.pshop ? S.d.products.filter(p => !q || (pname(p.id, p.name) + " " + p.name).toLowerCase().includes(q)).slice(0, 80) : [];
+  return `<h1>🏷 Нархлар</h1><div class="card"><label class="field" style="margin:0">Дўкон<select id="pshopSel"><option value="">— дўконни танланг —</option>
+    ${S.d.shops.map(s => `<option value="${s.id}" ${+S.pshop === s.id ? "selected" : ""}>${esc(s.name)} · ${esc(s.row)}</option>`).join("")}</select></label></div>
+    ${S.pshop ? `<label class="search"><input id="pq" type="search" placeholder="Товар қидириш…" value="${esc(S.pq)}"></label>
+      <div class="card">${list.map(p => { const o = S.poff[p.id];
+        return `<div class="pitem"><div><b>${esc(pname(p.id, p.name))}</b><div class="muted">${esc((UZ.get(p.id) || {}).s || p.spec)}</div></div>
+        <div class="row"><input inputmode="numeric" data-pp="${p.id}" class="${o ? "set" : ""}" value="${o ? fmt(o.price) : ""}" placeholder="нарх"><span class="muted">/${esc(unit(p.unit))}</span></div>
+        ${o ? `<div style="grid-column:1/-1" class="row"><span class="muted sp">Сақланган ✓</span><span class="sw"><button class="y" data-pst="${p.id}:1" aria-pressed="${o.in_stock}">Бор</button><button class="n" data-pst="${p.id}:0" aria-pressed="${!o.in_stock}">Йўқ</button></span></div>` : ""}</div>`; }).join("") || `<div class="muted">Топилмади.</div>`}</div>
+      <button class="btn" style="width:100%" data-newp>➕ Каталогда йўқ янги товар</button>` : `<div class="msg">Дўконни танланг, кейин унинг нархларини ёзасиз. Ҳар бир нарх дарров сақланади.</div>`}`;
+}
+function newProductHTML(){
+  return `<button class="btn ghost sm" data-cancel>← Орқага</button><h1 style="margin-top:10px">➕ Янги товар</h1><div class="card">
+    <label class="field">Тоифа<select id="np_cat">${S.d.cats.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></label>
+    <label class="field">Номи<input id="np_name" placeholder="Масалан: Кафель елими Х"></label>
+    <label class="field">Тавсифи<input id="np_spec" placeholder="Масалан: қоп 25 кг"></label>
+    <label class="field">Ўлчов<input id="np_unit" placeholder="қоп, дона, м², рулон…"></label>
+    <label class="field">Нархи (${esc((shopById(S.pshop) || {}).name || "")})<input id="np_price" inputmode="numeric"></label>
+    <button class="btn dark" style="width:100%" data-npsave>Админга юбориш</button>
+    <p class="muted">Админ тасдиқлагач, товар мижозлар каталогида пайдо бўлади.</p></div>`;
+}
+// ---------- Дўконлар ----------
+function shopsHTML(){
+  return `<h1>🏪 Дўконлар (${S.d.shops.length})</h1><button class="btn" style="width:100%;margin-bottom:10px" data-newshop>➕ Янги дўкон қўшиш</button>
+    ${S.d.shops.map(s => `<div class="card"><b>${esc(s.name)}</b> · ${esc(s.row)}<div class="muted">📱 ${esc(s.phone || "—")} · 💳 ${esc(s.card || "карта йўқ")}</div></div>`).join("")}`;
+}
+function newShopHTML(){
+  return `<button class="btn ghost sm" data-cancel>← Орқага</button><h1 style="margin-top:10px">➕ Янги дўкон</h1><div class="card">
+    <label class="field">Дўкон номи<input id="ns_name" placeholder="Масалан: Азиз Строй"></label>
+    <label class="field">Жойи (қатор, дўкон рақами)<input id="ns_row" placeholder="Масалан: 7-қатор, 15-дўкон"></label>
+    <label class="field">Телефон<input id="ns_phone" type="tel" placeholder="+998 90 123 45 67"></label>
+    <label class="field">Карта рақами (тўлов учун)<input id="ns_card" inputmode="numeric" placeholder="8600 0000 0000 0000"></label>
+    <button class="btn dark" style="width:100%" data-nssave>Сақлаш</button></div>`;
+}
+
+function render(){
+  document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === S.tab ? "page" : "false"));
+  const o = S.open && S.d.my.find(x => x.no === S.open);
+  let h;
+  if (S.form === "shop") h = newShopHTML(); else if (S.form === "product") h = newProductHTML();
+  else if (S.tab === "orders") h = o ? orderHTML(o) : ordersHTML();
+  else if (S.tab === "prices") h = pricesHTML(); else h = shopsHTML();
+  $("app").innerHTML = h;
+  stickyOrder(S.tab === "orders" && !S.form ? o : null);
+}
+async function refreshData(){ try { await load(); if (!document.activeElement || !document.activeElement.matches("input,select")) render(); } catch (e) {} }
+async function loadShopOffers(id){ S.shopOffers = id && id !== "new" ? (await call({ action:"c_offers", shop_id:+id })).offers : {}; }
+async function act(fn, okMsg){ try { await fn(); await load(); render(); if (okMsg) toast(okMsg); if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); } catch (e) { toast(e.message); } }
+
+document.addEventListener("click", async e => {
+  const b = e.target.closest("button,[data-openo]"); if (!b) return;
+  const ds = b.dataset;
+  if (ds.tab) { S.tab = ds.tab; S.form = null; S.open = null; render(); window.scrollTo(0, 0); }
+  else if (ds.openo) { S.open = +ds.openo; S.sel = {}; S.qty = {}; S.price = {}; render(); window.scrollTo(0, 0); refreshData(); }
+  else if ("back" in ds) { S.open = null; render(); refreshData(); }
+  else if ("cancel" in ds) { S.form = null; render(); }
+  else if (ds.claim) act(async () => { await call({ action:"c_claim", no:+ds.claim }); S.open = +ds.claim; }, "Буюртма сизники ✅");
+  else if (ds.miss) act(() => call({ action:"c_missing", no:S.open, line_no:+ds.miss, on:true }), "Топилмади деб белгиланди");
+  else if (ds.unmiss) act(() => call({ action:"c_missing", no:S.open, line_no:+ds.unmiss, on:false }));
+  else if ("buy" in ds) {
+    const o = S.d.my.find(x => x.no === S.open);
+    const lines = o.lines.filter(l => l.status === "pending" && S.sel[l.line_no]).map(l => ({ line_no:l.line_no, qty:num(S.qty[l.line_no] ?? l.qty), price:num(S.price[l.line_no] ?? curPrice(l)) }));
+    act(async () => { await call({ action:"c_buy", no:S.open, shop_id:+S.shop, lines }); S.sel = {}; S.qty = {}; S.price = {}; }, "💳 Тўлов сўрови админга юборилди");
+  }
+  else if (ds.hand) act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, ...(ds.hand === "self" ? { self:true } : { driver_id:+ds.hand }) }); },
+    ds.hand === "self" ? "Ботда юклаш рўйхати келди 🚗" : "Ҳайдовчига топширилди 🚚");
+  else if (ds.pst) { const [id, v] = ds.pst.split(":"); const o = S.poff[id]; act(async () => { await call({ action:"c_price", shop_id:+S.pshop, product_id:+id, price:o.price, in_stock:v === "1" }); S.poff[id].in_stock = v === "1"; }); }
+  else if ("newp" in ds) { S.form = "product"; render(); }
+  else if ("newshop" in ds) { S.form = "shop"; render(); }
+  else if ("nssave" in ds) act(async () => {
+    const r = await call({ action:"c_addshop", name:$("ns_name").value, row:$("ns_row").value, phone:$("ns_phone").value, card:$("ns_card").value });
+    S.form = null; if (S.open) { S.shop = String(r.shop.id); S.shopOffers = {}; }
+  }, "Дўкон қўшилди ✅");
+  else if ("npsave" in ds) act(async () => {
+    await call({ action:"c_newproduct", cat:$("np_cat").value, name:$("np_name").value, spec:$("np_spec").value, unit:$("np_unit").value, price:num($("np_price").value), shop_id:+S.pshop });
+    S.form = null;
+  }, "Админга юборилди ✅");
+});
+document.addEventListener("change", async e => {
+  const t = e.target;
+  if (t.id === "shopSel") { S.shop = t.value; if (t.value === "new") { S.form = "shop"; render(); return; } try { await loadShopOffers(t.value); } catch (er) {} S.price = {}; render(); }
+  else if (t.id === "pshopSel") { S.pshop = t.value; S.poff = t.value ? (await call({ action:"c_offers", shop_id:+t.value })).offers : {}; render(); }
+  else if (t.dataset.sel) { S.sel[t.dataset.sel] = t.checked; stickyOrder(S.d.my.find(x => x.no === S.open)); }
+  else if (t.dataset.qty) { S.qty[t.dataset.qty] = num(t.value); stickyOrder(S.d.my.find(x => x.no === S.open)); }
+  else if (t.dataset.pr) { S.price[t.dataset.pr] = num(t.value); S.sel[t.dataset.pr] = true; const c = document.querySelector(`[data-sel="${t.dataset.pr}"]`); if (c) c.checked = true; stickyOrder(S.d.my.find(x => x.no === S.open)); }
+  else if (t.dataset.pp) {
+    const id = t.dataset.pp, price = num(t.value);
+    try { await call({ action:"c_price", shop_id:+S.pshop, product_id:+id, price, in_stock:true }); if (price) S.poff[id] = { price, in_stock:true }; else delete S.poff[id]; t.classList.toggle("set", !!price); toast(price ? "✓ Сақланди" : "Ўчирилди"); }
+    catch (er) { toast(er.message); }
+  }
+});
+document.addEventListener("input", e => { if (e.target.id === "pq") { S.pq = e.target.value; const pos = e.target.selectionStart; render(); const q = $("pq"); q.focus(); q.setSelectionRange(pos, pos); } });
+
+(async () => {
+  if (!TG || !TG.initData) { $("app").innerHTML = `<div class="msg">Бу саҳифа Telegram'даги <b>@tamir_sotuvchi_bot</b> ботида «🧺 Йиғувчи кабинети» тугмаси орқали очилади.</div>`; return; }
+  TG.ready(); TG.expand();
+  try { await load(); $("nav").hidden = false; render(); setInterval(refreshData, 8000); }
+  catch (err) { $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+})();
+</script>
+</body>
+</html>
