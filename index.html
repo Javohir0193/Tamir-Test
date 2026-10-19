@@ -95,7 +95,9 @@ label input,label select,label textarea{display:block;width:100%;margin-top:4px;
 .order .meta{color:var(--muted);font-size:13px;margin:2px 0 10px}
 .pill{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:13px;white-space:nowrap}
 .pill.done{background:var(--steel);color:var(--bg)}
-.paybox{border:2px solid var(--accent);border-radius:12px;padding:10px 12px;margin:8px 0;background:#FFFBEA}.paybox.exp{border-color:#B3261E;background:#FDECEA}
+.paybox{border:2px solid #E5E7EB;border-radius:12px;padding:10px 12px;margin:8px 0;background:#fff}.paybox.exp{border-color:#B3261E;background:#FDECEA}
+.paylogo{height:46px;width:auto;display:block;margin:0 auto}.paylogo.sm{height:22px;margin:0}.btn.paybtn,.btn.lg.paybtn{background:#fff;border:2px solid #D1D5DB;padding:6px;min-height:68px;display:flex;align-items:center;justify-content:center}.btn.paybtn:active{background:#F3F4F6}
+.rcp{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:60;display:flex;align-items:flex-end;justify-content:center}.rcpbox{background:#fff;border-radius:16px 16px 0 0;padding:16px;width:100%;max-width:520px;max-height:90vh;overflow:auto}.rcpbox hr{border:0;border-top:1px dashed #D1D5DB;margin:8px 0}
 .payrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
 .tl{list-style:none;margin:8px 0 10px;padding:0}
 .tl li{position:relative;padding:0 0 16px 32px;color:var(--muted)}
@@ -1245,7 +1247,8 @@ const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mod
   lat:r.delivery_lat, lng:r.delivery_lng, driver:r.driver_info || null, dlat:r.driver_lat, dlng:r.driver_lng, dat:r.driver_at ? Date.parse(r.driver_at) : 0,
   eta:r.eta_min, received:r.received_at ? Date.parse(r.received_at) : 0, receivedOk:r.received_ok,
   picker:r.picker_info || null, picked:r.picked || 0, pickTotal:r.pick_total || 0,
-  payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null });
+  payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null,
+  paidAt:r.paid_at ? Date.parse(r.paid_at) : 0, goodsSum:r.goods_sum == null ? null : Number(r.goods_sum), deliverySum:Number(r.delivery_sum) || 0, serviceFee:Number(r.service_fee) || 0 });
 async function loadOrders(){
   if (!dbReady) return;
   try {
@@ -1516,11 +1519,36 @@ function sellerBox(){
     <label>Код<input type="password" id="adminCode" autocomplete="off"></label><p class="msg">${esc(S.adminMsg || "")}</p>
     <button class="btn dark" data-adminin>Войти</button></section>`;
 }
+const PAYLOGO = { click:"pay-click.png", payme:"pay-payme.png" };
+const PAYNAME = { click:"Click", payme:"Payme", test:"Тест (без денег)" };
+function receiptText(o){
+  const L = ["🧾 Квитанция об оплате", "Заказ №" + o.no, "Оплачено: " + dt(o.paidAt || o.ts), "Способ: " + (PAYNAME[o.payBy] || "—"), ""];
+  if (o.goodsSum != null) L.push("Товары: " + fmt(o.goodsSum) + " " + CURRENCY);
+  if (o.deliverySum) L.push("Доставка: " + fmt(o.deliverySum) + " " + CURRENCY);
+  if (o.serviceFee) L.push("Услуга сервиса: " + fmt(o.serviceFee) + " " + CURRENCY);
+  if (o.reserve) L.push("Запас на цену: " + fmt(o.reserve) + " " + CURRENCY);
+  L.push("Итого оплачено: " + fmt(o.payAmount || o.total) + " " + CURRENCY);
+  return L.join("\n");
+}
+function openReceipt(no){
+  const o = S.orders.find(x => x.no === no); if (!o) return;
+  const row = (a, b, strong) => `<div class="sumrow"><span>${a}</span>${strong ? `<b>${b}</b>` : `<span>${b}</span>`}</div>`;
+  const ov = document.createElement("div"); ov.className = "rcp";
+  ov.innerHTML = `<div class="rcpbox"><h2>🧾 Квитанция об оплате</h2>
+    ${row("Заказ", "№" + o.no)}${row("Оплачено", dt(o.paidAt || o.ts))}
+    <div class="sumrow"><span>Способ оплаты</span>${PAYLOGO[o.payBy] ? `<img class="paylogo sm" src="${PAYLOGO[o.payBy]}" alt="${PAYNAME[o.payBy]}">` : `<span>${PAYNAME[o.payBy] || "—"}</span>`}</div>
+    <hr>${o.goodsSum != null ? row("Товары", fmt(o.goodsSum) + " " + CURRENCY) : ""}${o.deliverySum ? row("Доставка", fmt(o.deliverySum) + " " + CURRENCY) : ""}${o.serviceFee ? row("Услуга сервиса", fmt(o.serviceFee) + " " + CURRENCY) : ""}${o.reserve ? row("Запас на цену", fmt(o.reserve) + " " + CURRENCY) : ""}
+    <hr>${row("Итого оплачено", fmt(o.payAmount || o.total) + " " + CURRENCY, true)}
+    <p class="note">${o.items.map(i => `${esc(i.n)} × ${i.q}`).join(", ")}</p>
+    <p class="note">Это подтверждение оплаты. Запас на цену вернём, если он не понадобится.</p>
+    <div class="payrow"><button class="btn" data-rcpshare="${o.no}">Поделиться</button><button class="btn alt" data-rcpclose>Закрыть</button></div></div>`;
+  document.body.appendChild(ov);
+}
 function payHtml(o){
   if (o.payStatus === "expired") return `<div class="paybox exp"><b>Время оплаты истекло</b><p class="note">Заказ отменён автоматически. Оформите его заново.</p></div>`;
   if (o.payStatus !== "unpaid") return "";
   const pv = (S.providers && S.providers.length ? S.providers : [{ code:"click", n:"Click" }, { code:"payme", n:"Payme" }]);
-  const btns = S.seller ? "" : `<div class="payrow">${pv.map(p => `<button class="btn lg" data-pay="${esc(p.code)}" data-no="${o.no}">${esc(p.n)}</button>`).join("")}</div>
+  const btns = S.seller ? "" : `<div class="payrow">${pv.map(p => `<button class="btn lg paybtn" data-pay="${esc(p.code)}" data-no="${o.no}" aria-label="${esc(p.n)}">${PAYLOGO[p.code] ? `<img class="paylogo" src="${PAYLOGO[p.code]}" alt="${esc(p.n)}">` : esc(p.n)}</button>`).join("")}</div>
     ${S.payTest ? `<button class="btn alt" data-pay="test" data-no="${o.no}">🧪 Тестовая оплата (без денег)</button>` : ""}`;
   return `<div class="paybox"><div class="sumrow"><span>К оплате</span><b>${fmt(o.payAmount || o.total)} ${CURRENCY}</b></div>
     ${o.reserve > 0 ? `<p class="note">В сумму входит запас на цену: ${fmt(o.reserve)} ${CURRENCY}. Что останется — вернём вам.</p>` : ""}
@@ -1558,6 +1586,7 @@ function renderOrders(){
         ${payHtml(o)}
         <p class="meta">${dt(o.ts)} · ${fmt(o.total)} ${CURRENCY}${o.slot ? `<br>Время: ${o.slot}` : ""}${S.seller && o.name ? `<br><b>${esc(o.name)}</b> · ${esc(o.phone || "")}${o.addr ? "<br>" + esc(o.addr) : ""}${o.note ? "<br>Комментарий: " + esc(o.note) : ""}` : ""}</p>
         ${deliveryCard(o)}
+        ${o.payStatus === "paid" ? `<button class="btn alt" data-receipt="${o.no}" style="margin:6px 0">🧾 Квитанция об оплате</button>` : ""}
         ${unp || exp ? "" : `<ol class="tl">${st.map((s, i) => {
           const cls = i < o.stage ? "done" : i === o.stage ? (last ? "done" : "now") : "";
           const when = i <= o.stage && o.times[i] ? dt(o.times[i]) : "";
@@ -1657,6 +1686,10 @@ document.addEventListener("click", async e => {
   if (t.closest && t.closest("[data-dbody]")) { const b = t.closest("[data-dbody]"); if (!b.disabled) { S.form.body = (S.form.body === b.dataset.dbody) ? "" : b.dataset.dbody; refreshQuote(); } return; }
   if (t.dataset.zone) { S.form.zone = t.dataset.zone; applyQuote(); refreshQuote(); return; }
   if (t.hasAttribute("data-carback")) { S.view = "home"; renderHome(); window.scrollTo(0, 0); return; }
+  if (t.dataset.receipt) { openReceipt(+t.dataset.receipt); return; }
+  if (t.hasAttribute("data-rcpclose")) { const r = document.querySelector(".rcp"); if (r) r.remove(); return; }
+  if (t.dataset.rcpshare) { const o = S.orders.find(x => x.no === +t.dataset.rcpshare); if (o) { const tx = receiptText(o);
+    if (navigator.share) navigator.share({ title: "Квитанция №" + o.no, text: tx }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(tx).then(() => toast("Скопировано")).catch(() => {}); } return; }
   if (t.dataset.pay) { t.disabled = true; payNow(+t.dataset.no, t.dataset.pay).finally(() => { t.disabled = false; }); return; }
   if (t.id === "carOrder") {
     if (!carValidate()) return;
