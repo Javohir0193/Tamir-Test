@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Ta'mir · Админ</title>
+<style>
+:root{--bg:#F3F4F6;--c:#fff;--ink:#1B1F24;--mu:#6B7280;--ln:#E5E7EB;--ac:#FFD92F;--g:#1F9D55;--gb:#E6F6ED;--r:#D93025;--rb:#FDECEA;--y:#B7791F;--yb:#FFF6DB;--bl:#2563EB}
+@media(prefers-color-scheme:dark){:root{--bg:#121417;--c:#1C2024;--ink:#ECEFF2;--mu:#9AA3AD;--ln:#2E343A;--g:#3DCB7C;--gb:#173326;--r:#FF6B5E;--rb:#3A1D1A;--y:#F2C14E;--yb:#3A311A;--bl:#7AA7FF}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{background:var(--c);border:1px solid var(--ln);border-radius:8px;padding:9px 10px;min-width:0;font-size:16px}
+button{cursor:pointer}
+.btn{border:0;border-radius:8px;padding:9px 14px;font-weight:600;background:var(--ac);color:#1B1F24}
+.btn.alt{background:transparent;border:1px solid var(--ln);color:var(--ink)}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn.red{background:var(--r);color:#fff}
+.btn:disabled{opacity:.5}
+header{position:sticky;top:0;z-index:5;background:var(--c);border-bottom:1px solid var(--ln)}
+.hd{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 14px}
+.hd h1{font-size:18px;margin:0;flex:1}
+nav{max-width:1100px;margin:0 auto;display:flex;gap:4px;padding:0 10px 8px;overflow-x:auto}
+nav button{background:transparent;border:0;border-radius:8px;padding:8px 12px;white-space:nowrap;color:var(--mu);font-weight:600}
+nav button.on{background:var(--ac);color:#1B1F24}
+nav .badge{background:var(--r);color:#fff;border-radius:10px;font-size:11px;padding:1px 6px;margin-left:4px}
+main{max-width:1100px;margin:0 auto;padding:14px}
+.card{background:var(--c);border-radius:14px;padding:14px;margin:0 0 12px}
+.card h2{font-size:16px;margin:0 0 10px}
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.kpi{background:var(--c);border-radius:14px;padding:12px}
+.kpi small{color:var(--mu);display:block}.kpi b{font-size:22px;display:block;margin-top:2px}
+.kpi.g b{color:var(--g)}.kpi.r b{color:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--ln);text-align:left;vertical-align:top}
+th{color:var(--mu);font-weight:600;font-size:12.5px}
+td.n,th.n{text-align:right;white-space:nowrap}
+.tw{overflow-x:auto}
+.pill{display:inline-block;border-radius:10px;padding:2px 9px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.pill.g{background:var(--gb);color:var(--g)}.pill.r{background:var(--rb);color:var(--r)}.pill.y{background:var(--yb);color:var(--y)}.pill.m{background:var(--ln);color:var(--mu)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+.row>input[type=search]{flex:1;min-width:160px}
+.al{display:flex;gap:8px;align-items:flex-start;padding:9px 10px;border-radius:10px;margin:6px 0;cursor:pointer}
+.al.red{background:var(--rb)}.al.yellow{background:var(--yb)}
+.al.ok{background:var(--gb);cursor:default}
+.fn{margin:8px 0}.fn .t{display:flex;justify-content:space-between;font-size:14px}
+.bar{height:10px;border-radius:5px;background:var(--ln);margin-top:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--bl);border-radius:5px}
+.mu{color:var(--mu)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sbox{background:var(--bg);width:100%;max-width:780px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px}
+@media(min-width:800px){.sheet{align-items:center}.sbox{border-radius:16px}}
+.kv{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:14px}.kv span:nth-child(even){text-align:right;font-weight:600}
+.login{max-width:420px;margin:12vh auto;padding:0 16px}
+.msg{margin:10px 0;color:var(--mu)}
+.err{color:var(--r);font-weight:600}
+.set{display:flex;gap:8px;align-items:center;margin:6px 0}.set label{flex:1;font-size:14px}.set small{display:block;color:var(--mu)}.set input{width:130px;text-align:right}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#1B1F24;color:#fff;padding:10px 16px;border-radius:10px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+"use strict";
+const CFG = window.TAMIR_CONFIG || {};
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const fmt = n => Math.round(Number(n) || 0).toLocaleString("ru-RU").replace(/,/g, " ");
+const sum = n => fmt(n) + " сўм";
+const dt = t => t ? new Date(t).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "—";
+function toast(t){ const e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2800); }
+let sb, CODE = "", S = { tab:"home", days:7, dash:null, orders:[], refunds:[], people:null, settings:null, filter:"all", q:"", me:null, pay:null, admins:null, audit:null, aq:"" };
+try { CODE = sessionStorage.getItem("acode") || ""; } catch(e){}
+
+const STAGE = { delivery:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Йўлда","Етказилди"], pickup:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Олиб кетишга тайёр"], car:["Қабул қилинди","Машина топилди","Юкланмоқда","Йўлда","Етказилди"] };
+const stName = o => (STAGE[o.mode] || STAGE.delivery)[Math.min(o.stage, (STAGE[o.mode] || STAGE.delivery).length - 1)];
+const stMax = o => (STAGE[o.mode] || STAGE.delivery).length - 1;
+const PAY = { none:["Онлайн тўловсиз", "m"], unpaid:["Тўлов кутилмоқда", "y"], paid:["Тўланган", "g"], expired:["Муддати ўтди", "r"], refunded:["Қайтарилган", "m"] };
+const payPill = o => { const p = PAY[o.pay_status] || ["—", "m"]; return `<span class="pill ${p[1]}">${p[0]}</span>`; };
+const ERR = { "wrong code":"Код нотўғри", admin_login_required:"Бу Telegram ҳисоб админ эмас", not_paid:"Буюртма тўланмаган", bad_amount:"Сумма нотўғри", too_much:"Тўланган суммадан кўп", reserve_too_much:"Захирадан кўп", bad_value:"Қиймат нотўғри", not_allowed:"Бу созламани бу ерда ўзгартириб бўлмайди", not_pending:"Аллақачон бажарилган", forbidden:"Бу амал учун рухсатингиз йўқ", pin_not_set:"PIN ҳали ўрнатилмаган", bad_pin:"PIN 6–12 та рақамдан иборат бўлиши керак", locked:"Кўп хато уриниш. 15 дақиқа кутинг", over_limit:"Сизнинг лимитингиздан катта сумма. Бухгалтер ёки эга яратсин", reason_required:"Сабабни ёзинг", second_approval:"Катта сумма: бошқа админ тасдиқлаши керак", person_not_active:"Одам фаол эмас ёки роли мос эмас", profile_not_found:"Бундай рақамли одам сайтга ҳали кирмаган", cannot_self:"Ўзингизни блоклаб ёки эгаликдан ол бўлмайди", over:"" };
+const errText = e => { const m = (e && e.message) || String(e); for (const k in ERR) if (m.indexOf(k) >= 0) return ERR[k]; return m; };
+
+async function rpc(name, args){
+  const r = await sb.rpc(name, Object.assign({ p_code:CODE }, args || {}));
+  if (r.error) throw r.error;
+  return r.data;
+}
+
+/* ---------- Кириш ---------- */
+async function init(){
+  if (!window.supabase || !CFG.supabaseUrl) { $("app").innerHTML = `<div class="login"><p class="err">Базага уланиб бўлмади</p></div>`; return; }
+  sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
+  const cur = await sb.auth.getSession();
+  if (!cur.data.session) { const r = await sb.auth.signInAnonymously(); if (r.error) { $("app").innerHTML = `<div class="login"><p class="err">${esc(r.error.message)}</p></div>`; return; } }
+  await gate();
+}
+async function profile(){ const r = await sb.rpc("my_profile"); return r.error ? null : r.data; }
+async function gate(){
+  const p = await profile();
+  if (!p) return loginView();
+  if (!p.admin) return notAdminView(p);
+  if (!CODE) return pinView();
+  try { S.me = await rpc("admin_me"); await load(); shell(); }
+  catch(e){
+    const m = (e && e.message) || "";
+    if (/find the function|admin_me/.test(m) && !/wrong code/.test(m)) return legacyView();
+    if (/wrong code|admin_login/.test(m)) { dropSession(); return pinView(errText(e)); }
+    $("app").innerHTML = `<div class="login"><p class="err">${esc(errText(e))}</p><p class="mu">7-schema-admin2.sql базага ишга туширилганми?</p><button class="btn" onclick="location.reload()">Қайта уриниш</button></div>`;
+  }
+}
+function dropSession(){ CODE = ""; S.me = null; try { sessionStorage.removeItem("acode"); } catch(_){} }
+function loginView(){
+  $("app").innerHTML = `<div class="login card"><h2>Админ кириши</h2><p class="mu">Аввал Telegram орқали кирасиз, кейин шахсий PIN киритасиз.</p>
+    <p><a class="btn" id="tg" target="_blank" rel="noopener" href="#" style="display:inline-block;text-decoration:none">Telegram'ни очиш</a></p><p class="msg" id="lm">Тайёрланмоқда…</p></div>`;
+  sb.rpc("login_start", { p_consent:true }).then(r => {
+    if (r.error || !r.data) { $("lm").textContent = "Киришни бошлаб бўлмади. Бироздан кейин қайта уриниб кўринг."; return; }
+    $("tg").href = `https://t.me/${r.data.bot}?start=login_${r.data.token}`; $("lm").textContent = "Telegram'да «Рақамни юбориш» ни босинг, кейин шу саҳифага қайтинг.";
+    const t0 = Date.now(), iv = setInterval(async () => { if (Date.now() - t0 > 600000) { clearInterval(iv); return; } if (await profile()) { clearInterval(iv); gate(); } }, 2500);
+  });
+}
+function notAdminView(p){
+  $("app").innerHTML = `<div class="login card"><h2>Рухсат йўқ</h2><p>Сиз <b>${esc(p.name || p.phone || "")}</b> сифатида кирдингиз, лекин бу ҳисоб админ эмас.</p><button class="btn alt" id="lo">Чиқиш</button></div>`;
+  $("lo").onclick = async () => { await sb.rpc("logout"); location.reload(); };
+}
+function pinView(err){
+  $("app").innerHTML = `<div class="login card"><h2>PIN</h2><p class="err" id="pe">${esc(err || "")}</p>
+    <p><input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Кириш</button></div>`;
+  const go = async () => {
+    const pin = $("pin").value.trim(); if (!pin) return;
+    const r = await sb.rpc("admin_login", { p_pin:pin });
+    if (r.error) { if (/pin_not_set/.test(r.error.message)) return setPinView(); if (/find the function/.test(r.error.message)) return legacyView(); $("pe").textContent = errText(r.error); return; }
+    if (r.data && r.data.error) { $("pe").textContent = r.data.error === "locked" ? ERR.locked : "PIN нотўғри"; $("pin").value = ""; return; }
+    CODE = r.data.token; try { sessionStorage.setItem("acode", CODE); } catch(e){} gate();
+  };
+  $("go").onclick = go; $("pin").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+}
+function setPinView(err){
+  $("app").innerHTML = `<div class="login card"><h2>Янги PIN ўрнатиш</h2><p class="mu">6–12 та рақам. Уни ҳеч кимга айтманг.</p><p class="err" id="pe">${esc(err || "")}</p>
+    <p><input id="oc" type="password" placeholder="Эски админ коди (фақат эга биринчи марта)" autocomplete="off" style="width:100%"></p>
+    <p><input id="p1" type="password" inputmode="numeric" placeholder="Янги PIN" autocomplete="off" style="width:100%"></p>
+    <p><input id="p2" type="password" inputmode="numeric" placeholder="PIN'ни такрорланг" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Сақлаш</button></div>`;
+  $("go").onclick = async () => {
+    if ($("p1").value !== $("p2").value) { $("pe").textContent = "PIN'лар бир хил эмас"; return; }
+    const r = await sb.rpc("admin_set_pin", { p_code:$("oc").value.trim() || null, p_pin:$("p1").value.trim() });
+    if (r.error) { $("pe").textContent = errText(r.error); return; }
+    pinView("PIN ўрнатилди. Энди кириш.");
+  };
+}
+function legacyView(err){
+  $("app").innerHTML = `<div class="login card"><h2>Админ коди</h2><p class="err">${esc(err || "")}</p>
+    <p><input id="ac" type="password" placeholder="Код" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Кириш</button></div>`;
+  const go = async () => { CODE = $("ac").value.trim(); if (!CODE) return; try { await load(); S.me = { name:"умумий код", roles:["owner"] }; shell(); } catch(e){ CODE = ""; legacyView(errText(e)); } };
+  $("go").onclick = go; $("ac").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+}
+
+/* ---------- Маълумот ---------- */
+async function load(){
+  const [d, o, rf] = await Promise.all([rpc("admin_dashboard", { p_days:S.days }), rpc("admin_list_orders"), rpc("admin_refunds")]);
+  const arr = x => Array.isArray(x) ? x : (x ? [x] : []);
+  S.dash = d; S.orders = arr(o); S.refunds = arr(rf);
+}
+async function tabData(){
+  try {
+    if (S.tab === "people") S.people = await rpc("admin_people");
+    if (S.tab === "set") S.settings = await rpc("admin_settings");
+    if (S.tab === "pay") S.pay = await rpc("admin_payouts");
+    if (S.tab === "audit") S.audit = await rpc("admin_audit", { p_limit:150, p_offset:0, p_q:S.aq || null });
+    if (S.tab === "admins") S.admins = await rpc("admin_admins");
+  } catch(e){ sessErr(e); }
+}
+function sessErr(e){ if (/wrong code|admin_login/.test((e && e.message) || "")) { dropSession(); pinView("Сессия тугади. Қайта киринг."); } else toast(errText(e)); }
+async function reload(){ try { await load(); await tabData(); draw(); } catch(e){ sessErr(e); } }
+
+/* ---------- Қобиқ ---------- */
+const ROLE_N = { owner:"Эга", operator:"Оператор", accountant:"Бухгалтер", support:"Қўллаб-қувватлаш" };
+const can = p => { const r = (S.me && S.me.roles) || []; if (r.includes("owner")) return true; return ({ orders_edit:["operator"], money:["accountant"], payout:["accountant"], refund:["accountant", "operator"], people:["operator"], audit:["accountant"], admins:[], settings:[] }[p] || []).some(x => r.includes(x)); };
+const TABS = () => [["home", "Бош", 1], ["orders", "Буюртмалар", 1], ["pay", "Тўловлар", can("payout")], ["money", "Пул", can("money")], ["people", "Одамлар", 1], ["set", "Созламалар", 1], ["audit", "Журнал", can("audit")], ["admins", "Админлар", can("admins")]].filter(t => t[2]);
+function shell(){
+  $("app").innerHTML = `<header><div class="hd"><h1>Ta'mir · Админ ${CFG.env === "test" ? '<span class="pill y">СИНОВ</span>' : ""}</h1><button class="btn alt sm" id="rf">Янгилаш</button><span class="mu" style="font-size:13px">${esc(S.me ? S.me.name : "")} · ${esc(((S.me && S.me.roles) || []).map(r => ROLE_N[r] || r).join(", "))}</span><button class="btn alt sm" id="lo">Чиқиш</button></div><nav id="nav"></nav></header><main id="main"></main>`;
+  $("rf").onclick = reload;
+  $("lo").onclick = async () => { try { await rpc("admin_logout"); } catch(e){} dropSession(); gate(); };
+  draw();
+}
+function draw(){
+  const al = (S.dash.alerts || []).length + (S.dash.refunds_pending ? 0 : 0);
+  $("nav").innerHTML = TABS().map(([k, n]) => { const pp = S.dash.payouts_pending ? S.dash.payouts_pending.n : 0, bd = k === "home" ? al : k === "pay" ? pp : k === "people" ? S.dash.pending_people : 0; return `<button data-t="${k}" class="${S.tab === k ? "on" : ""}">${n}${bd ? `<span class="badge">${bd}</span>` : ""}</button>`; }).join("");
+  $("nav").querySelectorAll("button").forEach(b => b.onclick = async () => {
+    S.tab = b.dataset.t;
+    await tabData();
+    draw();
+  });
+  $("main").innerHTML = ({ home:homeView, orders:ordersView, money:moneyView, people:peopleView, set:setView, pay:payView, audit:auditView, admins:adminsView })[S.tab]();
+  bind();
+}
+
+/* ---------- Бош ---------- */
+function homeView(){
+  const d = S.dash, o = d.orders, f = d.funnel || {};
+  const fv = [["visit", "Саҳифага кирди"], ["search", "Қидирди"], ["cart_add", "Саватга қўшди"], ["checkout", "Буюртма бошлади"], ["order", "Буюртма берди"]];
+  const top = Math.max(1, ...fv.map(([k]) => (f[k] && f[k].people) || 0));
+  const al = d.alerts || [];
+  const pp = d.payouts_pending || { n:0, sum:0, oldest_min:0 };
+  const q = [[can("payout") && pp.n, `💳 Дўконга тўлов: <b>${pp.n}</b> та · ${sum(pp.sum)} · энг эскиси ${pp.oldest_min} дақ.`, "pay"], [can("payout") && d.refunds_pending, `↩️ Қайтаришлар кутмоқда: <b>${d.refunds_pending}</b>`, can("money") ? "money" : "orders"], [can("people") && d.pending_people, `🆕 Янги аризалар: <b>${d.pending_people}</b>`, "people"]].filter(x => x[0]);
+  const queue = `<div class="card"><h2>Ҳозир қилиш керак</h2>${q.length ? q.map(x => `<div class="al red" data-go="${x[2]}">${x[1]}</div>`).join("") : `<div class="al ok">✅ Навбатда иш йўқ</div>`}</div>`;
+  return queue + `<div class="row"><b>Давр:</b>${[7, 30, 90].map(n => `<button class="btn ${S.days === n ? "" : "alt"} sm" data-days="${n}">${n} кун</button>`).join("")}</div>
+  <div class="grid" style="margin-bottom:12px">
+    <div class="kpi"><small>Буюртмалар</small><b>${o.total}</b></div>
+    <div class="kpi g"><small>Тўланган</small><b>${o.paid}</b></div>
+    <div class="kpi ${o.unpaid ? "r" : ""}"><small>Тўлов кутилмоқда</small><b>${o.unpaid}</b></div>
+    <div class="kpi"><small>Муддати ўтган</small><b>${o.expired}</b></div>
+    ${o.sum != null ? `<div class="kpi"><small>Айланма</small><b>${fmt(o.sum)}</b></div>
+    <div class="kpi g"><small>Платформа даромади</small><b>${fmt(o.platform)}</b></div>
+    <div class="kpi"><small>Ўртача чек</small><b>${fmt(o.avg)}</b></div>` : ""}
+    <div class="kpi"><small>Етказилган</small><b>${o.delivered}</b></div>
+    <div class="kpi"><small>Ташрифчилар</small><b>${d.visitors}</b></div>
+    <div class="kpi"><small>Янги мижозлар</small><b>${d.new_customers} <span class="mu" style="font-size:13px">/ ${d.customers}</span></b></div></div>
+  <div class="card"><h2>Огоҳлантиришлар</h2>${al.length ? al.map(a => `<div class="al ${a.lvl === "info" ? "ok" : a.lvl}" ${a.no ? `data-open="${a.no}"` : ""}><span>${a.lvl === "red" ? "🔴" : a.lvl === "info" ? "ℹ️" : "🟡"}</span><span>${esc(a.text)}</span></div>`).join("") : `<div class="al ok">✅ Ҳаммаси жойида</div>`}</div>
+  <div class="card"><h2>Воронка (${d.days} кун, ноёб одамлар)</h2>${fv.map(([k, n]) => { const p = (f[k] && f[k].people) || 0; return `<div class="fn"><div class="t"><span>${n}</span><b>${p}</b></div><div class="bar"><i style="width:${Math.round(p / top * 100)}%"></i></div></div>`; }).join("")}</div>
+  <div class="grid"><div class="card"><h2>Кўп қидирилган</h2>${(d.top_searches || []).length ? (d.top_searches || []).map(x => `<div class="row" style="margin:3px 0"><span style="flex:1">${esc(x.q)}</span><b>${x.n}</b></div>`).join("") : '<span class="mu">Ҳали йўқ</span>'}</div>
+  <div class="card"><h2>Натижа бермаган қидирув</h2>${(d.searches_empty || []).length ? (d.searches_empty || []).map(x => `<div class="row" style="margin:3px 0"><span style="flex:1">${esc(x.q)}</span><b>${x.n}</b></div>`).join("") : '<span class="mu">Йўқ</span>'}</div></div>`;
+}
+
+/* ---------- Буюртмалар ---------- */
+function ordersView(){
+  const q = S.q.trim().toLowerCase();
+  const list = S.orders.filter(o => {
+    if (S.filter === "unpaid" && o.pay_status !== "unpaid") return false;
+    if (S.filter === "paid" && o.pay_status !== "paid") return false;
+    if (S.filter === "active" && !(o.stage < stMax(o) && ["paid", "none"].includes(o.pay_status))) return false;
+    if (S.filter === "done" && o.stage < stMax(o)) return false;
+    if (q && !`${o.no} ${o.customer_name} ${o.phone} ${o.address || ""}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const F = [["all", "Ҳаммаси"], ["unpaid", "Тўлов кутилмоқда"], ["paid", "Тўланган"], ["active", "Жараёнда"], ["done", "Етказилган"]];
+  return `<div class="row"><input type="search" id="oq" placeholder="№, исм, телефон, манзил…" value="${esc(S.q)}"><button class="btn alt sm" id="csv">Excel (CSV)</button></div>
+  <div class="row">${F.map(([k, n]) => `<button class="btn ${S.filter === k ? "" : "alt"} sm" data-f="${k}">${n}</button>`).join("")}</div>
+  <div class="card tw"><table><tr><th>№</th><th>Вақт</th><th>Мижоз</th><th>Ҳолат</th><th>Тўлов</th><th class="n">Сумма</th></tr>
+  ${list.slice(0, 200).map(o => `<tr data-open="${o.no}" style="cursor:pointer"><td><b>${o.no}</b></td><td>${dt(o.created_at)}</td><td>${esc(o.customer_name)}<br><small class="mu">${esc(o.phone)}</small></td><td>${esc(stName(o))}</td><td>${payPill(o)}</td><td class="n">${fmt(o.pay_amount || o.total)}</td></tr>`).join("") || `<tr><td colspan="6" class="mu">Буюртма йўқ</td></tr>`}</table></div>`;
+}
+function csv(){
+  const head = ["№", "Вақт", "Мижоз", "Телефон", "Манзил", "Тури", "Босқич", "Тўлов", "Товар", "Етказиш", "Хизмат ҳақи", "Захира", "Тўланган сумма", "Платформа даромади"];
+  const rows = S.orders.map(o => [o.no, o.created_at, o.customer_name, o.phone, o.address || "", o.mode, stName(o), o.pay_status, o.goods_sum || "", o.delivery_sum || "", o.service_fee || "", o.reserve_sum || "", o.pay_amount || o.total, o.platform_income || ""]);
+  const body = [head, ...rows].map(r => r.map(c => `"${String(c == null ? "" : c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + body], { type:"text/csv;charset=utf-8" }));
+  a.download = "buyurtmalar-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+}
+
+/* ---------- Пул ---------- */
+function moneyView(){
+  const m = S.dash.money, ok = Number(m.sum_all) === 0;
+  const rows = [["Мижозлардан тушган", m.in, ""], ["Дўконларга (товар)", m.shops, ""], ["Ҳайдовчиларга", m.drivers, ""], ["Йиғувчиларга", m.collectors, ""], ["Тўлов тизими ҳақи", m.gateway, ""], ["Платформа даромади", m.platform, "g"], ["Ушлаб турилган захира", m.reserve, ""], ["Қайтарилган", m.refunds, ""]];
+  const pend = S.refunds.filter(r => r.status === "pending");
+  return `<div class="card ${ok ? "" : ""}"><h2>Мувозанат</h2><div class="al ${ok ? "ok" : "red"}">${ok ? "✅ Ҳамма сўм жойида: тушган пул = тақсимланган пул" : "🔴 Мувозанат бузилган, фарқ: " + sum(m.sum_all)}</div>
+  <div class="kv" style="margin-top:8px">${rows.map(([n, v, c]) => `<span>${n}</span><span class="${c === "g" ? "" : ""}">${sum(v)}</span>`).join("")}</div>
+  <p class="mu" style="font-size:13px">Маълумот барча вақт учун. Қайтариш ва захира алоҳида кўрсатилган. Захира — мижозга қайтиши мумкин бўлган пул.</p></div>
+  <div class="card tw"><h2>Қайтаришлар ${pend.length ? `<span class="pill y">${pend.length} кутилмоқда</span>` : ""}</h2>
+  <table><tr><th>№ буюртма</th><th>Тури</th><th>Сабаб</th><th class="n">Сумма</th><th>Ҳолат</th><th></th></tr>
+  ${S.refunds.map(r => `<tr><td><a href="#" data-open="${r.order_no}">${r.order_no}</a></td><td>${({ reserve:"Захира", item:"Товар", cancel:"Бекор", other:"Бошқа" })[r.kind] || r.kind}</td><td>${esc(r.reason || "")}</td><td class="n">${fmt(r.amount)}</td><td>${r.status === "done" ? '<span class="pill g">Бажарилди</span>' : '<span class="pill y">Кутилмоқда</span>'}</td><td>${r.status === "pending" && can("payout") ? `<button class="btn sm" data-rdone="${r.id}">Қайтардим</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Қайтариш йўқ</td></tr>'}</table>
+  <p class="mu" style="font-size:13px">«Қайтардим» ни фақат пулни Click/Payme кабинетидан ёки қўлда мижозга ўтказганингиздан кейин босинг.</p></div>`;
+}
+
+/* ---------- Одамлар ---------- */
+function peopleView(){
+  const p = S.people; if (!p) return '<p class="mu">Юкланмоқда…</p>';
+  const st = s => s === "active" ? '<span class="pill g">Фаол</span>' : s === "pending" ? '<span class="pill y">Кутилмоқда</span>' : '<span class="pill r">Блок</span>';
+  const act = r => !can("people") ? "" : r.status === "pending" ? `<button class="btn sm" data-pset="${r.id}" data-st="active">Тасдиқлаш</button> <button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Рад этиш</button>` : r.status === "active" ? `<button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Блоклаш</button>` : `<button class="btn sm" data-pset="${r.id}" data-st="active">Очиш</button>${r.reason ? ` <small class="mu">${esc(r.reason)}</small>` : ""}`;
+  const tbl = (title, rows, cols) => `<div class="card tw"><h2>${title} (${rows.length})</h2><table><tr>${cols.map(c => `<th class="${c[2] || ""}">${c[0]}</th>`).join("")}</tr>${rows.map(r => `<tr>${cols.map(c => `<td class="${c[2] || ""}">${c[1](r)}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="${cols.length}" class="mu">Ҳали йўқ</td></tr>`}</table></div>`;
+  return tbl("Йиғувчилар", p.collectors, [["Исм", r => esc(r.name)], ["Телефон", r => esc(r.phone || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
+    + tbl("Ҳайдовчилар", p.drivers, [["Исм", r => esc(r.name)], ["Машина", r => esc(r.car || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
+    + tbl("Дўконлар", p.shops, [["Дўкон", r => esc(r.shop || r.name) + (r.row ? ` <small class="mu">${esc(r.row)}</small>` : "")], ["Ҳолат", r => st(r.status)], ["Нархлар", r => r.prices, "n"], ["Сотилган", r => fmt(r.sold), "n"], ["Тўланган", r => fmt(r.paid), "n"], ["Карта", r => r.card ? "✓" : '<span class="pill y">йўқ</span>'], ["", act]]);
+}
+
+/* ---------- Тўловлар ---------- */
+function payView(){
+  const p = S.pay; if (!p) return '<p class="mu">Юкланмоқда…</p>';
+  return `<div class="card"><h2>Дўконга тўлов кутмоқда (${p.pending.length})</h2>${p.pending.map(x => `<div class="card" style="border:1px solid var(--ln)"><div class="kv"><span>№ буюртма</span><span><a href="#" data-open="${x.order_no}">${x.order_no}</a></span><span>Дўкон</span><span>${esc(x.shop || "")}${x.row ? " · " + esc(x.row) : ""}</span><span>Карта</span><span><b>${esc(x.card || "—")}</b></span><span>Телефон</span><span>${esc(x.phone || "")}</span><span>Йиғувчи</span><span>${esc(x.collector || "")}</span><span>Кутяпти</span><span class="${x.minutes > 5 ? "err" : ""}">${x.minutes} дақ.</span><span>Сумма</span><span><b>${sum(x.total)}</b></span></div>
+    <div class="row" style="margin-top:8px"><button class="btn" data-pay="${x.id}" data-ok="1">✅ Тўладим</button><button class="btn alt" data-pay="${x.id}" data-ok="0">❌ Рад этиш</button></div></div>`).join("") || '<div class="al ok">✅ Тўлов кутаётган йўқ</div>'}</div>
+  <div class="card tw"><h2>Охирги тўловлар</h2><table><tr><th>№</th><th>Дўкон</th><th>Ҳолат</th><th class="n">Сумма</th><th>Вақт</th></tr>${p.recent.map(x => `<tr><td>${x.order_no}</td><td>${esc(x.shop || "")}</td><td>${x.status === "paid" ? '<span class="pill g">тўланган</span>' : '<span class="pill r">рад</span>'}</td><td class="n">${fmt(x.total)}</td><td>${dt(x.at)}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳали йўқ</td></tr>'}</table>
+  <p class="mu" style="font-size:13px">«Тўладим» ни фақат пулни дўкон картасига ўтказганингиздан кейин босинг. Қарор журналга ёзилади, йиғувчига хабар кетади.</p></div>`;
+}
+
+/* ---------- Журнал ---------- */
+function auditView(){
+  const a = S.audit; if (!a) return '<p class="mu">Юкланмоқда…</p>';
+  const brief = v => v ? esc(JSON.stringify(v)).slice(0, 90) : "";
+  return `<div class="row"><input type="search" id="aq" placeholder="Амал, обьект, админ…" value="${esc(S.aq)}"><button class="btn sm" id="aqgo">Қидириш</button></div>
+  <div class="card tw"><table><tr><th>Вақт</th><th>Ким</th><th>Амал</th><th>Обьект</th><th>Ўзгариш</th><th>Сабаб</th></tr>${a.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.admin_name || "")}</td><td>${esc(x.action)}</td><td>${esc(x.object || "")} ${esc(x.obj_id || "")}</td><td class="mu" style="font-size:12.5px">${brief(x.old_value)}${x.old_value ? " → " : ""}${brief(x.new_value)}</td><td>${esc(x.reason || "")}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ёзув йўқ</td></tr>'}</table><p class="mu" style="font-size:13px">Журналдан ҳеч нарсани ўчириб ёки ўзгартириб бўлмайди.</p></div>`;
+}
+
+/* ---------- Админлар ---------- */
+function adminsView(){
+  const a = S.admins; if (!a) return '<p class="mu">Юкланмоқда…</p>';
+  const ro = r => r.map(x => ROLE_N[x] || x).join(", ");
+  return `<div class="card tw"><h2>Админлар</h2><table><tr><th>Исм</th><th>Телефон</th><th>Рол</th><th>PIN</th><th>Охирги</th><th></th></tr>${a.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.phone || "")}</td><td>${esc(ro(x.roles))}</td><td>${x.pin ? "✓" : '<span class="pill y">йўқ</span>'}</td><td>${dt(x.last)}</td><td>${x.status === "blocked" ? `<span class="pill r">блок</span> <button class="btn sm" data-aset="${x.id}" data-ast="active">Очиш</button>` : `<select data-arole="${x.id}">${Object.keys(ROLE_N).map(r => `<option value="${r}" ${x.roles[0] === r ? "selected" : ""}>${ROLE_N[r]}</option>`).join("")}</select> <button class="btn sm alt" data-aset="${x.id}" data-ast="blocked">Блок</button>`}</td></tr>`).join("")}</table></div>
+  <div class="card"><h2>Янги админ қўшиш</h2><div class="row"><input id="ap" inputmode="tel" placeholder="Телефон (998…)"><select id="ar">${Object.keys(ROLE_N).map(r => `<option value="${r}">${ROLE_N[r]}</option>`).join("")}</select><button class="btn" id="aadd">Қўшиш</button></div>
+  <p class="mu" style="font-size:13px">Одам аввал шу сайтга Telegram орқали кирган бўлиши керак. Кейин ўзи PIN ўрнатади.</p></div>`;
+}
+
+/* ---------- Созламалар ---------- */
+function setView(){
+  const s = S.settings; if (!s) return '<p class="mu">Юкланмоқда…</p>';
+  const A = s.app || {}, ro = s.can_edit ? "" : " disabled";
+  return `<div class="card"><h2>Тўлов</h2>
+    <div class="row"><span>Онлайн тўлов:</span> <span class="pill ${A.payments_on === "true" ? "g" : "m"}">${A.payments_on === "true" ? "ЁҚИЛГАН" : "ЎЧИРИЛГАН"}</span> <span>Синов тўлови:</span> <span class="pill ${A.pay_test_mode === "true" ? "r" : "g"}">${A.pay_test_mode === "true" ? "ЁҚИЛГАН" : "ЎЧИРИЛГАН"}</span></div>
+    <p class="mu" style="font-size:13px">Хавфсизлик учун бу иккитаси фақат SQL орқали ўзгартирилади. ${A.pay_test_mode === "true" && CFG.env !== "test" ? '<b class="err">Диққат: боевой базада синов тўлови ёқилган, ҳар ким тўламасдан «тўланди» қилиши мумкин!</b>' : ""}</p>
+    ${[["pay_minutes", "Тўлов муддати (дақиқа)"], ["reserve_pct", "Нарх захираси (%)"], ["answer_minutes", "Дўкон жавоб кутиш (дақиқа)"], ["payout_alert_minutes", "Тўлов огоҳлантириши (дақиқа)"], ["unpicked_alert_minutes", "«Олинмади» огоҳлантириши (дақиқа)"]].map(([k, n]) => `<div class="set"><label>${n}</label><input data-app="${k}" value="${esc(A[k] || "")}" inputmode="numeric"${ro}><button class="btn sm" data-saveapp="${k}"${ro}>Сақлаш</button></div>`).join("")}</div>
+  <div class="card"><h2>Тўлов тизимлари (комиссия %)</h2>${s.providers.map(p => `<div class="set"><label>${esc(p.name)}</label><input data-pp="${p.code}" value="${p.pct}" inputmode="decimal"${ro}><label style="flex:none"><input type="checkbox" data-pe="${p.code}" ${p.enabled ? "checked" : ""} style="width:auto"${ro}> ёқилган</label><button class="btn sm" data-savepp="${p.code}"${ro}>Сақлаш</button></div>`).join("")}</div>
+  <div class="card"><h2>Етказиш тарифлари (сўм)</h2>${s.tariffs.map(t => `<div class="set"><label><b>${esc(t.name)}</b> <small>${t.cap} кг гача</small></label><input data-tn="${t.id}" value="${t.near}" title="Яқин"${ro}><input data-tm="${t.id}" value="${t.mid}" title="Ўрта"${ro}><input data-tf="${t.id}" value="${t.far}" title="Узоқ"${ro}><button class="btn sm" data-savet="${t.id}"${ro}>Сақлаш</button></div>`).join("")}<p class="mu" style="font-size:13px">Устунлар: яқин · ўрта · узоқ. Янги нарх фақат кейинги буюртмаларга таъсир қилади.</p></div>
+  <div class="card"><h2>Комиссия ва ҳақлар</h2>${s.fees.map(f => `<div class="set"><label>${esc(f.note || f.key)}<small>${esc(f.key)}</small></label><input data-fee="${esc(f.key)}" value="${f.value}" inputmode="decimal"${ro}><button class="btn sm" data-savefee="${esc(f.key)}"${ro}>Сақлаш</button></div>`).join("")}<p class="mu" style="font-size:13px">Ўзгартирилган қиймат кейинги буюртмаларга қўлланади, эскилари ўзгармайди.</p></div>`;
+}
+
+/* ---------- Буюртма тафсилоти ---------- */
+async function openOrder(no){
+  let d, ppl = null; try { d = await rpc("admin_order", { p_no:Number(no) }); if (can("orders_edit")) ppl = await rpc("admin_people"); } catch(e){ sessErr(e); return; }
+  if (!d) { toast("Буюртма топилмади"); return; }
+  const o = d.order, kv = (a) => a.filter(x => x[1] != null && x[1] !== "").map(([n, v]) => `<span>${n}</span><span>${v}</span>`).join("");
+  const items = (o.items || []).map(i => `<tr><td>${esc(i.n || i.name)}</td><td class="n">${i.q || i.qty || ""} ${esc(i.u || "")}</td><td class="n">${i.price ? fmt(i.price) : ""}</td></tr>`).join("");
+  const pays = d.payments.map(p => `<tr><td>${esc(p.provider)}</td><td>${p.status === "paid" ? '<span class="pill g">тўланган</span>' : esc(p.status)}</td><td class="n">${fmt(p.amount)}</td><td>${dt(p.paid_at || p.created_at)}</td></tr>`).join("");
+  const led = d.ledger.map(l => `<tr><td>${esc(l.kind)}</td><td class="n">${fmt(l.amount)}</td><td class="mu">${esc(l.note || "")}</td></tr>`).join("");
+  const rfs = d.refunds.map(r => `<tr><td>${({ reserve:"Захира", item:"Товар", cancel:"Бекор", other:"Бошқа" })[r.kind]}</td><td class="n">${fmt(r.amount)}</td><td>${r.status === "done" ? '<span class="pill g">бажарилди</span>' : can("payout") ? `<button class="btn sm" data-rdone="${r.id}" data-close="1">Қайтардим</button>` : '<span class="pill y">кутилмоқда</span>'}</td></tr>`).join("");
+  const opts = (rows, cur) => `<option value="">— йўқ —</option>` + (rows || []).filter(x => x.status === "active").map(x => `<option value="${x.id}">${esc(x.name)}${x.car ? " · " + esc(x.car) : ""}</option>`).join("");
+  const assign = ppl ? `<div class="card"><h2>Тайинлаш / алмаштириш</h2>
+    <div class="row"><span style="width:80px">Йиғувчи:</span><select id="as-picker" style="flex:1">${opts(ppl.collectors)}</select><button class="btn sm" data-assign="picker" data-no="${o.no}">Тайинлаш</button></div>
+    <div class="row"><span style="width:80px">Ҳайдовчи:</span><select id="as-driver" style="flex:1">${opts(ppl.drivers)}</select><button class="btn sm" data-assign="driver" data-no="${o.no}">Тайинлаш</button></div>
+    <p class="mu" style="font-size:13px">Алмаштиришда сабаб сўралади, эски ва янги одамга Telegram'да хабар боради.</p></div>` : "";
+  const hist = (d.history || []).length ? `<div class="card tw"><h2>Ўзгаришлар тарихи</h2><table>${d.history.map(h => `<tr><td>${dt(h.at)}</td><td>${esc(h.who || "")}</td><td>${esc(h.action)}</td><td class="mu" style="font-size:12.5px">${esc(JSON.stringify(h.new || ""))}</td><td>${esc(h.reason || "")}</td></tr>`).join("")}</table></div>` : "";
+  const bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
+  bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">Буюртма №${o.no} ${payPill(o)}</h2><button class="btn alt sm" data-x>Ёпиш</button></div>
+  <div class="card"><div class="kv">${kv([["Мижоз", esc(o.customer_name)], ["Телефон", `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`], ["Манзил", esc(o.address || "")], ["Вақт", esc(o.slot || "")], ["Тури", esc(o.mode)], ["Босқич", `${o.stage + 1}/${stMax(o) + 1} · ${esc(stName(o))}`], ["Йиғувчи", esc(d.picker || "")], ["Ҳайдовчи", esc(d.driver || "")], ["Яратилган", dt(o.created_at)]])}</div>
+    ${can("orders_edit") && o.stage < stMax(o) && ["paid", "none"].includes(o.pay_status) ? `<p><button class="btn" data-adv="${o.no}" data-max="${stMax(o)}">Кейинги босқич: ${esc((STAGE[o.mode] || STAGE.delivery)[o.stage + 1])}</button></p>` : ""}</div>
+  <div class="card"><h2>Сумма</h2><div class="kv">${kv([["Товар", o.goods_sum != null ? sum(o.goods_sum) : ""], ["Етказиш", o.delivery_sum != null ? sum(o.delivery_sum) : ""], ["Хизмат ҳақи", o.service_fee != null ? sum(o.service_fee) : ""], ["Захира", o.reserve_sum ? sum(o.reserve_sum) : ""], ["Мижоз тўлайди", sum(o.pay_amount || o.total)], ["Йиғувчи ҳақи", o.collector_fee != null ? sum(o.collector_fee) : ""], ["Ҳайдовчи ҳақи", o.delivery_sum != null ? sum((o.delivery_sum || 0) - (o.driver_fee || 0)) : ""], ["Тўлов тизими ҳақи", o.gateway_fee != null ? sum(o.gateway_fee) : ""], ["Платформа даромади", o.platform_income != null ? sum(o.platform_income) : ""]])}</div></div>
+  ${assign}
+  <div class="card tw"><h2>Товарлар</h2><table>${items || '<tr><td class="mu">—</td></tr>'}</table></div>
+  ${d.payments.length ? `<div class="card tw"><h2>Тўловлар</h2><table>${pays}</table></div>` : ""}
+  ${d.ledger.length ? `<div class="card tw"><h2>Пул журнали</h2><table>${led}</table><p class="mu" style="font-size:13px">Йиғинди: ${fmt(d.ledger.reduce((a, l) => a + Number(l.amount), 0))} (0 бўлиши керак)</p></div>` : ""}
+  <div class="card tw"><h2>Қайтаришлар</h2>${rfs ? `<table>${rfs}</table>` : '<p class="mu">Йўқ</p>'}
+  ${o.pay_status === "paid" && can("refund") ? `<div class="row" style="margin-top:10px"><select id="rk"><option value="reserve">Захирани қайтариш</option><option value="item">Топилмаган товар</option><option value="cancel">Бекор қилиш</option><option value="other">Бошқа</option></select><input id="ra" inputmode="numeric" placeholder="Сумма" style="width:120px"><input id="rr" placeholder="Сабаб" style="flex:1"><button class="btn sm" data-rnew="${o.no}">Яратиш</button></div>` : ""}</div>${hist}</div>`;
+  document.body.appendChild(bx);
+}
+function closeSheet(){ const s = $("sheet"); if (s) s.remove(); }
+
+/* ---------- Ҳодисалар ---------- */
+async function act(fn, okMsg){ try { await fn(); if (okMsg) toast(okMsg); } catch(e){ toast(errText(e)); } }
+function bind(){
+  const m = $("main");
+  m.querySelectorAll("[data-days]").forEach(b => b.onclick = async () => { S.days = +b.dataset.days; await reload(); });
+  m.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; draw(); });
+  const oq = $("oq"); if (oq) oq.oninput = () => { S.q = oq.value; const p = oq.selectionStart; draw(); const n = $("oq"); n.focus(); n.setSelectionRange(p, p); };
+  const c = $("csv"); if (c) c.onclick = csv;
+  m.querySelectorAll("[data-saveapp]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.saveapp; await rpc("admin_set_app", { p_key:k, p_value:m.querySelector(`[data-app="${k}"]`).value.trim() }); S.settings = await rpc("admin_settings"); draw(); }, "Сақланди"));
+  m.querySelectorAll("[data-savefee]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.savefee; await rpc("admin_set_fee", { p_key:k, p_value:Number(m.querySelector(`[data-fee="${k}"]`).value.replace(",", ".")) }); S.settings = await rpc("admin_settings"); draw(); }, "Сақланди"));
+  m.querySelectorAll("[data-savepp]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.savepp; await rpc("admin_set_provider", { p_pcode:k, p_pct:Number(m.querySelector(`[data-pp="${k}"]`).value.replace(",", ".")), p_enabled:m.querySelector(`[data-pe="${k}"]`).checked }); S.settings = await rpc("admin_settings"); draw(); }, "Сақланди"));
+  m.querySelectorAll("[data-savet]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.savet, g = a => Number(m.querySelector(`[data-${a}="${k}"]`).value.replace(/\s/g, "")); await rpc("admin_set_tariff", { p_id:k, p_near:g("tn"), p_mid:g("tm"), p_far:g("tf") }); S.settings = await rpc("admin_settings"); draw(); }, "Сақланди"));
+}
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button,[data-open],a[data-open],[data-go]"); if (!t) return;
+  if (t.dataset.open) { e.preventDefault(); closeSheet(); openOrder(t.dataset.open); return; }
+  if ("x" in t.dataset) { closeSheet(); return; }
+  if (t.dataset.go) { S.tab = t.dataset.go; await tabData(); draw(); return; }
+  if (t.dataset.pay) { const ok = t.dataset.ok === "1"; let note = null;
+    if (!ok) { note = prompt("Рад этиш сабаби:"); if (!note) return; } else if (!confirm("Пулни дўкон картасига ўтказдингизми?")) return;
+    await act(async () => { await rpc("admin_payout_decide", { p_id:Number(t.dataset.pay), p_ok:ok, p_note:note }); await new Promise(r => setTimeout(r, 1500)); await load(); S.pay = await rpc("admin_payouts"); draw(); }, ok ? "Белгиланди" : "Рад этилди"); return; }
+  if (t.dataset.pset) { const st = t.dataset.st; let why = null;
+    if (st === "blocked") { why = prompt("Сабаб:"); if (!why) return; }
+    await act(async () => { await rpc("admin_person_set", { p_id:Number(t.dataset.pset), p_status:st, p_reason:why }); await load(); S.people = await rpc("admin_people"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.assign) { const role = t.dataset.assign, no = Number(t.dataset.no), v = $("as-" + role).value; let why = null;
+    if (!v) { if (!confirm("Тайинлашни олиб ташлайсизми?")) return; }
+    why = prompt("Сабаб (мас. «йиғувчи жавоб бермади»):"); if (!why) return;
+    await act(async () => { await rpc("admin_assign", { p_no:no, p_role:role, p_seller_id:v ? Number(v) : null, p_reason:why }); await load(); closeSheet(); draw(); openOrder(no); }, "Сақланди"); return; }
+  if (t.id === "aqgo") { S.aq = $("aq").value; await tabData(); draw(); return; }
+  if (t.id === "aadd") { await act(async () => { await rpc("admin_admin_add", { p_phone:$("ap").value.trim(), p_roles:[$("ar").value], p_name:null }); S.admins = await rpc("admin_admins"); draw(); }, "Қўшилди"); return; }
+  if (t.dataset.aset) { const id = Number(t.dataset.aset), st = t.dataset.ast; if (st === "blocked" && !confirm("Блоклайсизми?")) return;
+    await act(async () => { await rpc("admin_admin_set", { p_id:id, p_roles:null, p_status:st }); S.admins = await rpc("admin_admins"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.adv) { await act(async () => { await rpc("admin_advance", { p_no:Number(t.dataset.adv), p_max:Number(t.dataset.max) }); await load(); closeSheet(); draw(); openOrder(t.dataset.adv); }, "Босқич ўзгарди"); return; }
+  if (t.dataset.rdone) { if (!confirm("Пулни мижозга қайтардингизми?")) return; await act(async () => { await rpc("admin_refund_done", { p_id:Number(t.dataset.rdone) }); await load(); closeSheet(); draw(); }, "Белгиланди"); return; }
+  if (t.dataset.rnew) { const no = Number(t.dataset.rnew), amt = Number(($("ra").value || "").replace(/\s/g, ""));
+    if (!amt) { toast("Суммани киритинг"); return; }
+    await act(async () => { await rpc("admin_refund_create", { p_no:no, p_kind:$("rk").value, p_amount:amt, p_reason:$("rr").value.trim() || null }); await load(); closeSheet(); draw(); openOrder(no); }, "Қайтариш яратилди"); return; }
+});
+document.addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
+document.addEventListener("change", e => { const t = e.target; if (t.dataset && t.dataset.arole) act(async () => { await rpc("admin_admin_set", { p_id:Number(t.dataset.arole), p_roles:[t.value], p_status:null }); S.admins = await rpc("admin_admins"); draw(); }, "Рол ўзгарди"); });
+setInterval(() => { if (sb && CODE && !document.hidden && !$("sheet") && S.dash) reload(); }, 45000);
+init();
+</script>
+</body>
+</html>
