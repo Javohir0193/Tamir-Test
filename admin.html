@@ -438,6 +438,10 @@ function staffCard(){
 /* ---------- Аналитика ---------- */
 const ACT = {admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)/, m => m === "assign_" ? "Тайинлаш: " : "Одам: ");
 const LK = {customer_payment:"Мижоз тўлови",shop_goods:"Дўконга товар пули",driver_pay:"Ҳайдовчига",collector_pay:"Йиғувчига",gateway_fee:"Тўлов тизими ҳақи",platform_income:"Платформа даромади",reserve_hold:"Нарх захираси",refund:"Қайтариш"};const lk = k => LK[k] || k;
+const OBJ = {order:"Буюртма №",admin:"Админ №",setting:"Созлама:",price:"Нарх (дўкон:товар):",customer:"Мижоз:",ticket:"Мурожаат №",refund:"Қайтариш №",staff:"Ходим №",person:"Одам №",payout:"Тўлов №",tariff:"Тариф:",fee:"Ҳақ:",provider:"Тўлов тизими:",seller:"Дўкон №",market:"Бозор №"};
+const KEYL = {stage:"босқич",amount:"сумма",refund:"қайтариш №",kind:"тури",len:"изоҳ узунлиги",status:"ҳолат",roles:"роллар",pct:"фоиз",price:"нарх",name:"ном",phone:"телефон",reason:"сабаб"};
+const objT = (o, id) => (OBJ[o] || (o ? o + " " : "")) + (id != null && id !== "" ? " " + id : "");
+const valT = v => v == null || v === "" ? "" : typeof v === "object" ? Object.entries(v).map(([k, y]) => (KEYL[k] || k) + ": " + (typeof y === "object" ? JSON.stringify(y) : y)).join(", ") : String(v);
 function anTip(el){document.querySelectorAll(".anbar>div").forEach(d=>d.style.outline="");const t=document.getElementById("anTip");if(t)t.textContent=el.dataset.tip;if(el.firstChild)el.firstChild.style.outline="2px solid #111"}
 function anView(){
   const a = S.an; if (!a) return '<p class="mu">Юкланмоқда…</p>';
@@ -510,9 +514,9 @@ async function openTix(id){
 /* ---------- Журнал ---------- */
 function auditView(){
   const a = S.audit; if (!a) return '<p class="mu">Юкланмоқда…</p>';
-  const brief = v => v ? esc(JSON.stringify(v)).slice(0, 90) : "";
+  const brief = v => v ? esc(valT(v)).slice(0, 120) : "";
   return `<div class="row"><input type="search" id="aq" placeholder="Амал, обьект, админ…" value="${esc(S.aq)}"><button class="btn sm" id="aqgo">Қидириш</button></div>
-  <div class="card tw"><table><tr><th>Вақт</th><th>Ким</th><th>Амал</th><th>Обьект</th><th>Ўзгариш</th><th>Сабаб</th></tr>${a.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.admin_name || "")}</td><td>${esc(actT(x.action))}</td><td>${esc(x.object || "")} ${esc(x.obj_id || "")}</td><td class="mu" style="font-size:12.5px">${brief(x.old_value)}${x.old_value ? " → " : ""}${brief(x.new_value)}</td><td>${esc(x.reason || "")}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ёзув йўқ</td></tr>'}</table><p class="mu" style="font-size:13px">Журналдан ҳеч нарсани ўчириб ёки ўзгартириб бўлмайди.</p></div>`;
+  <div class="card tw"><table><tr><th>Вақт</th><th>Ким</th><th>Амал</th><th>Обьект</th><th>Ўзгариш</th><th>Сабаб</th></tr>${a.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.admin_name || "")}</td><td>${esc(actT(x.action))}</td><td>${esc(objT(x.object, x.obj_id))}</td><td class="mu" style="font-size:12.5px">${brief(x.old_value)}${x.old_value ? " → " : ""}${brief(x.new_value)}</td><td>${esc(x.reason || "")}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ёзув йўқ</td></tr>'}</table><p class="mu" style="font-size:13px">Журналдан ҳеч нарсани ўчириб ёки ўзгартириб бўлмайди.</p></div>`;
 }
 
 /* ---------- Админлар ---------- */
@@ -561,7 +565,7 @@ async function openOrder(no){
     <div class="row"><span style="width:80px">Йиғувчи:</span><select id="as-picker" style="flex:1">${opts(ppl.collectors)}</select><button class="btn sm" data-assign="picker" data-no="${o.no}">Тайинлаш</button></div>
     <div class="row"><span style="width:80px">Ҳайдовчи:</span><select id="as-driver" style="flex:1">${opts(ppl.drivers)}</select><button class="btn sm" data-assign="driver" data-no="${o.no}">Тайинлаш</button></div>
     <p class="mu" style="font-size:13px">Алмаштиришда сабаб сўралади, эски ва янги одамга Telegram'да хабар боради.</p></div>` : "";
-  const hist = (d.history || []).length ? `<div class="card tw"><h2>Ўзгаришлар тарихи</h2><table>${d.history.map(h => `<tr><td>${dt(h.at)}</td><td>${esc(h.who || "")}</td><td>${esc(actT(h.action))}</td><td class="mu" style="font-size:12.5px">${esc(JSON.stringify(h.new || ""))}</td><td>${esc(h.reason || "")}</td></tr>`).join("")}</table></div>` : "";
+  const hist = (d.history || []).length ? `<div class="card"><h2>Ўзгаришлар тарихи</h2>${d.history.map(h => `<div style="padding:8px 0;border-top:1px solid #eee"><div class="mu" style="font-size:12.5px">${dt(h.at)} · ${esc(h.who || "")}</div><div><b>${esc(actT(h.action))}</b>${h.new ? ` <span class="mu">${esc(valT(h.new))}</span>` : ""}</div>${h.reason ? `<div class="mu" style="font-size:12.5px">Сабаб: ${esc(h.reason)}</div>` : ""}</div>`).join("")}</div>` : "";
   const bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
   bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">Буюртма №${o.no} ${payPill(o)}</h2><button class="btn alt sm" data-x>Ёпиш</button></div>
   <div class="card"><div class="kv">${kv([["Мижоз", esc(o.customer_name)], ["Телефон", `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`], ["Манзил", esc(o.address || "")], ["Вақт", esc(o.slot || "")], ["Тури", esc(o.mode)], ["Босқич", `${o.stage + 1}/${stMax(o) + 1} · ${esc(stName(o))}`], ["Йиғувчи", esc(d.picker || "")], ["Ҳайдовчи", esc(d.driver || "")], ["Яратилган", dt(o.created_at)]])}</div>
