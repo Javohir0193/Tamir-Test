@@ -170,7 +170,7 @@ async function load(){
 }
 async function tabData(){
   try {
-    if (S.tab === "people") S.people = await rpc("admin_people");
+    if (S.tab === "people") { S.people = await rpc("admin_people"); try { S.fleets = await rpc("admin_fleets"); } catch(e){ S.fleets = null; } }
     if (S.tab === "set") { S.settings = await rpc("admin_settings"); try { S.shist = S.settings.can_edit ? await rpc("admin_settings_history") : null; } catch(e){ S.shist = null; } }
     if (S.tab === "pay") { S.pay = await rpc("admin_payouts"); try { S.staff = await rpc("admin_staff"); } catch(e){ S.staff = null; } try { S.comm = await rpc("admin_commissions"); } catch(e){ S.comm = null; } }
     if (S.tab === "audit") S.audit = await rpc("admin_audit", { p_limit:150, p_offset:0, p_q:S.aq || null });
@@ -328,6 +328,19 @@ function parseStatement(file, tiyin){
 }
 
 /* ---------- Одамлар ---------- */
+function fleetCard(){
+  const f = S.fleets; if (!f) return "";
+  const ed = can("people"), mk = id => (f.markets.find(m => m.id === id) || {}).name || "—";
+  const fopt = cur => `<option value="">— паркда эмас —</option>` + f.fleets.filter(x => x.active).map(x => `<option value="${x.id}" ${x.id === cur ? "selected" : ""}>${esc(x.name)}</option>`).join("");
+  return `<div class="card tw"><h2>Таксопарклар</h2>
+  <p class="mu" style="font-size:13px">Ҳар бозорга битта парк. Йиғиш тугагач буюртма шу бозорнинг паркидаги ҳайдовчиларнинг ботига тушади, биринчи «Мен оламан» босган олади. 10 дақиқа ҳеч ким олмаса, сизга огоҳлантириш келади.</p>
+  <table><tr><th>Парк</th><th>Бозор</th><th>Телефон</th><th class="n">Ҳайдовчи</th><th>Ҳолат</th><th></th></tr>
+  ${f.fleets.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.market || "—")}</td><td>${esc(x.phone || "")}</td><td class="n">${x.drivers}</td><td>${x.active ? '<span class="pill g">Фаол</span>' : '<span class="pill r">Ўчирилган</span>'}</td><td>${ed ? `<button class="btn sm alt" data-fedit="${x.id}">Ўзгартириш</button> <button class="btn sm alt" data-ftog="${x.id}">${x.active ? "Ўчириш" : "Ёқиш"}</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ҳали парк йўқ</td></tr>'}</table>
+  ${ed ? `<div class="row" style="margin-top:10px"><input id="fnm" placeholder="Парк номи" style="flex:1;min-width:120px"><select id="fmk">${f.markets.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select><input id="fph" placeholder="Телефон" style="width:130px"><button class="btn sm" data-fadd>Қўшиш</button></div>` : ""}
+  <h2 style="margin-top:14px">Ҳайдовчиларни паркка бириктириш</h2>
+  <table><tr><th>Ҳайдовчи</th><th>Машина</th><th>Гувоҳнома</th><th>Ҳолат</th><th>Парк</th></tr>
+  ${f.drivers.map(d => `<tr><td>${esc(d.name)}</td><td>${esc(d.car || "")}</td><td>${esc(d.license || "—")}${d.has_photo ? " 📷" : ""}</td><td>${d.status === "active" ? '<span class="pill g">Фаол</span>' : d.status === "pending" ? '<span class="pill y">Кутилмоқда</span>' : '<span class="pill r">Блок</span>'}</td><td>${ed ? `<select data-fas="${d.id}">${fopt(d.fleet_id)}</select>` : esc(d.fleet_id ? ((f.fleets.find(z => z.id === d.fleet_id) || {}).name || "") : "—")}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳайдовчи йўқ</td></tr>'}</table></div>`;
+}
 function peopleView(){
   const p = S.people; if (!p) return '<p class="mu">Юкланмоқда…</p>';
   const st = s => s === "active" ? '<span class="pill g">Фаол</span>' : s === "pending" ? '<span class="pill y">Кутилмоқда</span>' : '<span class="pill r">Блок</span>';
@@ -335,7 +348,7 @@ function peopleView(){
   const tbl = (title, rows, cols) => `<div class="card tw"><h2>${title} (${rows.length})</h2><table><tr>${cols.map(c => `<th class="${c[2] || ""}">${c[0]}</th>`).join("")}</tr>${rows.map(r => `<tr>${cols.map(c => `<td class="${c[2] || ""}">${c[1](r)}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="${cols.length}" class="mu">Ҳали йўқ</td></tr>`}</table></div>`;
   return tbl("Йиғувчилар", p.collectors, [["Исм", r => esc(r.name)], ["Телефон", r => esc(r.phone || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
     + tbl("Ҳайдовчилар", p.drivers, [["Исм", r => esc(r.name)], ["Машина", r => esc(r.car || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
-    + tbl("Дўконлар", p.shops, [["Дўкон", r => esc(r.shop || r.name) + (r.row ? ` <small class="mu">${esc(r.row)}</small>` : "")], ["Ҳолат", r => st(r.status)], ["Нархлар", r => r.prices, "n"], ["Сотилган", r => fmt(r.sold), "n"], ["Тўланган", r => fmt(r.paid), "n"], ["Карта", r => r.card ? "✓" : '<span class="pill y">йўқ</span>'], ["", act]]);
+    + fleetCard() + tbl("Дўконлар", p.shops, [["Дўкон", r => esc(r.shop || r.name) + (r.row ? ` <small class="mu">${esc(r.row)}</small>` : "")], ["Ҳолат", r => st(r.status)], ["Нархлар", r => r.prices, "n"], ["Сотилган", r => fmt(r.sold), "n"], ["Тўланган", r => fmt(r.paid), "n"], ["Карта", r => r.card ? "✓" : '<span class="pill y">йўқ</span>'], ["", act]]);
 }
 
 /* ---------- Тўловлар ---------- */
@@ -438,9 +451,9 @@ function staffCard(){
 }
 
 /* ---------- Аналитика ---------- */
-const ACT = {payout_release:"Ҳақ қўйиб юборилди",admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)(.*)$/, (m, p, r) => (p === "assign_" ? "Тайинлаш: " : "Одам: ") + ({picker:"йиғувчи",driver:"ҳайдовчи"}[r] || r));
+const ACT = {fleet_save:"Парк сақланди",fleet_assign:"Ҳайдовчи паркка бириктирилди",payout_release:"Ҳақ қўйиб юборилди",admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)(.*)$/, (m, p, r) => (p === "assign_" ? "Тайинлаш: " : "Одам: ") + ({picker:"йиғувчи",driver:"ҳайдовчи"}[r] || r));
 const LK = {customer_payment:"Мижоз тўлови",shop_goods:"Дўконга товар пули",driver_pay:"Ҳайдовчига",collector_pay:"Йиғувчига",gateway_fee:"Тўлов тизими ҳақи",platform_income:"Платформа даромади",reserve_hold:"Нарх захираси",refund:"Қайтариш"};const lk = k => LK[k] || k;
-const OBJ = {order:"Буюртма №",admin:"Админ №",setting:"Созлама:",price:"Нарх (дўкон:товар):",customer:"Мижоз:",ticket:"Мурожаат №",refund:"Қайтариш №",staff:"Ходим №",person:"Одам №",payout:"Тўлов №",tariff:"Тариф:",fee:"Ҳақ:",provider:"Тўлов тизими:",seller:"Дўкон №",market:"Бозор №"};
+const OBJ = {fleet:"Парк №",order:"Буюртма №",admin:"Админ №",setting:"Созлама:",price:"Нарх (дўкон:товар):",customer:"Мижоз:",ticket:"Мурожаат №",refund:"Қайтариш №",staff:"Ходим №",person:"Одам №",payout:"Тўлов №",tariff:"Тариф:",fee:"Ҳақ:",provider:"Тўлов тизими:",seller:"Дўкон №",market:"Бозор №"};
 const KEYL = {enabled:"ёқилган",decision:"қарор",due:"тўланиши керак",paid:"тўланди",shop_id:"дўкон №",seller_id:"дўкон №",stage:"босқич",amount:"сумма",refund:"қайтариш №",kind:"тури",len:"изоҳ узунлиги",status:"ҳолат",roles:"роллар",pct:"фоиз",price:"нарх",name:"ном",phone:"телефон",reason:"сабаб"};
 const objT = (o, id) => (OBJ[o] || (o ? o + " " : "")) + (id != null && id !== "" ? " " + id : "");
 const VALN = {reserve:"захира",item:"товар",cancel:"бекор қилиш",other:"бошқа",accept:"қабул",partial:"қисман",reject:"рад этилди",picker:"йиғувчи",driver:"ҳайдовчи"};
@@ -652,6 +665,13 @@ document.addEventListener("click", async e => {
   if (t.dataset.pf) { S.pf = t.dataset.pf; draw(); return; }
   if (t.dataset.prel) { const r = prompt("Сабаб (нима ҳал бўлди?):"); if (!r || !r.trim()) return;
     await act(async () => { await rpc("admin_release_payout", { p_no:Number(t.dataset.prel), p_reason:r.trim() }); S.staff = await rpc("admin_staff"); draw(); }, "Қўйиб юборилди"); return; }
+  if (t.hasAttribute("data-fadd")) { const nm = $("fnm").value.trim(); if (!nm) { toast("Парк номини ёзинг"); return; }
+    await act(async () => { await rpc("admin_fleet_save", { p_id:null, p_name:nm, p_market:Number($("fmk").value), p_phone:$("fph").value.trim() || null, p_active:true }); S.fleets = await rpc("admin_fleets"); draw(); }, "Парк қўшилди"); return; }
+  if (t.dataset.ftog) { const x = S.fleets.fleets.find(z => z.id === Number(t.dataset.ftog)); if (!x) return;
+    await act(async () => { await rpc("admin_fleet_save", { p_id:x.id, p_name:x.name, p_market:x.market_id, p_phone:x.phone, p_active:!x.active }); S.fleets = await rpc("admin_fleets"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.fedit) { const x = S.fleets.fleets.find(z => z.id === Number(t.dataset.fedit)); if (!x) return;
+    const nm = prompt("Парк номи:", x.name); if (!nm || !nm.trim()) return; const ph = prompt("Телефон:", x.phone || "");
+    await act(async () => { await rpc("admin_fleet_save", { p_id:x.id, p_name:nm.trim(), p_market:x.market_id, p_phone:(ph || "").trim() || null, p_active:x.active }); S.fleets = await rpc("admin_fleets"); draw(); }, "Сақланди"); return; }
   if (t.dataset.psave) { const sid = t.dataset.psave, pid = Number(t.dataset.pid);
     const seller = sid === "new" ? Number($("pnew").value) : Number(sid), price = Number((sid === "new" ? $("pnewp").value : document.querySelector(`[data-pp2="${sid}"]`).value).replace(/\s/g, ""));
     await act(async () => { await rpc("admin_price_set", { p_seller:seller, p_product:pid, p_price:price, p_in_stock:true }); S.prices = await rpc("admin_prices"); closeSheet(); draw(); openPrice(pid); }, "Сақланди"); return; }
@@ -669,6 +689,7 @@ document.addEventListener("click", async e => {
 document.addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
 document.addEventListener("change", async e => { const t = e.target;
   if (t.id === "rcprov") { S.rcprov = t.value; return; }
+  if (t.dataset.fas) { await act(async () => { await rpc("admin_fleet_assign", { p_seller:Number(t.dataset.fas), p_fleet:t.value ? Number(t.value) : null }); S.fleets = await rpc("admin_fleets"); draw(); }, "Сақланди"); return; }
   if (t.id === "rcfile" && t.files && t.files[0]) {
     try { const rows = await parseStatement(t.files[0], $("rctiyin").checked); if (!rows.length) { toast("Файлда тўловлар топилмади"); return; }
       S.rc = await rpc("admin_recon", { p_provider:S.rcprov, p_rows:rows }); draw(); toast("Солиштирилди: " + rows.length + " қатор"); }
