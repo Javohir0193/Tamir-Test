@@ -233,11 +233,13 @@ document.addEventListener("click", async e => {
   }
   else if ("fleet" in ds) {
     const note = (document.getElementById("fnote") || {}).value || "";
-    if (!navigator.geolocation) { toast("Бу қурилмада жойлашув ишламайди. Ҳайдовчини ўзингиз танланг."); return; }
+    if (!navigator.geolocation) { toast("Бу қурилмада жойлашув ишламайди."); return; }
     toast("Жойлашув аниқланмоқда…");
-    navigator.geolocation.getCurrentPosition(pos => {
-      act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, fleet:true, lat:pos.coords.latitude, lng:pos.coords.longitude, note }); }, "🚕 Паркка юборилди: ҳайдовчилар ботида");
-    }, () => toast("Жойлашув рухсати берилмади. Созламалардан рухсат беринг ёки ҳайдовчини ўзингиз танланг."), { enableHighAccuracy:true, timeout:15000 });
+    const send = pos => act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, fleet:true, lat:pos.coords.latitude, lng:pos.coords.longitude, note }); }, "🚕 Паркка юборилди: ҳайдовчилар ботида");
+    const denied = () => toast("Жойлашув рухсати берилмади. Браузер созламаларидан рухсат беринг.");
+    // аввал тез усул (тармоқ/кеш, бир неча сония), бўлмаса аниқ GPS
+    navigator.geolocation.getCurrentPosition(send, () => navigator.geolocation.getCurrentPosition(send, denied, { enableHighAccuracy:true, timeout:15000 }),
+      { enableHighAccuracy:false, maximumAge:120000, timeout:5000 });
   }
   else if (ds.hand) act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, ...(ds.hand === "self" ? { self:true } : { driver_id:+ds.hand }) }); },
     ds.hand === "self" ? "Ботда юклаш рўйхати келди 🚗" : "Ҳайдовчига топширилди 🚚");
