@@ -75,7 +75,7 @@ const fmt = n => Math.round(Number(n) || 0).toLocaleString("ru-RU").replace(/,/g
 const sum = n => fmt(n) + " сўм";
 const dt = t => t ? new Date(t).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "—";
 function toast(t){ const e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2800); }
-let sb, CODE = "", S = { tab:"home", days:7, dash:null, orders:[], refunds:[], people:null, settings:null, filter:"all", q:"", me:null, pay:null, admins:null, audit:null, aq:"", view:"list", an:null, andays:30, shist:null, custs:null, cq:"", staff:null, prices:null, tks:null, tkf:"open", pf:"all", pq:"", prev:null, pshop:"" };
+let sb, CODE = "", S = { tab:"home", days:7, dash:null, orders:[], refunds:[], people:null, settings:null, filter:"all", q:"", me:null, pay:null, admins:null, audit:null, aq:"", view:"list", an:null, andays:30, shist:null, custs:null, cq:"", staff:null, prices:null, tks:null, tkf:"open", pf:"all", pq:"", prev:null, pshop:"", rc:null, rcprov:"click" };
 try { CODE = sessionStorage.getItem("acode") || ""; } catch(e){}
 
 const STAGE = { delivery:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Йўлда","Етказилди"], pickup:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Олиб кетишга тайёр"], car:["Қабул қилинди","Машина топилди","Юкланмоқда","Йўлда","Етказилди"] };
@@ -283,7 +283,46 @@ function moneyView(){
   <div class="card tw"><h2>Қайтаришлар ${pend.length ? `<span class="pill y">${pend.length} кутилмоқда</span>` : ""}</h2>
   <table><tr><th>№ буюртма</th><th>Тури</th><th>Сабаб</th><th class="n">Сумма</th><th>Ҳолат</th><th></th></tr>
   ${S.refunds.map(r => `<tr><td><a href="#" data-open="${r.order_no}">${r.order_no}</a></td><td>${({ reserve:"Захира", item:"Товар", cancel:"Бекор", other:"Бошқа" })[r.kind] || r.kind}</td><td>${esc(r.reason || "")}</td><td class="n">${fmt(r.amount)}</td><td>${r.status === "done" ? '<span class="pill g">Бажарилди</span>' : '<span class="pill y">Кутилмоқда</span>'}</td><td>${r.status === "pending" && can("payout") ? `<button class="btn sm" data-rdone="${r.id}">Қайтардим</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Қайтариш йўқ</td></tr>'}</table>
-  <p class="mu" style="font-size:13px">«Қайтардим» ни фақат пулни Click/Payme кабинетидан ёки қўлда мижозга ўтказганингиздан кейин босинг.</p></div>`;
+  <p class="mu" style="font-size:13px">«Қайтардим» ни фақат пулни Click/Payme кабинетидан ёки қўлда мижозга ўтказганингиздан кейин босинг.</p></div>${reconView()}`;
+}
+/* ---------- Click/Payme солиштириш ---------- */
+function reconView(){
+  const r = S.rc;
+  const tb = (h, rows) => rows.length ? `<div class="tw"><table><tr>${h.map(x => `<th>${x}</th>`).join("")}</tr>${rows.map(c => `<tr>${c.map(x => `<td>${x}</td>`).join("")}</tr>`).join("")}</table></div>` : '<p class="mu">Йўқ ✅</p>';
+  return `<div class="card"><h2>Click/Payme ҳисоботини солиштириш</h2>
+  <p class="mu" style="font-size:13px">Click ёки Payme кабинетидан тўловлар ҳисоботини Excel/CSV қилиб юкланг. Тизим ҳар бир тўловни бизнинг тўловлар билан солиштиради. Ҳеч нарса ўзгармайди.</p>
+  <div class="row"><select id="rcprov"><option value="click" ${S.rcprov === "click" ? "selected" : ""}>Click</option><option value="payme" ${S.rcprov === "payme" ? "selected" : ""}>Payme</option></select>
+  <label style="margin:0"><input type="checkbox" id="rctiyin" style="width:auto"> сумма тийинда (÷100)</label><input type="file" id="rcfile" accept=".xlsx,.xls,.csv,.txt"></div>
+  ${r ? `<div class="kv" style="margin-top:10px"><span>Ҳисоботда қаторлар</span><span>${r.rows}</span><span>✅ Мос келди</span><span>${r.ok}</span><span>⚠️ Сумма фарқ қилди</span><span>${r.amount_diff.length}</span><span>🔴 Фақат уларда (бизда йўқ)</span><span>${r.only_theirs.length}</span><span>🟡 Фақат бизда (ҳисоботда йўқ)</span><span>${r.only_ours.length}</span></div>
+  <h2 style="margin-top:12px">Сумма фарқ қилди</h2>${tb(["Транзакция", "Буюртма", "Уларда", "Бизда"], r.amount_diff.map(x => [esc(x.id), x.order_no, fmt(x.theirs), fmt(x.ours)]))}
+  <h2>Фақат уларда</h2>${tb(["Транзакция", "Буюртма", "Сумма", "Сана"], r.only_theirs.map(x => [esc(x.id), x.order_no || "—", fmt(x.amount), x.date || ""]))}
+  <h2>Фақат бизда (${r.from} — ${r.to})</h2>${tb(["Буюртма", "Транзакция", "Сумма", "Вақт"], r.only_ours.map(x => [x.order_no, esc(x.id), fmt(x.amount), dt(x.at)]))}
+  <p class="mu" style="font-size:13px">«Фақат уларда» — пул тушган, лекин буюртма тўланган деб белгиланмаган: мижоз билан боғланинг. «Фақат бизда» — тизимда тўланган, лекин ҳисоботда йўқ: ҳисобот даври тўлиқми, текширинг.</p>` : ""}</div>`;
+}
+function parseStatement(file, tiyin){
+  return new Promise((res, rej) => {
+    const fr = new FileReader(); fr.onerror = () => rej(new Error("Файлни ўқиб бўлмади"));
+    fr.onload = () => { try {
+      let rows;
+      if (window.XLSX) { const wb = XLSX.read(fr.result, { type:"array", cellDates:true }); rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:"" }); }
+      else { const t = new TextDecoder().decode(fr.result).replace(/^\uFEFF/, ""); rows = t.split(/\r?\n/).map(l => l.split(/[;\t,]/)); }
+      const norm = x => String(x == null ? "" : x).toLowerCase();
+      let hi = rows.findIndex(r => r.some(c => /сумм|amount|summa|сўм/.test(norm(c))));
+      const H = hi >= 0 ? rows[hi].map(norm) : [], find = re => H.findIndex(h => re.test(h));
+      let ci = { id:find(/trans|транзак|^id$|№|номер/), amt:find(/сумм|amount|summa|сўм/), ord:find(/order|заказ|merchant|буюртма|invoice/), dt:find(/дата|date|sana|вақт|время|time/) };
+      if (hi < 0 || ci.id < 0 || ci.amt < 0) { hi = -1; ci = { id:0, amt:1, ord:-1, dt:-1 }; }
+      const out = [];
+      rows.slice(hi + 1).forEach(r => {
+        const id = String(r[ci.id] == null ? "" : r[ci.id]).trim(); if (!id) return;
+        const raw = r[ci.amt]; let amt = typeof raw === "number" ? raw : Number(String(raw).replace(/[\s\u00A0]/g, "").replace(",", ".")); if (!Number.isFinite(amt)) return;
+        if (tiyin) amt = amt / 100;
+        let d = ci.dt >= 0 ? r[ci.dt] : ""; if (d instanceof Date) d = d.toISOString().slice(0, 10); else { const m = String(d).match(/(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4})/); d = m ? (m[1] ? m[0] : `${m[6]}-${m[5]}-${m[4]}`) : ""; }
+        const o = ci.ord >= 0 ? String(r[ci.ord]).replace(/\D/g, "") : "";
+        out.push({ id, amount:String(Math.round(amt)), order_no:o || null, date:d || null });
+      });
+      res(out); } catch(e){ rej(e); } };
+    fr.readAsArrayBuffer(file);
+  });
 }
 
 /* ---------- Одамлар ---------- */
@@ -594,6 +633,11 @@ document.addEventListener("click", async e => {
 });
 document.addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
 document.addEventListener("change", async e => { const t = e.target;
+  if (t.id === "rcprov") { S.rcprov = t.value; return; }
+  if (t.id === "rcfile" && t.files && t.files[0]) {
+    try { const rows = await parseStatement(t.files[0], $("rctiyin").checked); if (!rows.length) { toast("Файлда тўловлар топилмади"); return; }
+      S.rc = await rpc("admin_recon", { p_provider:S.rcprov, p_rows:rows }); draw(); toast("Солиштирилди: " + rows.length + " қатор"); }
+    catch(err){ sessErr(err); } return; }
   if (t.id === "pshop") { S.pshop = t.value; S.prev = null; return; }
   if (t.id === "pfile" && t.files && t.files[0]) {
     try { const rows = await parsePriceFile(t.files[0]); if (!rows.length) { toast("Файлда нарх топилмади (4-устун)"); return; }
