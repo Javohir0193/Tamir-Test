@@ -149,8 +149,10 @@ function orderHTML(o){
       <button class="btn ghost sm" data-unmiss="${l.line_no}">Қайтариш</button></div>`).join("")}</div>` : ""}
     ${o.driver_id ? `<div class="card"><span class="pill g">🚚 Топширилди</span> <span class="muted">Чек-лист ва йўл — ботда.</span></div>`
       : allDone ? `<h2>📦 Ҳаммаси олинди — кимга топширасиз?</h2><div class="card">
-      ${S.d.drivers.map(dr => `<button class="btn dark" style="width:100%;margin-bottom:8px" data-hand="${dr.id}">🚚 ${esc(dr.name)} · ${esc(dr.car || "")}</button>`).join("")}
-      <button class="btn" style="width:100%" data-hand="self">🚗 Ўзим олиб бораман</button></div>` : ""}`;
+      <p class="muted" style="margin:0 0 8px">Буюртма таксопаркка тушади — ҳайдовчини парк ўзи топади.</p></div>
+      <h2>🚕 Таксопаркка бериш</h2><div class="card"><p class="muted" style="margin:0 0 8px">Юк ортиладиган жойни кўрсатинг: шу жой ҳайдовчига ва мижозга «А нуқта» бўлиб кўринади. Юк турган жойда туриб тугмани босинг.</p>
+      <input id="fnote" placeholder="Жой таърифи (масалан: Гумбаз бозор, 3-дарвоза)" style="width:100%;margin-bottom:8px">
+      <button class="btn dark" style="width:100%" data-fleet="1">📍 Жойлашувимни олиб, паркка бериш</button></div>` : ""}`;
 }
 function stickyOrder(o){
   const pend = o ? o.lines.filter(l => l.status === "pending" && S.sel[l.line_no]) : [];
@@ -228,6 +230,14 @@ document.addEventListener("click", async e => {
     const o = S.d.my.find(x => x.no === S.open);
     const lines = o.lines.filter(l => l.status === "pending" && S.sel[l.line_no]).map(l => ({ line_no:l.line_no, qty:num(S.qty[l.line_no] ?? l.qty), price:num(S.price[l.line_no] ?? curPrice(l)) }));
     act(async () => { await call({ action:"c_buy", no:S.open, shop_id:+S.shop, lines }); S.sel = {}; S.qty = {}; S.price = {}; }, "💳 Тўлов сўрови админга юборилди");
+  }
+  else if ("fleet" in ds) {
+    const note = (document.getElementById("fnote") || {}).value || "";
+    if (!navigator.geolocation) { toast("Бу қурилмада жойлашув ишламайди. Ҳайдовчини ўзингиз танланг."); return; }
+    toast("Жойлашув аниқланмоқда…");
+    navigator.geolocation.getCurrentPosition(pos => {
+      act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, fleet:true, lat:pos.coords.latitude, lng:pos.coords.longitude, note }); }, "🚕 Паркка юборилди: ҳайдовчилар ботида");
+    }, () => toast("Жойлашув рухсати берилмади. Созламалардан рухсат беринг ёки ҳайдовчини ўзингиз танланг."), { enableHighAccuracy:true, timeout:15000 });
   }
   else if (ds.hand) act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, ...(ds.hand === "self" ? { self:true } : { driver_id:+ds.hand }) }); },
     ds.hand === "self" ? "Ботда юклаш рўйхати келди 🚗" : "Ҳайдовчига топширилди 🚚");
