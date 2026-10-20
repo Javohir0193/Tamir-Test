@@ -436,6 +436,7 @@ function staffCard(){
 }
 
 /* ---------- Аналитика ---------- */
+const ACT = {admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)/, m => m === "assign_" ? "Тайинлаш: " : "Одам: ");
 function anTip(el){document.querySelectorAll(".anbar>div").forEach(d=>d.style.outline="");const t=document.getElementById("anTip");if(t)t.textContent=el.dataset.tip;if(el.firstChild)el.firstChild.style.outline="2px solid #111"}
 function anView(){
   const a = S.an; if (!a) return '<p class="mu">Юкланмоқда…</p>';
@@ -510,7 +511,7 @@ function auditView(){
   const a = S.audit; if (!a) return '<p class="mu">Юкланмоқда…</p>';
   const brief = v => v ? esc(JSON.stringify(v)).slice(0, 90) : "";
   return `<div class="row"><input type="search" id="aq" placeholder="Амал, обьект, админ…" value="${esc(S.aq)}"><button class="btn sm" id="aqgo">Қидириш</button></div>
-  <div class="card tw"><table><tr><th>Вақт</th><th>Ким</th><th>Амал</th><th>Обьект</th><th>Ўзгариш</th><th>Сабаб</th></tr>${a.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.admin_name || "")}</td><td>${esc(x.action)}</td><td>${esc(x.object || "")} ${esc(x.obj_id || "")}</td><td class="mu" style="font-size:12.5px">${brief(x.old_value)}${x.old_value ? " → " : ""}${brief(x.new_value)}</td><td>${esc(x.reason || "")}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ёзув йўқ</td></tr>'}</table><p class="mu" style="font-size:13px">Журналдан ҳеч нарсани ўчириб ёки ўзгартириб бўлмайди.</p></div>`;
+  <div class="card tw"><table><tr><th>Вақт</th><th>Ким</th><th>Амал</th><th>Обьект</th><th>Ўзгариш</th><th>Сабаб</th></tr>${a.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.admin_name || "")}</td><td>${esc(actT(x.action))}</td><td>${esc(x.object || "")} ${esc(x.obj_id || "")}</td><td class="mu" style="font-size:12.5px">${brief(x.old_value)}${x.old_value ? " → " : ""}${brief(x.new_value)}</td><td>${esc(x.reason || "")}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ёзув йўқ</td></tr>'}</table><p class="mu" style="font-size:13px">Журналдан ҳеч нарсани ўчириб ёки ўзгартириб бўлмайди.</p></div>`;
 }
 
 /* ---------- Админлар ---------- */
@@ -541,7 +542,7 @@ function histCard(){
   const AN = { set_fee:"Ҳақ", set_tariff:"Тариф", set_provider:"Тўлов тизими", set_app:"Созлама" };
   const v = x => x == null ? "—" : typeof x === "object" ? Object.entries(x).map(([k, y]) => `${k}: ${y}`).join(", ") : String(x);
   return `<div class="card tw"><h2>Ўзгаришлар тарихи</h2><table><tr><th>Вақт</th><th>Ким</th><th>Нима</th><th>Эски → Янги</th><th></th></tr>
-  ${h.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.who || "")}</td><td>${AN[x.action] || x.action}: ${esc(x.key || "")}</td><td class="mu" style="font-size:12.5px">${esc(v(x.old))} → <b>${esc(v(x.new))}</b></td><td>${x.reverted ? '<span class="pill m">қайтарилган</span>' : x.old == null ? "" : `<button class="btn alt sm" data-revert="${x.id}">Қайтариш</button>`}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳали ўзгариш йўқ</td></tr>'}</table>
+  ${h.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.who || "")}</td><td>${actT(x.action)}: ${esc(x.key || "")}</td><td class="mu" style="font-size:12.5px">${esc(v(x.old))} → <b>${esc(v(x.new))}</b></td><td>${x.reverted ? '<span class="pill m">қайтарилган</span>' : x.old == null ? "" : `<button class="btn alt sm" data-revert="${x.id}">Қайтариш</button>`}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳали ўзгариш йўқ</td></tr>'}</table>
   <p class="mu" style="font-size:13px">«Қайтариш» шу ўзгаришдан олдинги қийматни тиклайди. Янги ўзгариш журналга ёзилади, эскиси ўчмайди.</p></div>`;
 }
 
@@ -559,7 +560,7 @@ async function openOrder(no){
     <div class="row"><span style="width:80px">Йиғувчи:</span><select id="as-picker" style="flex:1">${opts(ppl.collectors)}</select><button class="btn sm" data-assign="picker" data-no="${o.no}">Тайинлаш</button></div>
     <div class="row"><span style="width:80px">Ҳайдовчи:</span><select id="as-driver" style="flex:1">${opts(ppl.drivers)}</select><button class="btn sm" data-assign="driver" data-no="${o.no}">Тайинлаш</button></div>
     <p class="mu" style="font-size:13px">Алмаштиришда сабаб сўралади, эски ва янги одамга Telegram'да хабар боради.</p></div>` : "";
-  const hist = (d.history || []).length ? `<div class="card tw"><h2>Ўзгаришлар тарихи</h2><table>${d.history.map(h => `<tr><td>${dt(h.at)}</td><td>${esc(h.who || "")}</td><td>${esc(h.action)}</td><td class="mu" style="font-size:12.5px">${esc(JSON.stringify(h.new || ""))}</td><td>${esc(h.reason || "")}</td></tr>`).join("")}</table></div>` : "";
+  const hist = (d.history || []).length ? `<div class="card tw"><h2>Ўзгаришлар тарихи</h2><table>${d.history.map(h => `<tr><td>${dt(h.at)}</td><td>${esc(h.who || "")}</td><td>${esc(actT(h.action))}</td><td class="mu" style="font-size:12.5px">${esc(JSON.stringify(h.new || ""))}</td><td>${esc(h.reason || "")}</td></tr>`).join("")}</table></div>` : "";
   const bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
   bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">Буюртма №${o.no} ${payPill(o)}</h2><button class="btn alt sm" data-x>Ёпиш</button></div>
   <div class="card"><div class="kv">${kv([["Мижоз", esc(o.customer_name)], ["Телефон", `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`], ["Манзил", esc(o.address || "")], ["Вақт", esc(o.slot || "")], ["Тури", esc(o.mode)], ["Босқич", `${o.stage + 1}/${stMax(o) + 1} · ${esc(stName(o))}`], ["Йиғувчи", esc(d.picker || "")], ["Ҳайдовчи", esc(d.driver || "")], ["Яратилган", dt(o.created_at)]])}</div>
