@@ -182,7 +182,7 @@ async function tabData(){
   } catch(e){ sessErr(e); }
 }
 function sessErr(e){ if (/wrong code|admin_login/.test((e && e.message) || "")) { dropSession(); pinView("Сессия тугади. Қайта киринг."); } else toast(errText(e)); }
-async function reload(){ try { await load(); await tabData(); draw(); } catch(e){ sessErr(e); } }
+async function reload(){ const b = document.getElementById("rf"); if (b) { b.disabled = true; b.textContent = "…"; } try { await load(); await tabData(); draw(); toast("Янгиланди"); } catch(e){ sessErr(e); } finally { const c = document.getElementById("rf"); if (c) { c.disabled = false; c.textContent = "Янгилаш"; } } }
 
 /* ---------- Қобиқ ---------- */
 const ROLE_N = { owner:"Эга", operator:"Оператор", accountant:"Бухгалтер", support:"Қўллаб-қувватлаш" };
@@ -429,14 +429,16 @@ function tplCsv(){
 function staffCard(){
   const st = S.staff; if (!st) return "";
   const RN = { collector:"Йиғувчи", driver:"Ҳайдовчи" };
-  return `<div class="card tw"><h2>Йиғувчи ва ҳайдовчи баланси</h2><table><tr><th>Исм</th><th>Рол</th><th class="n">Буюртма</th><th class="n">Топган</th><th class="n">Тўланган</th><th class="n">Қолдиқ</th><th></th></tr>
-  ${st.people.map(x => `<tr><td>${esc(x.name)}<br><small class="mu">${esc(x.card || "карта йўқ")} · ${esc(x.phone || "")}</small></td><td>${RN[x.role] || x.role}</td><td class="n">${x.orders}</td><td class="n">${fmt(x.earned)}</td><td class="n">${fmt(x.paid)}</td><td class="n"><b>${fmt(x.due)}</b></td><td>${x.due > 0 ? `<button class="btn sm" data-spay="${x.id}" data-due="${x.due}">Тўладим</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="7" class="mu">Ҳали етказилган буюртма йўқ</td></tr>'}</table>
-  <p class="mu" style="font-size:13px">Баланс етказилган ва тўланган буюртмалардан ҳисобланади. «Тўладим» ни пулни ўтказгандан кейин босинг: сумма ўзгартирилиши мумкин (қисман тўлов).</p>
+  const ho = st.held_orders || [];
+  return `<div class="card tw"><h2>Йиғувчи ва ҳайдовчи баланси</h2><table><tr><th>Исм</th><th>Рол</th><th class="n">Буюртма</th><th class="n">Тўланиши керак</th><th class="n">Тўланган</th><th class="n">Қолдиқ</th><th class="n">Кутилмоқда</th><th></th></tr>
+  ${st.people.map(x => `<tr><td>${esc(x.name)}<br><small class="mu">${esc(x.card || "карта йўқ")} · ${esc(x.phone || "")}</small></td><td>${RN[x.role] || x.role}</td><td class="n">${x.orders}</td><td class="n">${fmt(x.earned)}</td><td class="n">${fmt(x.paid)}</td><td class="n"><b>${fmt(x.due)}</b></td><td class="n mu">${fmt((x.waiting || 0) + (x.held || 0))}</td><td>${x.due > 0 ? `<button class="btn sm" data-spay="${x.id}" data-due="${x.due}">Тўладим</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="8" class="mu">Ҳали етказилган буюртма йўқ</td></tr>'}</table>
+  <p class="mu" style="font-size:13px">Ҳақ мижоз «Олдим» деганда ёки етказилгандан 24 соат ўтгач «Қолдиқ»га ўтади. «Кутилмоқда» — ҳали шу вақт ўтмаган ёки мижоз «етишмади» деган буюртмалар. «Тўладим» ни пулни ўтказгандан кейин босинг: сумма ўзгартирилиши мумкин (қисман тўлов).</p>
+  ${ho.length ? `<h2 style="margin-top:12px">Мижоз «етишмади» деган буюртмалар</h2><table>${ho.map(h => `<tr><td>№${h.no}</td><td class="mu">${esc(h.note || "")}</td><td><button class="btn sm alt" data-prel="${h.no}">Қўйиб юбориш</button></td></tr>`).join("")}</table><p class="mu" style="font-size:13px">Муаммо ҳал бўлгач «Қўйиб юбориш» босинг: сабаб сўралади, ҳақ «Қолдиқ»га ўтади.</p>` : ""}
   ${st.recent.length ? `<h2 style="margin-top:12px">Охирги тўловлар</h2><table>${st.recent.map(r => `<tr><td>${dt(r.at)}</td><td>${esc(r.name)}</td><td class="n">${fmt(r.amount)}</td><td class="mu">${esc(r.note || "")}</td></tr>`).join("")}</table>` : ""}</div>`;
 }
 
 /* ---------- Аналитика ---------- */
-const ACT = {admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)(.*)$/, (m, p, r) => (p === "assign_" ? "Тайинлаш: " : "Одам: ") + ({picker:"йиғувчи",driver:"ҳайдовчи"}[r] || r));
+const ACT = {payout_release:"Ҳақ қўйиб юборилди",admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)(.*)$/, (m, p, r) => (p === "assign_" ? "Тайинлаш: " : "Одам: ") + ({picker:"йиғувчи",driver:"ҳайдовчи"}[r] || r));
 const LK = {customer_payment:"Мижоз тўлови",shop_goods:"Дўконга товар пули",driver_pay:"Ҳайдовчига",collector_pay:"Йиғувчига",gateway_fee:"Тўлов тизими ҳақи",platform_income:"Платформа даромади",reserve_hold:"Нарх захираси",refund:"Қайтариш"};const lk = k => LK[k] || k;
 const OBJ = {order:"Буюртма №",admin:"Админ №",setting:"Созлама:",price:"Нарх (дўкон:товар):",customer:"Мижоз:",ticket:"Мурожаат №",refund:"Қайтариш №",staff:"Ходим №",person:"Одам №",payout:"Тўлов №",tariff:"Тариф:",fee:"Ҳақ:",provider:"Тўлов тизими:",seller:"Дўкон №",market:"Бозор №"};
 const KEYL = {enabled:"ёқилган",decision:"қарор",due:"тўланиши керак",paid:"тўланди",shop_id:"дўкон №",seller_id:"дўкон №",stage:"босқич",amount:"сумма",refund:"қайтариш №",kind:"тури",len:"изоҳ узунлиги",status:"ҳолат",roles:"роллар",pct:"фоиз",price:"нарх",name:"ном",phone:"телефон",reason:"сабаб"};
@@ -648,6 +650,8 @@ document.addEventListener("click", async e => {
   if (t.dataset.nadd) { const body = $("nbody").value.trim(); if (!body) return; const kind = t.dataset.nadd, ref = t.dataset.nref;
     await act(async () => { await rpc("admin_note_add", { p_kind:kind, p_ref:String(ref), p_body:body }); closeSheet(); if (kind === "order") openOrder(ref); else openCust(ref); }, "Қўшилди"); return; }
   if (t.dataset.pf) { S.pf = t.dataset.pf; draw(); return; }
+  if (t.dataset.prel) { const r = prompt("Сабаб (нима ҳал бўлди?):"); if (!r || !r.trim()) return;
+    await act(async () => { await rpc("admin_release_payout", { p_no:Number(t.dataset.prel), p_reason:r.trim() }); S.staff = await rpc("admin_staff"); draw(); }, "Қўйиб юборилди"); return; }
   if (t.dataset.psave) { const sid = t.dataset.psave, pid = Number(t.dataset.pid);
     const seller = sid === "new" ? Number($("pnew").value) : Number(sid), price = Number((sid === "new" ? $("pnewp").value : document.querySelector(`[data-pp2="${sid}"]`).value).replace(/\s/g, ""));
     await act(async () => { await rpc("admin_price_set", { p_seller:seller, p_product:pid, p_price:price, p_in_stock:true }); S.prices = await rpc("admin_prices"); closeSheet(); draw(); openPrice(pid); }, "Сақланди"); return; }
