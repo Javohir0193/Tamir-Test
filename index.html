@@ -1267,8 +1267,9 @@ async function loadOrders(quiet){
     S.orders = q.data.map(fromRow);
     let tkSig = "";
     if (S.profile && !S.seller) { try { const tq = await sb.rpc("my_tickets"); if (!tq.error && Array.isArray(tq.data)) S.tickets = tq.data; } catch(e){} }
+    if (!S.seller) { S.payOpts = S.payOpts || {}; for (const o of S.orders) if (o.payStatus === "unpaid") { try { const pq = await sb.rpc("pay_options", { p_no:o.no }); if (!pq.error && Array.isArray(pq.data) && pq.data.length) S.payOpts[o.no] = pq.data; } catch(e){} } }
     tkSig = JSON.stringify((S.tickets || []).map(t => [t.id, t.status, t.msgs.length]));
-    const same = prev === JSON.stringify(S.orders.map(o => [o.no, o.status, o.payStatus, o.payDue])) && tkSig === S.tkSig; S.tkSig = tkSig;
+    const same = prev === JSON.stringify(S.orders.map(o => [o.no, o.status, o.payStatus, o.payDue])) && tkSig === S.tkSig && payOptSig() === S.poSig; S.poSig = payOptSig(); S.tkSig = tkSig;
     if (quiet && same) return;
     const ae = document.activeElement; if (ae && /^(helpt|ackt)/.test(ae.id || "")) return;
     if (S.tab === "orders") { const y = window.scrollY; renderOrders(); window.scrollTo(0, y); }
@@ -1560,13 +1561,16 @@ function openReceipt(no){
     <div class="payrow"><button class="btn" data-rcpshare="${o.no}">Поделиться</button><button class="btn alt" data-rcpclose>Закрыть</button></div></div>`;
   document.body.appendChild(ov);
 }
+function payOptSig(){ return JSON.stringify(S.payOpts || {}); }
+function payOpt(o, code){ return ((S.payOpts || {})[o.no] || []).find(x => x.code === code); }
 function payHtml(o){
   if (o.payStatus === "expired") return `<div class="paybox exp"><b>Время оплаты истекло</b><p class="note">Заказ отменён автоматически. Оформите его заново.</p></div>`;
   if (o.payStatus !== "unpaid") return "";
   const pv = (S.providers && S.providers.length ? S.providers : [{ code:"click", n:"Click" }, { code:"payme", n:"Payme" }]);
-  const btns = S.seller ? "" : `<div class="payrow">${pv.map(p => `<button class="btn lg paybtn" data-pay="${esc(p.code)}" data-no="${o.no}" aria-label="${esc(p.n)}">${PAYLOGO[p.code] ? `<img class="paylogo" src="${PAYLOGO[p.code]}" alt="${esc(p.n)}">` : esc(p.n)}</button>`).join("")}</div>
+  const btns = S.seller ? "" : `<div class="payrow">${pv.map(p => `<button class="btn lg paybtn" data-pay="${esc(p.code)}" data-no="${o.no}" aria-label="${esc(p.n)}"><span style="display:grid;gap:2px;justify-items:center">${PAYLOGO[p.code] ? `<img class="paylogo" src="${PAYLOGO[p.code]}" alt="${esc(p.n)}">` : esc(p.n)}${payOpt(o, p.code) ? `<b style="font-size:15px">${fmt(payOpt(o, p.code).pay_amount)} ${CURRENCY}</b><small style="font-size:12px;opacity:.75">${String(payOpt(o, p.code).pct).replace(".", ",")}%</small>` : ""}</span></button>`).join("")}</div>
     ${S.payTest ? `<button class="btn alt" data-pay="test" data-no="${o.no}">🧪 Тестовая оплата (без денег)</button>` : ""}`;
-  return `<div class="paybox"><div class="sumrow"><span>К оплате</span><b>${fmt(o.payAmount || o.total)} ${CURRENCY}</b></div>
+  return `<div class="paybox"><div class="sumrow"><span>К оплате</span><b>${fmt(Math.min(...(((S.payOpts || {})[o.no] || []).map(x => x.pay_amount)).concat([o.payAmount || o.total])))} ${CURRENCY}</b></div>
+    ${((S.payOpts || {})[o.no] || []).length > 1 ? `<p class="note">Сумма зависит от платёжной системы: у каждой своя комиссия. Выберите удобную — итог указан на кнопке.</p>` : ""}
     ${o.reserve > 0 ? `<p class="note">В сумму входит запас на цену: ${fmt(o.reserve)} ${CURRENCY}. Что останется — вернём вам.</p>` : ""}
     <p class="note">Осталось: <b data-due="${o.payDue}">--:--</b></p>${btns}</div>`;
 }
