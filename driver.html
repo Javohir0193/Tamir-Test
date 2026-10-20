@@ -79,10 +79,11 @@ async function load(){
 }
 const nav = (lat, lng) => lat ? `https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto` : "";
 function openCard(o){
-  const pa = o.pickup_lat ? `<a class="btn alt" href="https://yandex.uz/maps/?pt=${o.pickup_lng},${o.pickup_lat}&z=17&l=map" target="_blank" rel="noopener">📍 А нуқта</a>` : "";
+  const pa = o.pickup_lat ? `<a class="btn alt" href="https://yandex.uz/maps/?pt=${o.pickup_lng},${o.pickup_lat}&z=17&l=map" target="_blank" rel="noopener">📍 Б нуқта</a>` : "";
   return `<div class="card"><div class="row" style="margin:0;justify-content:space-between"><h2>Буюртма №${o.no}</h2><span class="fee">${fmt(o.fee)} сўм</span></div>
-  <div class="pt"><b>A</b><div>${esc(o.market || "Бозор")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
-  <div class="pt"><b>B</b><div>${esc(o.address || "—")}</div></div>
+  <div class="pt"><b>A</b><div>Сиз турган жой</div></div>
+  <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "Бозор")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
+  <div class="pt"><b>🏠</b><div>Мижоз: ${esc(o.address || "—")}</div></div>
   <div class="mu">🕒 ${esc(o.slot || "")} · 🧺 ${o.lines.length} қатор</div>
   <div class="row">${pa}<button class="btn" data-claim="${o.no}">🙋 Мен оламан</button></div></div>`;
 }
@@ -91,11 +92,12 @@ function mineCard(o){
   let last = "", ls = "";
   for (const l of o.lines) { if (l.shop !== last) { ls += `<div class="shop">🏪 ${esc(l.shop)}${l.shop_phone ? ` · <a href="tel:${esc(l.shop_phone)}">${esc(l.shop_phone)}</a>` : ""}</div>`; last = l.shop; }
     ls += `<label class="ln"><input type="checkbox" ${l.loaded ? "checked" : ""} ${go ? "" : "disabled"} data-ld="${o.no}:${l.line_no}"><span>${esc(l.name)} — ${esc(l.qty)} ${esc(l.unit)}</span></label>`; }
-  const pa = o.pickup_lat ? `<a class="btn alt" href="${nav(o.pickup_lat, o.pickup_lng)}" target="_blank" rel="noopener">📍 А нуқтага йўл</a>` : "";
+  const pa = o.pickup_lat ? `<a class="btn alt" href="${nav(o.pickup_lat, o.pickup_lng)}" target="_blank" rel="noopener">📍 Б нуқтага йўл (юк ортиш)</a>` : "";
   const pb = o.lat ? `<a class="btn alt" href="${nav(o.lat, o.lng)}" target="_blank" rel="noopener">🏠 Мижозга йўл</a>` : "";
   return `<div class="card"><div class="row" style="margin:0;justify-content:space-between"><h2>№${o.no} ${done ? '<span class="pill">етказилди</span>' : o.stage === 3 ? '<span class="pill">йўлда</span>' : ""}</h2><span class="fee">${fmt(o.fee)} сўм</span></div>
-  <div class="pt"><b>A</b><div>${esc(o.market || "")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
-  <div class="pt"><b>B</b><div>${esc(o.address || "—")}<br><span class="mu">${esc(o.customer || "")} · <a href="tel:${esc(o.phone)}">${esc(o.phone || "")}</a></span></div></div>
+  <div class="pt"><b>A</b><div>Сиз турган жой</div></div>
+  <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
+  <div class="pt"><b>🏠</b><div>Мижоз: ${esc(o.address || "—")}<br><span class="mu">${esc(o.customer || "")} · <a href="tel:${esc(o.phone)}">${esc(o.phone || "")}</a></span></div></div>
   ${o.note ? `<div class="mu">💬 ${esc(o.note)}</div>` : ""}${ls}
   ${done ? "" : `<div class="row">${pa}${pb}</div><div class="row">${go ? `<button class="btn" data-go="${o.no}" ${allL ? "" : "disabled"}>🚚 Йўлга чиқдим${allL ? "" : " (" + o.lines.filter(l => l.loaded).length + "/" + o.lines.length + ")"}</button>` : `<button class="btn g" data-dn="${o.no}">✅ Топширдим</button>`}</div>`}</div>`;
 }

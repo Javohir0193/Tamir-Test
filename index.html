@@ -1254,7 +1254,7 @@ const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mod
   slot:r.slot, stage:r.stage, times:(r.times && r.times.length ? r.times : [Date.parse(r.created_at)]), items:r.items || [],
   name:r.customer_name, phone:r.phone, addr:r.address, note:r.note,
   lat:r.delivery_lat, lng:r.delivery_lng, driver:r.driver_info || null, dlat:r.driver_lat, dlng:r.driver_lng, dat:r.driver_at ? Date.parse(r.driver_at) : 0,
-  eta:r.eta_min, received:r.received_at ? Date.parse(r.received_at) : 0, receivedOk:r.received_ok,
+  pickLat:r.pickup_lat, pickLng:r.pickup_lng, pickNote:r.pickup_note, eta:r.eta_min, received:r.received_at ? Date.parse(r.received_at) : 0, receivedOk:r.received_ok,
   picker:r.picker_info || null, picked:r.picked || 0, pickTotal:r.pick_total || 0,
   payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null,
   paidAt:r.paid_at ? Date.parse(r.paid_at) : 0, goodsSum:r.goods_sum == null ? null : Number(r.goods_sum), deliverySum:Number(r.delivery_sum) || 0, serviceFee:Number(r.service_fee) || 0 });
@@ -1654,15 +1654,17 @@ function deliveryCard(o){
     return `<div class="dcard"><div class="drv"><div class="plate">🧺</div><div><b>${esc(o.picker.name || "")}</b>${ph ? ` · <a href="tel:${ph}">${esc(o.picker.phone)}</a>` : ""}<small>Ваш сборщик на рынке</small></div></div>
       <p class="dnote">Собирает ваш заказ: <b>${o.picked} / ${o.pickTotal}</b> товаров уже куплено и проверено.</p><i class="pbar"><i style="width:${pct}%"></i></i></div>`;
   }
+  const pa = o.pickLat ? `<p class="dnote">📦 <b>Точка А — откуда заберут заказ:</b> ${o.pickNote ? esc(o.pickNote) + " · " : ""}<a href="https://yandex.uz/maps/?pt=${o.pickLng},${o.pickLat}&z=17&l=map" target="_blank" rel="noopener">на карте</a></p>` + (o.lat ? `<p class="dnote">🅱️ <b>Точка Б — куда привезут (ваш адрес из заказа)</b></p>` : "") : "";
+  if (o.mode === "delivery" && !o.driver && o.pickLat && o.stage < 4) return `<div class="dcard"><p class="dnote">✅ Заказ собран. Ищем водителя.</p>${pa}</div>`;
   if (o.mode !== "delivery" || !o.driver) return "";
   const d = o.driver, phone = String(d.phone || "").replace(/[^\d+]/g, "");
   const head = `<div class="drv"><div class="plate">${esc(d.car || "")}</div>
     <div><b>${esc(d.name || "")}</b>${phone ? ` · <a href="tel:${phone}">${esc(d.phone)}</a>` : ""}<small>Ваш водитель</small></div></div>`;
-  if (o.stage < 3) return `<div class="dcard">${head}<p class="dnote">🚚 Водитель загружает ваш заказ: проверяет каждую позицию по списку.</p></div>`;
+  if (o.stage < 3) return `<div class="dcard">${head}<p class="dnote">🚚 Водитель загружает ваш заказ: проверяет каждую позицию по списку.</p>${pa}</div>`;
   if (o.stage === 3){
     const eta = o.dlat ? (o.eta ? `<div class="eta">≈ ${o.eta} мин<small>до вас · обновлено ${ago(o.dat)}</small></div>` : `<div class="eta sm">В пути<small>обновлено ${ago(o.dat)}</small></div>`)
       : `<p class="dnote">Все товары загружены ✅. Водитель выехал, его машина скоро появится на карте.</p>`;
-    return `<div class="dcard">${head}${eta}${o.dlat ? `<div class="mapbox" data-map="${o.no}"></div>` : ""}</div>`;
+    return `<div class="dcard">${head}${eta}${o.dlat ? `<div class="mapbox" data-map="${o.no}"></div>` : ""}${pa}</div>`;
   }
   if (!o.received) return `<div class="dcard">${head}<p class="dnote"><b>Заказ доставлен.</b> Проверьте, всё ли на месте:</p>
     <div class="ack"><button class="btn" data-ack="${o.no}:1">✅ Всё получил</button><button class="btn alt" data-ackno="${o.no}">❌ Чего-то не хватает</button></div>
@@ -1680,12 +1682,13 @@ async function mountMaps(keep){
     if (m && old){ box.replaceWith(old); m.el = old; }
     else {
       const map = L.map(box, { zoomControl:false, attributionControl:true }); tiles(map);
-      const home = o.lat ? L.marker([o.lat, o.lng], { icon:icon("🏠", "home") }).addTo(map) : null;
+      const home = o.lat ? L.marker([o.lat, o.lng], { icon:icon("🅱️", "home") }).addTo(map) : null;
       const car = L.marker([o.dlat, o.dlng], { icon:icon("🚚", "car") }).addTo(map);
+      if (o.pickLat) L.marker([o.pickLat, o.pickLng], { icon:icon("🅰️", "home") }).addTo(map);
       m = { el:box, map, car, home }; MAPS.set(no, m);
     }
     m.car.setLatLng([o.dlat, o.dlng]);
-    const pts = [[o.dlat, o.dlng]].concat(o.lat ? [[o.lat, o.lng]] : []);
+    const pts = [[o.dlat, o.dlng]].concat(o.lat ? [[o.lat, o.lng]] : []).concat(o.pickLat ? [[o.pickLat, o.pickLng]] : []);
     if (pts.length > 1) m.map.fitBounds(pts, { padding:[40, 40], maxZoom:16 }); else m.map.setView(pts[0], 15);
     setTimeout(() => m.map.invalidateSize(), 50);
   }
