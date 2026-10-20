@@ -436,12 +436,13 @@ function staffCard(){
 }
 
 /* ---------- Аналитика ---------- */
+function anTip(el){document.querySelectorAll(".anbar>div").forEach(d=>d.style.outline="");const t=document.getElementById("anTip");if(t)t.textContent=el.dataset.tip;if(el.firstChild)el.firstChild.style.outline="2px solid #111"}
 function anView(){
   const a = S.an; if (!a) return '<p class="mu">Юкланмоқда…</p>';
   const c = a.cohort, sp = a.speed, pc = (x, y) => y > 0 ? Math.round(100 * x / y) + "%" : "—";
   const mx = Math.max(1, ...a.daily.map(x => x.n)), mn = v => v == null ? "—" : v + " дақ";
   return `<div class="row"><b>Давр:</b>${[7, 30, 90].map(n => `<button class="btn ${S.andays === n ? "" : "alt"} sm" data-andays="${n}">${n} кун</button>`).join("")}</div>
-  <div class="card"><h2>Кунлик буюртмалар</h2><div style="display:flex;align-items:flex-end;gap:2px;height:90px">${a.daily.map(x => `<div title="${x.day}: ${x.n} та${x.sum != null ? " · " + fmt(x.sum) : ""}" style="flex:1;background:var(--bl);border-radius:3px 3px 0 0;height:${Math.max(2, Math.round(x.n / mx * 100))}%;min-width:2px"></div>`).join("")}</div>
+  <div class="card"><h2>Кунлик буюртмалар</h2><div id="anTip" style="min-height:24px;font-weight:700;margin-bottom:6px">Устун устига босинг</div><div style="display:flex;align-items:flex-end;gap:2px;height:110px">${a.daily.map(x => `<div class="anbar" data-tip="${x.day}: ${x.n} та${x.sum != null ? " · " + fmt(x.sum) : ""}" onclick="anTip(this)" onmouseenter="anTip(this)" style="flex:1;height:100%;display:flex;align-items:flex-end;cursor:pointer;min-width:4px"><div style="width:100%;background:${x.n ? "var(--bl)" : "#cfd4dc"};border-radius:3px 3px 0 0;height:${x.n ? Math.max(6, Math.round(x.n / mx * 100)) : 3}%"></div></div>`).join("")}</div>
   <p class="mu" style="font-size:13px">Ҳар устун — бир кун. Устун устига босинг (ёки курсорни олиб боринг): кун ва сумма чиқади. Энг баланд кун: ${mx} та.</p></div>
   <div class="card"><h2>Қайтиб келган мижозлар</h2><div class="grid">
     <div class="kpi"><small>Биринчи марта буюртма берган (180 кун)</small><b>${c.customers}</b></div>
