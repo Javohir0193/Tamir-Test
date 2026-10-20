@@ -92,8 +92,8 @@ function mineCard(o){
   let last = "", ls = "";
   for (const l of o.lines) { if (l.shop !== last) { ls += `<div class="shop">🏪 ${esc(l.shop)}${l.shop_phone ? ` · <a href="tel:${esc(l.shop_phone)}">${esc(l.shop_phone)}</a>` : ""}</div>`; last = l.shop; }
     ls += `<label class="ln"><input type="checkbox" ${l.loaded ? "checked" : ""} ${go ? "" : "disabled"} data-ld="${o.no}:${l.line_no}"><span>${esc(l.name)} — ${esc(l.qty)} ${esc(l.unit)}</span></label>`; }
-  const pa = o.pickup_lat ? `<a class="btn alt" href="${nav(o.pickup_lat, o.pickup_lng)}" target="_blank" rel="noopener">📍 Б нуқтага йўл (юк ортиш)</a>` : "";
-  const pb = o.lat ? `<a class="btn alt" href="${nav(o.lat, o.lng)}" target="_blank" rel="noopener">🏠 Мижозга йўл</a>` : "";
+  const pa = o.pickup_lat ? `<a class="btn alt" data-nav="${o.pickup_lat},${o.pickup_lng}" href="${nav(o.pickup_lat, o.pickup_lng)}" target="_blank" rel="noopener">📍 Б нуқтага йўл (юк ортиш)</a>` : "";
+  const pb = o.lat ? `<a class="btn alt" data-nav="${o.lat},${o.lng}" href="${nav(o.lat, o.lng)}" target="_blank" rel="noopener">🏠 Мижозга йўл</a>` : "";
   return `<div class="card"><div class="row" style="margin:0;justify-content:space-between"><h2>№${o.no} ${done ? '<span class="pill">етказилди</span>' : o.stage === 3 ? '<span class="pill">йўлда</span>' : ""}</h2><span class="fee">${fmt(o.fee)} сўм</span></div>
   <div class="pt"><b>A</b><div>Сиз турган жой</div></div>
   <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
@@ -118,7 +118,13 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button,input,a"); if (!t) return;
   if (t.dataset.t) { S.tab = t.dataset.t; draw(); return; }
   if (t.dataset.claim) { act(async () => { const ok = await rpc("drv_claim", { p_session:SES, p_no:+t.dataset.claim }); if (!ok) throw new Error("Бу буюртмани бошқа ҳайдовчи олди."); S.tab = "mine"; }, "Сизники! Товарларни юкланг."); return; }
-  if (t.dataset.go) { act(async () => { const r = await rpc("drv_go", { p_session:SES, p_no:+t.dataset.go }); if (r !== "ok") throw new Error(r === "not_loaded" ? "Ҳали юкланмаган товар бор." : "Бажариб бўлмади."); }, "Оқ йўл!"); return; }
+  if (t.dataset.go) {
+    const ord = ((S.d && S.d.mine) || []).find(x => x.no === +t.dataset.go), tolat = ord && ord.lat ? `${ord.lat},${ord.lng}` : "";
+    let w = null; if (tolat) { try { w = window.open("", "_blank"); } catch (e) {} }
+    act(async () => { const r = await rpc("drv_go", { p_session:SES, p_no:+t.dataset.go }); if (r !== "ok") { try { w && w.close(); } catch (e) {} throw new Error(r === "not_loaded" ? "Ҳали юкланмаган товар бор." : "Бажариб бўлмади."); }
+      if (w && tolat) { const fb = `https://yandex.uz/maps/?rtext=~${tolat}&rtt=auto`;
+        if (navigator.geolocation) navigator.geolocation.getCurrentPosition(p => { w.location.href = `https://yandex.uz/maps/?rtext=${p.coords.latitude},${p.coords.longitude}~${tolat}&rtt=auto`; }, () => { w.location.href = fb; }, { enableHighAccuracy:true, timeout:6000, maximumAge:30000 });
+        else w.location.href = fb; } }, "Оқ йўл! Харита очилмоқда…"); return; }
   if (t.dataset.dn) { if (!confirm("Буюртма мижозга топширилдими?")) return; act(async () => { const r = await rpc("drv_done", { p_session:SES, p_no:+t.dataset.dn }); if (r !== "ok") throw new Error("Бажариб бўлмади."); }, "Раҳмат!"); return; }
   if (t.id === "out") { SES = ""; try { localStorage.removeItem("drv_ses"); } catch (x) {} loginView(); return; }
   if (t.id === "notif") { try { Notification.requestPermission().then(p => toast(p === "granted" ? "Рухсат берилди" : "Рухсат берилмади")); } catch (x) { toast("Бу қурилмада ишламайди"); } return; }
@@ -126,6 +132,13 @@ document.addEventListener("click", e => {
 document.addEventListener("change", e => { const t = e.target; if (t.dataset.ld) { const [no, ln] = t.dataset.ld.split(":"); act(() => rpc("drv_load", { p_session:SES, p_no:+no, p_line:+ln })); } });
 // ---------- жонли жойлашув: йўлдаги буюртма бўлса ----------
 let WID = null, LAST = 0, WAKE = null;
+document.addEventListener("click", e => {
+  const a = e.target.closest && e.target.closest("a[data-nav]"); if (!a || !navigator.geolocation) return;
+  e.preventDefault(); const to = a.dataset.nav;
+  navigator.geolocation.getCurrentPosition(
+    p => window.open(`https://yandex.uz/maps/?rtext=${p.coords.latitude},${p.coords.longitude}~${to}&rtt=auto`, "_blank"),
+    () => window.open(a.href, "_blank"), { enableHighAccuracy:true, timeout:6000, maximumAge:30000 });
+});
 function trackLoc(){
   const on = S.d && (S.d.mine || []).some(o => o.stage === 3);
   if (on && WID == null && navigator.geolocation) {
