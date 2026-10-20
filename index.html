@@ -1265,7 +1265,10 @@ async function loadOrders(quiet){
     if (q.error) throw q.error;
     const prev = JSON.stringify((S.orders || []).map(o => [o.no, o.status, o.payStatus, o.payDue]));
     S.orders = q.data.map(fromRow);
-    const same = prev === JSON.stringify(S.orders.map(o => [o.no, o.status, o.payStatus, o.payDue]));
+    let tkSig = "";
+    if (S.profile && !S.seller) { try { const tq = await sb.rpc("my_tickets"); if (!tq.error && Array.isArray(tq.data)) S.tickets = tq.data; } catch(e){} }
+    tkSig = JSON.stringify((S.tickets || []).map(t => [t.id, t.status, t.msgs.length]));
+    const same = prev === JSON.stringify(S.orders.map(o => [o.no, o.status, o.payStatus, o.payDue])) && tkSig === S.tkSig; S.tkSig = tkSig;
     if (quiet && same) return;
     if (S.tab === "orders") { const y = window.scrollY; renderOrders(); window.scrollTo(0, y); }
     else if (S.tab === "home" && S.view === "home") renderHome();
@@ -1606,10 +1609,20 @@ function renderOrders(){
           return `<li class="${cls}"><i></i>${s[0]}${sub ? `<small>${sub}</small>` : ""}</li>`;
         }).join("")}</ol>`}
         <p class="note">${o.items.map(i => `${esc(i.n)} × ${i.q}`).join(", ")}</p>
+        ${helpBox(o)}
         ${S.seller && !last && !unp && !exp ? `<button class="btn dark" data-advance="${o.no}">Перевести в статус «${st[o.stage + 1][0]}»</button>` : ""}
       </section>`;
     }).join("") + sellerBox();
   mountMaps(keep);
+}
+
+// ===== Помощь по заказу: обращение в службу поддержки =====
+function helpBox(o){
+  if (S.seller || !S.profile || !dbReady) return "";
+  const tk = (S.tickets || []).filter(t => t.order_no === o.no);
+  const thr = tk.map(t => `<div class="tkt"><p class="dnote"><b>Обращение №${t.id}</b> · ${t.status === "closed" ? "закрыто" : t.status === "answered" ? "есть ответ" : "рассматриваем"}</p>${t.msgs.map(m => `<p class="${m.from === "admin" ? "dnote" : "meta"}" style="${m.from === "admin" ? "background:#eef6ee;border-radius:8px;padding:6px 8px" : ""}">${m.from === "admin" ? "Ta'mir: " : "Вы: "}${esc(m.body)}</p>`).join("")}</div>`).join("");
+  return `<div class="help">${thr}<button class="btn alt" data-helpopen="${o.no}" style="margin:6px 0">💬 Помощь по заказу</button>
+    <div id="helpf${o.no}" hidden><textarea id="helpt${o.no}" rows="3" maxlength="1000" placeholder="Опишите, что случилось"></textarea><button class="btn dark" data-helpsend="${o.no}">Отправить</button></div></div>`;
 }
 
 // ===== Доставка: машина на карте, время прибытия, подтверждение получения =====
@@ -1726,6 +1739,13 @@ document.addEventListener("click", async e => {
   if (t.hasAttribute("data-pickx") && ov) { ov.remove(); return; }
   if (t.hasAttribute("data-pickme") && ov && ov._map) { locate(ov._map, false); return; }
   if (t.hasAttribute("data-pickok") && ov && ov._map) { const c = ov._map.getCenter(); S.form.lat = +c.lat.toFixed(6); S.form.lng = +c.lng.toFixed(6); ov.remove(); if (S.view === "car") renderCar(); else renderCart(); toast("📍 Точка сохранена"); return; }
+  if (t.dataset.helpopen) { const f = document.getElementById("helpf" + t.dataset.helpopen); if (f) { f.hidden = !f.hidden; if (!f.hidden) document.getElementById("helpt" + t.dataset.helpopen).focus(); } return; }
+  if (t.dataset.helpsend) { const no = +t.dataset.helpsend, el = document.getElementById("helpt" + no), txt = (el && el.value || "").trim();
+    if (txt.length < 3) { toast("Опишите, что случилось"); return; }
+    t.disabled = true; const r = await sb.rpc("create_ticket", { p_order_no:no, p_text:txt }); t.disabled = false;
+    if (r.error) { const m = r.error.message || ""; toast(/too_fast/.test(m) ? "Подождите немного и отправьте снова" : /too_many_open/.test(m) ? "У вас уже есть открытые обращения. Дождитесь ответа." : "Не удалось отправить. Проверьте интернет."); return; }
+    const q = await sb.rpc("my_tickets"); if (!q.error && Array.isArray(q.data)) S.tickets = q.data;
+    renderOrders(); toast("Обращение отправлено. Мы ответим в Telegram."); return; }
   if (t.dataset.ackno) { const n = document.getElementById("ackn" + t.dataset.ackno); if (n) { n.hidden = false; document.getElementById("ackt" + t.dataset.ackno).focus(); } return; }
   if (t.dataset.ack) {
     const [no, ok] = t.dataset.ack.split(":"), note = ok === "1" ? null : (document.getElementById("ackt" + no)?.value || "").trim();
