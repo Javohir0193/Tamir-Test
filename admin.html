@@ -437,6 +437,7 @@ function staffCard(){
 
 /* ---------- Аналитика ---------- */
 const ACT = {admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)/, m => m === "assign_" ? "Тайинлаш: " : "Одам: ");
+const LK = {customer_payment:"Мижоз тўлови",shop_goods:"Дўконга товар пули",driver_pay:"Ҳайдовчига",collector_pay:"Йиғувчига",gateway_fee:"Тўлов тизими ҳақи",platform_income:"Платформа даромади",reserve_hold:"Нарх захираси",refund:"Қайтариш"};const lk = k => LK[k] || k;
 function anTip(el){document.querySelectorAll(".anbar>div").forEach(d=>d.style.outline="");const t=document.getElementById("anTip");if(t)t.textContent=el.dataset.tip;if(el.firstChild)el.firstChild.style.outline="2px solid #111"}
 function anView(){
   const a = S.an; if (!a) return '<p class="mu">Юкланмоқда…</p>';
@@ -553,7 +554,7 @@ async function openOrder(no){
   const o = d.order, kv = (a) => a.filter(x => x[1] != null && x[1] !== "").map(([n, v]) => `<span>${n}</span><span>${v}</span>`).join("");
   const items = (o.items || []).map(i => `<tr><td>${esc(i.n || i.name)}</td><td class="n">${i.q || i.qty || ""} ${esc(i.u || "")}</td><td class="n">${i.price ? fmt(i.price) : ""}</td></tr>`).join("");
   const pays = d.payments.map(p => `<tr><td>${esc(p.provider)}</td><td>${p.status === "paid" ? '<span class="pill g">тўланган</span>' : esc(p.status)}</td><td class="n">${fmt(p.amount)}</td><td>${dt(p.paid_at || p.created_at)}</td></tr>`).join("");
-  const led = d.ledger.map(l => `<tr><td>${esc(l.kind)}</td><td class="n">${fmt(l.amount)}</td><td class="mu">${esc(l.note || "")}</td></tr>`).join("");
+  const led = d.ledger.map(l => `<tr><td>${esc(lk(l.kind))}</td><td class="n">${fmt(l.amount)}</td><td class="mu">${esc(l.note || "")}</td></tr>`).join("");
   const rfs = d.refunds.map(r => `<tr><td>${({ reserve:"Захира", item:"Товар", cancel:"Бекор", other:"Бошқа" })[r.kind]}</td><td class="n">${fmt(r.amount)}</td><td>${r.status === "done" ? '<span class="pill g">бажарилди</span>' : can("payout") ? `<button class="btn sm" data-rdone="${r.id}" data-close="1">Қайтардим</button>` : '<span class="pill y">кутилмоқда</span>'}</td></tr>`).join("");
   const opts = (rows, cur) => `<option value="">— йўқ —</option>` + (rows || []).filter(x => x.status === "active").map(x => `<option value="${x.id}">${esc(x.name)}${x.car ? " · " + esc(x.car) : ""}</option>`).join("");
   const assign = ppl ? `<div class="card"><h2>Тайинлаш / алмаштириш</h2>
