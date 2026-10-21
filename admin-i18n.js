@@ -579,7 +579,7 @@
 "энг эскиси": "самый старый"
 };
   var LANG = "uz";
-  try { LANG = localStorage.getItem("adm_lang") === "ru" ? "ru" : "uz"; } catch (e) {}
+  try { var _l = localStorage.getItem("adm_lang"); LANG = _l === "ru" || _l === "lat" ? _l : "uz"; } catch (e) {}
   var keys = Object.keys(LEX).sort(function (a, b) { return b.length - a.length; });
   var RX = new RegExp(keys.map(function (k) { return k.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&"); }).join("|"), "g");
   var LET = /[A-Za-zА-Яа-яЁёЎўҚқҒғҲҳ]/, HAS = /[А-Яа-яЁёЎўҚқҒғҲҳ]/;
@@ -591,15 +591,16 @@
       return LEX[m];
     });
   }
-  window.admTr = function (s) { return LANG === "ru" ? tr(String(s)) : s; };
+  function conv(s) { return LANG === "lat" ? window.cyr2lat(s) : tr(s); }
+  window.admTr = function (s) { return LANG === "uz" ? s : conv(String(s)); };
   var origText = new WeakMap(), origAttr = new WeakMap(), ATTRS = ["placeholder", "title", "aria-label"];
   var obs = null, busy = false;
-  function doText(n) { var cur = n.nodeValue, r = tr(cur); if (r !== cur) { origText.set(n, cur); n.nodeValue = r; } }
+  function doText(n) { var cur = n.nodeValue, r = conv(cur); if (r !== cur) { origText.set(n, cur); n.nodeValue = r; } }
   function doEl(el) {
     for (var i = 0; i < ATTRS.length; i++) {
       var a = ATTRS[i];
       if (el.hasAttribute && el.hasAttribute(a)) {
-        var cur = el.getAttribute(a), r = tr(cur);
+        var cur = el.getAttribute(a), r = conv(cur);
         if (r !== cur) { var o = origAttr.get(el) || {}; o[a] = cur; origAttr.set(el, o); el.setAttribute(a, r); }
       }
     }
@@ -619,7 +620,7 @@
   }
   function start() { obs.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS }); }
   function onMut(list) {
-    if (LANG !== "ru" || busy) return;
+    if (LANG === "uz" || busy) return;
     busy = true; obs.disconnect();
     try {
       for (var i = 0; i < list.length; i++) {
@@ -636,8 +637,9 @@
     var btn = document.getElementById("admLang");
     busy = true; obs.disconnect();
     try {
-      if (LANG === "ru") { walk(document.body); document.title = tr(origTitle); } else { restore(document.body); document.title = origTitle; }
-      if (btn) btn.textContent = LANG === "ru" ? "UZ" : "RU";
+      restore(document.body);
+      if (LANG !== "uz") { walk(document.body); document.title = conv(origTitle); } else document.title = origTitle;
+      if (btn) btn.textContent = LANG === "uz" ? "UZ" : LANG === "lat" ? "LAT" : "RU";
     } finally { start(); busy = false; }
   }
   function setLang(l) { LANG = l; try { localStorage.setItem("adm_lang", l); } catch (e) {} apply(); }
@@ -648,10 +650,11 @@
   });
   function init() {
     obs = new MutationObserver(onMut);
+    var st0 = document.createElement("style"); st0.textContent = "@keyframes lgp{0%,100%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 2px rgba(249,115,22,.55)}50%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 11px rgba(249,115,22,0)}}#lgBtn,#admLang,#langBtn{animation:lgp 1.8s ease-in-out infinite}@media(prefers-reduced-motion:reduce){#lgBtn,#admLang,#langBtn{animation:none}}"; document.head.appendChild(st0);
     var b = document.createElement("button");
     b.id = "admLang"; b.type = "button"; b.setAttribute("aria-label", "Til / Язык");
-    b.style.cssText = "position:fixed;right:10px;bottom:10px;z-index:60;min-width:46px;height:34px;padding:0 10px;border:1px solid #d6d9de;border-radius:17px;background:#fff;color:#222;font:700 13px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer";
-    b.addEventListener("click", function () { setLang(LANG === "ru" ? "uz" : "ru"); });
+    b.style.cssText = "position:fixed;right:10px;bottom:10px;z-index:60;min-width:46px;height:34px;padding:0 10px;border:1px solid #d6d9de;border-radius:17px;background:#F97316;color:#1B1F24;box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff;font:700 13px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer";
+    b.addEventListener("click", function () { setLang(LANG === "uz" ? "lat" : LANG === "lat" ? "ru" : "uz"); });
     document.body.appendChild(b);
     apply();
   }
