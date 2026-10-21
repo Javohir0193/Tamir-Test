@@ -22,9 +22,9 @@
     function YMap(el, opts) {
       var node = typeof el === "string" ? document.getElementById(el) : el;
       this._m = new ymaps.Map(node, { center: [41.3111, 69.2797], zoom: 12, controls: [] }, { suppressMapOpenBlock: true });
-      this._node = node;
+      this._node = node; var self = this; [100, 400, 1000].forEach(function (t) { setTimeout(function () { self.invalidateSize(); }, t); });
     }
-    YMap.prototype.setView = function (c, z) { this._m.setCenter(c, z == null ? this._m.getZoom() : z); return this; };
+    YMap.prototype.setView = function (c, z) { var self = this; this._m.setCenter(c, z == null ? this._m.getZoom() : z); [120, 500, 1200].forEach(function (t) { setTimeout(function () { self.invalidateSize(); }, t); }); return this; };
     YMap.prototype.getCenter = function () { var c = this._m.getCenter(); return { lat: c[0], lng: c[1] }; };
     YMap.prototype.invalidateSize = function () { try { this._m.container.fitToViewport(); } catch (e) {} };
     YMap.prototype.fitBounds = function (pts, o) {
