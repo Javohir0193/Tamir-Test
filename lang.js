@@ -1,5 +1,5 @@
-// Ta'mir: ҳайдовчи / йиғувчи / сотувчи иловалари учун 3 тил: Ўзбекча (кирилл) · Lotin · Русча.
-// Асос — ўзбекча матн. Лотин — автоматик (translit.js). Русча — луғат LEX (чапда ўзбекча, ўнгда русча).
+// Ta'mir: ҳайдовчи / йиғувчи / сотувчи иловалари учун 2 тил: Ўзбекча (кирилл) · Русча.
+// Асос — ўзбекча матн. Русча — луғат LEX (чапда ўзбекча, ўнгда русча).
 (function () {
   "use strict";
   var LEX = {
@@ -203,7 +203,7 @@
 "даги": "в",
 "Юкланмоқда…": "Загрузка…"
 };
-  var ORDER = ["uz", "lat", "ru"], LABEL = { uz:"UZ", lat:"LAT", ru:"RU" };
+  var ORDER = ["uz", "ru"], LABEL = { uz:"UZ", ru:"RU" };
   var LANG = "uz";
   try { var st = localStorage.getItem("app_lang"); if (ORDER.indexOf(st) > -1) LANG = st; } catch (e) {}
   var keys = Object.keys(LEX).sort(function (a, b) { return b.length - a.length; });
@@ -217,7 +217,7 @@
       return LEX[m];
     });
   }
-  function conv(s) { return LANG === "ru" ? ru(s) : LANG === "lat" ? window.cyr2lat(s) : s; }
+  function conv(s) { return LANG === "ru" ? ru(s) : s; }
   window.LG = { lang: function () { return LANG; }, tr: function (s) { return conv(String(s)); }, set: setLang };
   var origText = new WeakMap(), origAttr = new WeakMap(), ATTRS = ["placeholder", "title", "aria-label"];
   var obs = null, busy = false;
@@ -284,7 +284,7 @@
     var b = document.createElement("button");
     b.id = "lgBtn"; b.type = "button"; b.setAttribute("aria-label", "Til / Тил / Язык");
     b.style.cssText = "position:fixed;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:60;min-width:46px;height:34px;padding:0 10px;border:0;border-radius:16px;background:#F97316;color:#1B1F24;font:700 13px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff";
-    b.addEventListener("click", function () { setLang(ORDER[(ORDER.indexOf(LANG) + 1) % 3]); });
+    b.addEventListener("click", function () { setLang(ORDER[(ORDER.indexOf(LANG) + 1) % ORDER.length]); });
     document.body.appendChild(b);
     apply();
     if (LANG !== "uz") try { window.dispatchEvent(new Event("langchange")); } catch (e) {}
