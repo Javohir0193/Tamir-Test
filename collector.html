@@ -15,6 +15,7 @@
 <script src="translit.js"></script>
 <script src="lang.js"></script>
 <script src="sound.js"></script>
+<script src="hidehdr.js"></script>
 <script src="maps.js"></script>
 
 <script src="catalog.js"></script>
@@ -29,12 +30,12 @@
 
 :root{--bg:#F0F2F5;--card:#fff;--ink:#222;--muted:#7A808A;--line:#E3E6EB;--accent:#F97316;--ok:#1E9E5A;--warn:#D9822B;--bad:#C8463D}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.35 Rubik,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.35 Rubik,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:clip}
 input,button,select{font:inherit;color:inherit}
 input,select{font-size:16px!important}
 [hidden]{display:none!important}
 header{position:sticky;top:0;z-index:7;background:#F97316;color:#1B1F24;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-radius:0 0 18px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-header{padding-right:112px}header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
+header{padding-right:66px}header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
 header button{border:0;border-radius:10px;background:rgba(255,255,255,.92);color:#1B1F24;font:inherit;font-weight:600;font-size:13px;padding:7px 11px}
 .lg{max-width:360px;margin:12vh auto 0;text-align:center;padding:0 16px}.lg h1{font-size:24px}
 .wrap{max-width:680px;margin:0 auto;padding:10px 12px 150px}
@@ -85,17 +86,28 @@ nav button[aria-current="page"]{color:var(--ink);font-weight:600}
 .toast.show{opacity:1}
 .msg{background:var(--card);border-radius:14px;padding:20px;text-align:center;color:var(--muted);margin-top:24px}
 a{color:inherit}
+
+header nav{position:static;display:flex;flex:none;gap:2px;padding:0;border:0;background:transparent;grid-template-columns:none}
+header nav[hidden]{display:none}
+header nav button{flex-direction:row;padding:7px 9px;border-radius:12px;font-size:0;line-height:0;color:rgba(27,31,36,.72);gap:0}
+header nav button b{font-size:22px;line-height:1;display:inline-flex}
+header nav button .sk{width:24px!important;height:24px!important;margin:0!important}header nav button svg,header nav button b svg{width:24px!important;height:24px!important}header nav button{padding:6px 8px}
+header nav button[aria-current="page"]{background:#fff;color:#1B1F24;box-shadow:0 1px 4px rgba(0,0,0,.14)}
+header b:first-child{flex:none;font-size:17px}
+header #hme{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+@media(max-width:430px){header #hme{display:none}header b:first-child{flex:1}}
+@media(min-width:700px){header nav button{font-size:14px;line-height:1.2;font-weight:600;gap:6px;padding:7px 12px}}
+header #hout{display:grid;place-items:center;width:36px;height:32px;padding:0;flex:none}.sticky{bottom:54px!important}.wrap{padding-bottom:130px!important}
 </style>
 </head>
 <body>
-<header id="hdr" hidden><b>Ta'mir · Йиғувчи</b><span id="hme"></span><button id="hout" hidden>Чиқиш</button></header>
-<div class="wrap" id="app"><div class="msg">Юкланмоқда…</div></div>
-<div class="sticky" id="sticky" hidden></div>
-<nav id="nav" hidden>
+<header id="hdr" hidden><b>Ta'mir</b><nav id="nav" hidden>
   <button data-tab="orders"><b>🧺</b>Буюртмалар</button>
   <button data-tab="prices"><b>🏷</b>Нархлар</button>
   <button data-tab="shops"><b>🏪</b>Дўконлар</button>
-</nav>
+</nav><span id="hme"></span><button id="hout" hidden aria-label="Чиқиш" title="Чиқиш"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg></button></header>
+<div class="wrap" id="app"><div class="msg">Юкланмоқда…</div></div>
+<div class="sticky" id="sticky" hidden></div>
 <div class="toast" id="toast"></div>
 <script>
 // Кабинет йиғувчи (сборщика рынка). Открывается из бота @tamir_sotuvchi_bot.
