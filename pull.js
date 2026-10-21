@@ -13,7 +13,7 @@
   function measure() { var d = document.createElement("div"); d.style.cssText = "position:fixed;top:0;height:env(safe-area-inset-top,0px);visibility:hidden"; document.body.appendChild(d); SA = d.offsetHeight; d.remove(); }
   function blocked(t) {
     for (var n = t; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName) || (n.classList && (n.classList.contains("dmap") || n.classList.contains("leaflet-container"))) || n.hasAttribute("data-nopull")) return true;
+      if (/^(INPUT|TEXTAREA|SELECT|BUTTON|A|LABEL)$/.test(n.tagName) || (n.classList && (n.classList.contains("dmap") || n.classList.contains("leaflet-container"))) || n.hasAttribute("data-nopull")) return true;
       var cs = getComputedStyle(n); if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight && n.scrollTop > 0) return true;
     }
     return false;
@@ -47,7 +47,8 @@
     var d = e.touches[0].clientY - y0;
     if (d <= 0) { if (dy) { dy = 0; frame(0); } return; }
     if ((window.scrollY || 0) > 0) { y0 = null; setTr(true); apply(0); return; }
-    if (e.cancelable && d > 4) e.preventDefault();
+    if (d < 12) return;            // кичик силжиш — бу тап, босиш бекор бўлмасин
+    if (e.cancelable) e.preventDefault();
     dy = MAXV * (1 - Math.exp(-d / 170));          // табиий қаршилик (резина)
     frame(dy);
   }
