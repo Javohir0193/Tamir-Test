@@ -5,7 +5,7 @@
 (function () {
   var ENVS = {
     prod: { supabaseUrl: "https://agajmytkjpkihvaurqij.supabase.co", supabaseKey: "sb_publishable_vRb_dyiYUyPWNE9sIpDt8A_OM-64Nfi", ymapsKey: "" },
-    test: { supabaseUrl: "https://mlhhmohaxpetptmrtqrz.supabase.co", supabaseKey: "sb_publishable_J25T7bWC4ITRQ8NAZUg0sg_k_jys38i", ymapsKey: "" }   // синов лойиҳаси: Project URL ва publishable key
+    test: { supabaseUrl: "https://mlhhmohaxpetptmrtqrz.supabase.co", supabaseKey: "sb_publishable_J25T7bWC4ITRQ8NAZUg0sg_k_jys38i", ymapsKey: "faf7991b-8dd4-4fda-a8d8-7da051fc726d" }   // синов лойиҳаси: Project URL ва publishable key
   };
   var TEST_HOSTS = ["tamir-test.netlify.app"];                             // масалан: ["tamir-test.netlify.app"]
   var h = location.hostname, env = TEST_HOSTS.indexOf(h) >= 0 || /(^|\.)tamir-test/i.test(h) || /\/tamir-test(\/|$)/i.test(location.pathname) ? "test" : "prod";
