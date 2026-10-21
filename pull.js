@@ -8,7 +8,14 @@
     "#pullEl svg{width:24px;height:24px;color:#F97316}" +
     "#pullEl.spin svg{animation:pullspin .8s linear infinite}@keyframes pullspin{to{transform:rotate(360deg)}}" +
     "#pullEl.back{transition:transform .35s cubic-bezier(.2,.9,.3,1.2),opacity .3s}";
-  function start(e) { if (busy) return; if ((window.scrollY || 0) > 0 || document.querySelector(".pick,.sheet,#sheet")) { y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; }
+  function blocked(t) {
+    for (var n = t; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName) || (n.classList && (n.classList.contains("dmap") || n.classList.contains("leaflet-container"))) || n.hasAttribute("data-nopull")) return true;
+      var cs = getComputedStyle(n); if (/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight && n.scrollTop > 0) return true;
+    }
+    return false;
+  }
+  function start(e) { if (busy) return; if ((window.scrollY || 0) > 0 || blocked(e.target) || document.querySelector(".pick,.sheet,#sheet")) { y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; }
   function move(e) {
     if (y0 === null || busy) return;
     var d = e.touches[0].clientY - y0;
