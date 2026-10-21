@@ -1,0 +1,11 @@
+# gitleaks созламаси: стандарт қоидалар + сайтга очиқ қўйиладиган калитлар истисно.
+# Фақат PUBLISHABLE (очиқ) калитлар шу ерда. Махфий (secret / service_role) калит ҳеч қачон истисно қилинмайди.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Сайтга очиқ қўйиладиган калитлар (config.js)"
+regexes = [
+  '''sb_publishable_[A-Za-z0-9_-]+''',
+  '''faf7991b-8dd4-4fda-a8d8-7da051fc726d''',
+]

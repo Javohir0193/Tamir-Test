@@ -1,0 +1,10 @@
+# Махфий ва вақтинчалик файллар git'га тушмасин
+.env
+.env.*
+*.local
+supabase/.temp/
+supabase/.branches/
+node_modules/
+.DS_Store
+Thumbs.db
+*.csv

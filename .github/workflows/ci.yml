@@ -1,0 +1,33 @@
+# Ҳар бир push ва PR'да оддий текширувлар. Натижа: GitHub → Actions.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: JS файллар синтаксиси
+        run: for f in *.js scripts/*.mjs; do node --check "$f" || exit 1; done
+
+      - name: HTML ичидаги скриптлар синтаксиси
+        run: node scripts/check-inline.mjs
+
+      - name: Уланган файллар мавжудлиги
+        run: node scripts/check-refs.mjs
+
+      - name: Махфий калитлар (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 detect --source /repo --redact -v
