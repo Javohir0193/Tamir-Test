@@ -14,6 +14,7 @@
 <script src="icons.js"></script>
 <script src="translit.js"></script>
 <script src="lang.js"></script>
+<script src="sound.js"></script>
 <script src="maps.js"></script>
 
 <script src="catalog.js"></script>
@@ -33,7 +34,7 @@ input,button,select{font:inherit;color:inherit}
 input,select{font-size:16px!important}
 [hidden]{display:none!important}
 header{position:sticky;top:0;z-index:7;background:#F97316;color:#1B1F24;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-radius:0 0 18px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-header{padding-right:70px}header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
+header{padding-right:112px}header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
 header button{border:0;border-radius:10px;background:rgba(255,255,255,.92);color:#1B1F24;font:inherit;font-weight:600;font-size:13px;padding:7px 11px}
 .lg{max-width:360px;margin:12vh auto 0;text-align:center;padding:0 16px}.lg h1{font-size:24px}
 .wrap{max-width:680px;margin:0 auto;padding:10px 12px 150px}
@@ -313,7 +314,7 @@ document.addEventListener("change", async e => {
 document.addEventListener("input", e => { if (e.target.id === "pq") { S.pq = e.target.value; const pos = e.target.selectionStart; render(); const q = $("pq"); q.focus(); q.setSelectionRange(pos, pos); } });
 
 let LASTSIG = null, SEEN = new Set(), PB = false, LASTFULL = Date.now();
-function beepC(){ try { const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = .2; o.start(); setTimeout(() => { o.stop(); a.close(); }, 350); } catch (e) {} try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {} }
+function beepC(){ if (window.SND) SND.play(); }
 async function pingTick(force){
   if (PB || (document.hidden && !force)) return; PB = true;
   try {
