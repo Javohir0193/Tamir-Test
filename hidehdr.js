@@ -20,8 +20,9 @@
     h = document.querySelector("header"); if (!h) return;
     var st = document.createElement("style");
     st.textContent = "header{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s;will-change:transform}header.hh-hide{transform:translateY(-115%);box-shadow:none!important}" +
-      "body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);background:#F97316;z-index:49;pointer-events:none}";
+      "";
     document.head.appendChild(st);
+    var bd = document.createElement("div"); bd.id = "sabar"; bd.style.cssText = "position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top,0px);background:#F97316;z-index:49;pointer-events:none;transition:opacity .2s"; document.body.appendChild(bd);
     window.addEventListener("scroll", onScroll, { passive: true });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
