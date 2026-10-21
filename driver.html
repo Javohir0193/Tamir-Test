@@ -126,7 +126,7 @@ function draw(){
   else { const e = d.earn || {}; body = `<div class="card"><h2>Ҳисоб</h2><div class="kv"><span>Тўланиши керак</span><b>${fmt(e.due)} сўм</b><span>Кутилмоқда (24 соат / мижоз тасдиғи)</span><b>${fmt((e.waiting || 0) + (e.held || 0))} сўм</b><span>Тўланган</span><b>${fmt(e.paid)} сўм</b></div>
     <p class="mu">Ҳақ буюртма етказилгач, мижоз «Олдим» деганда ёки 24 соатдан кейин «Тўланиши керак»га ўтади.</p></div>
     <div class="card"><div class="row" style="margin:0"><button class="btn alt" id="notif">🔔 Огоҳлантиришга рухсат</button><button class="btn alt" id="out">Чиқиш</button></div></div>`; }
-  $("app").innerHTML = `<header><h1>${IC.i("truck",22)} ${esc(d.me.name)}</h1><small>${esc(d.me.car || "")}${d.me.fleet ? " · " + esc(d.me.fleet) : " · паркка бириктирилмаган"}</small></header>
+  $("app").innerHTML = `<header><h1>${IC.i("truck",22)} ${esc(d.me.name || "Ҳайдовчи")}</h1><small>${esc(d.me.car || "")}${d.me.fleet ? " · " + esc(d.me.fleet) : " · паркка бириктирилмаган"}</small></header>
   <div class="tabs"><button data-t="open" class="${S.tab === "open" ? "on" : ""}">${IC.i("list",18)} Очиқ${open.length ? `<i>${open.length}</i>` : ""}</button><button data-t="mine" class="${S.tab === "mine" ? "on" : ""}">${IC.i("box",18)} Менинг${act.length ? `<i>${act.length}</i>` : ""}</button><button data-t="map" class="${S.tab === "map" ? "on" : ""}">${IC.i("map",18)} Харита</button><button data-t="earn" class="${S.tab === "earn" ? "on" : ""}">${IC.i("wallet",18)} Ҳисоб</button></div><main>${body}</main>`;
   if (S.tab === "map") mountMap();
   window.scrollTo(0, sy);

@@ -163,7 +163,7 @@ const STG = ["Қабул қилинди", "Олинди", "Йиғилмоқда"
 // ---------- Буюртмалар ----------
 function ordersHTML(){
   const d = S.d;
-  return `<h1>🧺 Салом, ${esc(d.me.name)}!</h1>${d.me.market ? `<div class="muted" style="margin:-6px 0 8px">🏬 ${esc(d.me.market)}</div>` : ""}
+  return `<h1>🧺 Салом${d.me.name ? ", " + esc(d.me.name) : ""}!</h1>${d.me.market ? `<div class="muted" style="margin:-6px 0 8px">🏬 ${esc(d.me.market)}</div>` : ""}
     <h2>Янги буюртмалар (${d.open.length})</h2>
     ${d.open.map(o => `<div class="card"><div class="row"><div class="sp"><b>№${o.no}</b> · ${o.n} та товар · ${fmt(o.total)} сўм
       <div class="muted">🕒 ${esc(o.slot)}${o.address ? " · 📍 " + esc(o.address) : ""}</div></div>
