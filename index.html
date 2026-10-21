@@ -468,6 +468,7 @@ html,body{overflow-x:hidden}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
+<script src="icons.js"></script>
 <script src="maps.js"></script>
 <script src="catalog.js"></script>
 <script>
@@ -1684,9 +1685,9 @@ async function mountMaps(keep){
     if (m && old){ box.replaceWith(old); m.el = old; }
     else {
       const map = L.map(box, { zoomControl:false, attributionControl:true }); tiles(map);
-      const home = o.lat ? L.marker([o.lat, o.lng], { icon:icon("🅱️", "home") }).addTo(map) : null;
-      const car = L.marker([o.dlat, o.dlng], { icon:icon("🚚", "car") }).addTo(map);
-      if (o.pickLat) L.marker([o.pickLat, o.pickLng], { icon:icon("🅰️", "home") }).addTo(map);
+      const home = o.lat ? L.marker([o.lat, o.lng], { icon:icon(IC.marker("B"), "home") }).addTo(map) : null;
+      const car = L.marker([o.dlat, o.dlng], { icon:icon(IC.marker("truck"), "car") }).addTo(map);
+      if (o.pickLat) L.marker([o.pickLat, o.pickLng], { icon:icon(IC.marker("A"), "home") }).addTo(map);
       m = { el:box, map, car, home }; MAPS.set(no, m);
     }
     m.car.setLatLng([o.dlat, o.dlng]);
@@ -1700,8 +1701,8 @@ async function mountMaps(keep){
 async function pickMap(){
   const ov = document.createElement("div"); ov.className = "pick";
   ov.innerHTML = `<div class="pick-top"><b>Куда привезти?</b><button class="x" type="button" data-pickx aria-label="Закрыть">✕</button></div>
-    <div class="pick-mw"><div class="pick-map" id="pickMap"></div><div class="pin">📍</div></div>
-    <div class="pick-bot"><button class="btn alt" type="button" data-pickme>🎯 Моё местоположение</button><button class="btn" type="button" data-pickok>Готово — привезти сюда</button>
+    <div class="pick-mw"><div class="pick-map" id="pickMap"></div><div class="pin">${IC.pin()}</div></div>
+    <div class="pick-bot"><button class="btn alt" type="button" data-pickme>${IC.i("locate",18)} Моё местоположение</button><button class="btn" type="button" data-pickok>Готово — привезти сюда</button>
     <small>Передвиньте карту так, чтобы 📍 стояла у вашего дома или подъезда.</small></div>`;
   document.body.appendChild(ov);
   try { await loadLeaflet(); } catch(e){ ov.querySelector("#pickMap").textContent = "Карта не загрузилась. Проверьте интернет."; return; }

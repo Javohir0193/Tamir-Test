@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
+<script src="icons.js"></script>
 <script src="maps.js"></script>
 
 <script src="catalog.js"></script>
@@ -232,8 +233,8 @@ function loadLeaflet(){ if (window.TAMIR_YMAPS) return loadYandexAsL(); if (wind
 async function pickPoint(onOk){
   const ov = document.createElement("div"); ov.className = "pick";
   ov.innerHTML = `<div class="pick-top"><b>Юк қаерда ортилади?</b><button class="x" type="button" id="pkx">✕</button></div>
-    <div class="pick-mw"><div class="pick-map" id="pkMap"></div><div class="pin">📍</div></div>
-    <div class="pick-bot"><button class="btn ghost" type="button" id="pkme">🎯 Менинг жойим</button><button class="btn dark" type="button" id="pkok">Тайёр — паркка бериш</button>
+    <div class="pick-mw"><div class="pick-map" id="pkMap"></div><div class="pin">${IC.pin()}</div></div>
+    <div class="pick-bot"><button class="btn ghost" type="button" id="pkme">${IC.i("locate",18)} Менинг жойим</button><button class="btn dark" type="button" id="pkok">Тайёр — паркка бериш</button>
     <small>Харитани суриб, 📍 юк ортиладиган жойда турсин.</small></div>`;
   document.body.appendChild(ov);
   const close = () => ov.remove(); ov.querySelector("#pkx").onclick = close;
