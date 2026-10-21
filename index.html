@@ -468,6 +468,7 @@ html,body{overflow-x:hidden}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
+<script src="maps.js"></script>
 <script src="catalog.js"></script>
 <script>
 // ===== Настройки магазина =====
@@ -1636,6 +1637,7 @@ function helpBox(o){
 const LEAF = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/";
 let leafletP = null;
 function loadLeaflet(){
+  if (window.TAMIR_YMAPS) return loadYandexAsL();
   if (window.L) return Promise.resolve();
   if (!leafletP) leafletP = new Promise((res, rej) => {
     const l = document.createElement("link"); l.rel = "stylesheet"; l.href = LEAF + "leaflet.min.css"; document.head.appendChild(l);

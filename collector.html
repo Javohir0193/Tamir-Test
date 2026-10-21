@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
+<script src="maps.js"></script>
 
 <script src="catalog.js"></script>
 <style>
@@ -223,7 +224,7 @@ function render(){
 async function refreshData(){ try { await load(); if (!document.activeElement || !document.activeElement.matches("input,select")) render(); } catch (e) {} }
 async function loadShopOffers(id){ S.shopOffers = id && id !== "new" ? (await call({ action:"c_offers", shop_id:+id })).offers : {}; }
 const LEAF = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/"; let leafletP = null;
-function loadLeaflet(){ if (window.L) return Promise.resolve();
+function loadLeaflet(){ if (window.TAMIR_YMAPS) return loadYandexAsL(); if (window.L) return Promise.resolve();
   if (!leafletP) leafletP = new Promise((res, rej) => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = LEAF + "leaflet.min.css"; document.head.appendChild(l);
     const sc = document.createElement("script"); sc.src = LEAF + "leaflet.min.js"; sc.onload = res; sc.onerror = () => { leafletP = null; rej(new Error("map")); }; document.head.appendChild(sc); });
   return leafletP; }
