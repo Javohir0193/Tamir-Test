@@ -27,18 +27,9 @@
       if (!off) { unlock(); play(); }
       var t = document.getElementById("toast"); if (t) { t.textContent = off ? "Овоз ўчирилди" : "Овоз ёқилди"; t.classList.add("show"); setTimeout(function () { t.classList.remove("show"); }, 1400); }
     });
-    document.body.appendChild(b);
+    var hd = document.getElementById("hdr"), ho = document.getElementById("hout");
+    if (hd) hd.insertBefore(b, ho || null); else document.body.appendChild(b);   // хедер бор саҳифада — унинг ичида, бошқаларда — ўнг тепада
   }
-  // Янги буюртма бор экан, қўнғироқ тугмаси ёниб-ўчиб туради
-  function alert(on) {
-    var b = document.getElementById("sndBtn"); if (!b) return;
-    if (!document.getElementById("sndCss")) {
-      var st = document.createElement("style"); st.id = "sndCss";
-      st.textContent = "@keyframes sndGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.9),0 0 0 0 rgba(255,214,102,.8)}50%{box-shadow:0 0 0 5px rgba(255,255,255,.35),0 0 14px 6px rgba(255,214,102,.95)}}@keyframes sndSwing{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}40%{transform:rotate(-12deg)}60%{transform:rotate(8deg)}80%{transform:rotate(-6deg)}}#sndBtn.snd-alert{animation:sndGlow 1.2s ease-in-out infinite;background:#FFE08A!important}#sndBtn.snd-alert svg{animation:sndSwing 1.2s ease-in-out infinite;transform-origin:50% 10%}";
-      document.head.appendChild(st);
-    }
-    b.classList.toggle("snd-alert", !!on);
-  }
-  window.SND = { play: play, alert: alert, isOff: function () { return off; } };
+  window.SND = { play: play, isOff: function () { return off; } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
