@@ -169,12 +169,11 @@ function pinView(err){
 }
 function setPinView(err){
   $("app").innerHTML = LBAR + `<div class="login card"><h2>Янги PIN ўрнатиш</h2><p class="mu">6–12 та рақам. Уни ҳеч кимга айтманг.</p><p class="err" id="pe">${esc(err || "")}</p>
-    <p><input id="oc" type="password" placeholder="Эски админ коди (фақат эга биринчи марта)" autocomplete="off" style="width:100%"></p>
     <p><input id="p1" type="password" inputmode="numeric" placeholder="Янги PIN" autocomplete="off" style="width:100%"></p>
     <p><input id="p2" type="password" inputmode="numeric" placeholder="PIN'ни такрорланг" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Сақлаш</button></div>`;
   $("go").onclick = async () => {
     if ($("p1").value !== $("p2").value) { $("pe").textContent = "PIN'лар бир хил эмас"; return; }
-    const r = await sb.rpc("admin_set_pin", { p_code:$("oc").value.trim() || null, p_pin:$("p1").value.trim() });
+    const r = await sb.rpc("admin_set_pin", { p_code:CODE || null, p_pin:$("p1").value.trim() });
     if (r.error) { $("pe").textContent = errText(r.error); return; }
     pinView("PIN ўрнатилди. Энди кириш.");
   };
