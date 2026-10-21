@@ -75,10 +75,10 @@ function beep(){ try { const a = new (window.AudioContext || window.webkitAudioC
 function alertNew(n){ beep(); try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {}
   try { if ("Notification" in window && Notification.permission === "granted") new Notification("Ta'mir", { body:"Янги буюртма №" + n.no + " · ҳақ " + fmt(n.fee) + " сўм" }); } catch (e) {} }
 async function load(){
-  try { S.d = await rpc("drv_orders", { p_session:SES });
+  try { const nd = await rpc("drv_orders", { p_session:SES }), raw = JSON.stringify(nd), same = raw === S.raw && S.d; S.raw = raw; S.d = nd;
     const open = S.d.open || [];
     for (const o of open) { if (!S.seen.has(o.no)) { S.seen.add(o.no); if (!S.first) alertNew(o); } }
-    S.first = false; draw(); trackLoc();
+    S.first = false; if (!same) draw(); trackLoc(); refreshMap();
   } catch (e) { if (e.auth) { SES = ""; try { localStorage.removeItem("drv_ses"); } catch (x) {} loginView("Сессия тугади, қайта киринг."); } else if (!S.d) loginView(e.message); }
 }
 const nav = (lat, lng) => lat ? `https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto` : "";
@@ -106,7 +106,7 @@ function mineCard(o){
   ${done ? "" : `<div class="row">${go ? `<button class="btn" data-go="${o.no}" ${allL ? "" : "disabled"}>🚚 Йўлга чиқдим${allL ? "" : " (" + o.lines.filter(l => l.loaded).length + "/" + o.lines.length + ")"}</button>` : `<button class="btn g" data-dn="${o.no}">✅ Топширдим</button>`}</div>`}</div>`;
 }
 function draw(){
-  const d = S.d; if (!d) return;
+  const d = S.d; if (!d) return; const sy = window.scrollY;
   const open = d.open || [], mine = d.mine || [], act = mine.filter(o => o.stage < 4);
   let body = "";
   if (S.tab === "open") body = open.length ? open.map(openCard).join("") : `<div class="card center mu">Ҳозир очиқ буюртма йўқ.<br>Янгиси тушганда овоз чиқади (илова очиқ бўлса).</div>`;
@@ -120,10 +120,12 @@ function draw(){
   $("app").innerHTML = `<header><h1>🚚 ${esc(d.me.name)}</h1><small>${esc(d.me.car || "")}${d.me.fleet ? " · " + esc(d.me.fleet) : " · паркка бириктирилмаган"}</small></header>
   <div class="tabs"><button data-t="open" class="${S.tab === "open" ? "on" : ""}">Очиқ${open.length ? `<i>${open.length}</i>` : ""}</button><button data-t="mine" class="${S.tab === "mine" ? "on" : ""}">Менинг${act.length ? `<i>${act.length}</i>` : ""}</button><button data-t="map" class="${S.tab === "map" ? "on" : ""}">🗺 Харита</button><button data-t="earn" class="${S.tab === "earn" ? "on" : ""}">Ҳисоб</button></div><main>${body}</main>`;
   if (S.tab === "map") mountMap();
+  window.scrollTo(0, sy);
 }
 async function act(fn, ok){ if (S.busy) return; S.busy = true; try { const r = await fn(); await load(); if (ok) toast(ok); return r; } catch (e) { toast(e.message); } finally { S.busy = false; } }
 document.addEventListener("click", e => {
   const t = e.target.closest("button,input,a"); if (!t) return;
+  if (t.tagName === "BUTTON" && (t.dataset.claim || t.dataset.go || t.dataset.dn) && !t.disabled) { t.disabled = true; t.classList.remove("pulse"); t.dataset.txt = t.textContent; t.textContent = "⏳ …"; setTimeout(() => { if (document.body.contains(t)) { t.disabled = false; t.textContent = t.dataset.txt; } }, 8000); }
   if (t.dataset.t) { S.tab = t.dataset.t; draw(); return; }
   if (t.dataset.claim) { act(async () => { const ok = await rpc("drv_claim", { p_session:SES, p_no:+t.dataset.claim }); if (!ok) throw new Error("Бу буюртмани бошқа ҳайдовчи олди."); S.tab = "mine"; }, "Сизники! Товарларни юкланг."); return; }
   if (t.dataset.go) { act(async () => { const r = await rpc("drv_go", { p_session:SES, p_no:+t.dataset.go }); if (r !== "ok") throw new Error(r === "not_loaded" ? "Ҳали юкланмаган товар бор." : "Бажариб бўлмади."); S.tab = "map"; }, "Оқ йўл! Харита очилди 🗺"); return; }
