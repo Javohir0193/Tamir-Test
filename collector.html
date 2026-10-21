@@ -32,11 +32,11 @@
 
 :root{--bg:#F0F2F5;--card:#fff;--ink:#222;--muted:#7A808A;--line:#E3E6EB;--accent:#F97316;--ok:#1E9E5A;--warn:#D9822B;--bad:#C8463D}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.35 Rubik,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:clip}
+html{overflow-x:hidden}html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.35 Rubik,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:visible}
 input,button,select{font:inherit;color:inherit}
 input,select{font-size:16px!important}
 [hidden]{display:none!important}
-header{position:sticky;top:0;z-index:7;background:#F97316;color:#1B1F24;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-radius:0 0 18px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+header{position:sticky;top:0;z-index:7;background:#F97316;color:#1B1F24;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-radius:0;box-shadow:0 2px 10px rgba(0,0,0,.08)}
 header{padding-right:66px}header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
 header button{border:0;border-radius:10px;background:rgba(255,255,255,.92);color:#1B1F24;font:inherit;font-weight:600;font-size:13px;padding:7px 11px}
 .lg{max-width:360px;margin:12vh auto 0;text-align:center;padding:0 16px}.lg h1{font-size:24px}
@@ -99,7 +99,16 @@ header b:first-child{flex:none;font-size:17px}
 header #hme{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
 @media(max-width:430px){header #hme{display:none}header b:first-child{flex:1}}
 @media(min-width:700px){header nav button{font-size:14px;line-height:1.2;font-weight:600;gap:6px;padding:7px 12px}}
-header #hout{display:grid;place-items:center;width:36px;height:32px;padding:0;flex:none}.sticky{bottom:54px!important}.wrap{padding-bottom:130px!important}
+header #hout{display:grid;place-items:center;width:36px;height:32px;padding:0;flex:none}@media(max-width:699px){
+header{flex-wrap:wrap;row-gap:4px;padding-bottom:8px}
+header b:first-child{flex:1}
+header nav{order:3;flex:0 0 100%;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:0}
+header nav[hidden]{display:none}
+header nav button{flex-direction:column;gap:2px;padding:6px 2px 5px;font-size:11.5px;line-height:1.15;font-weight:600;justify-content:center;white-space:nowrap}
+header nav button b{font-size:inherit}
+header nav button .sk{width:22px!important;height:22px!important}
+}
+.sticky{bottom:54px!important}.wrap{padding-bottom:130px!important}
 </style>
 </head>
 <body>
