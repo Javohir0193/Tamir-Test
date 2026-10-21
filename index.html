@@ -677,7 +677,7 @@ Object.keys(S.cart).forEach(k => { if (!byId(+k)) delete S.cart[k]; });   // у�
 const saveCart = () => saveJSON("cart", S.cart);
 const saveOrders = () => saveJSON("orders", S.orders);
 const qty = id => S.cart[id] || 0;
-function setQty(id, n){ if (n > 0 && !S.cart[id]) logEvent("cart_add", { id }); if (n <= 0) delete S.cart[id]; else S.cart[id] = n; if (!Object.keys(S.cart).length) S.pending = {}; saveCart(); refresh(); }
+function setQty(id, n){ if (n > 0 && !S.cart[id]) logEvent("cart_add", { id }); if (n <= 0) delete S.cart[id]; else S.cart[id] = n; if (!Object.keys(S.cart).length) S.pending = {}; saveCart(); refresh(id); }
 const cartCount = () => Object.values(S.cart).reduce((a, b) => a + b, 0);
 function totals(){
   let goods = 0, work = 0;
@@ -712,7 +712,7 @@ function listHTML(){
     : S.cat !== "all" ? p.cat === S.cat : (S.grp === "all" || grpCats(S.grp).includes(p.cat))));
   if (!items.length) return `<div class="empty">Ничего не найдено. Попробуйте другое слово или категорию.</div>`;
   return `<div class="grid">` + items.map(p => `
-    <article class="card">
+    <article class="card" data-pid="${p.id}">
       <div class="pic" style="--c:${catColor(p.cat)}" aria-hidden="true">${p.e}</div>
       <div class="body">
         <h3>${p.n}</h3><p class="spec">${p.s}</p>
@@ -1794,10 +1794,20 @@ function homeRes(){
   const box = document.getElementById("hsres"); if (!box) return;
   const h = homeResHTML(); box.innerHTML = h; box.hidden = !h;
 }
-function refresh(){
+// Каталогда фақат ўзгарган карточканинг тугмасини янгилаймиз (бутун рўйхатни қайта чизмаймиз).
+function patchCard(id){
+  const l = document.getElementById("list"), art = l && l.querySelector(`[data-pid="${id}"]`);
+  if (!art) return false;
+  const body = art.querySelector(".body"), step = body.querySelector(".step"), n = qty(id);
+  if (n && step){ const inp = step.querySelector("input"); if (inp && document.activeElement !== inp) inp.value = n; return true; }
+  const old = step || body.querySelector("[data-add]"); if (!old) return false;
+  const tmp = document.createElement("div"); tmp.innerHTML = n ? stepper(id) : `<button class="btn" data-add="${id}">В корзину</button>`;
+  old.replaceWith(tmp.firstElementChild); return true;
+}
+function refresh(id){
   updateBadge();
   if (S.tab === "home") homeRes();
-  if (S.tab === "catalog"){ const l = document.getElementById("list"); if (l) l.innerHTML = listHTML(); }
+  if (S.tab === "catalog"){ if (id != null && patchCard(id)) return; const l = document.getElementById("list"); if (l) l.innerHTML = listHTML(); }
   else if (S.tab === "cart") renderCart();
 }
 function show(tab){
