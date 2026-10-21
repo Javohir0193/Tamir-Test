@@ -436,6 +436,13 @@ html,body{overflow-x:hidden}
 .ap .e{width:40px;height:40px;font-size:20px;border-radius:12px}.ap{font-size:11.5px;gap:4px}.myr{padding:10px;gap:6px}.myr-g button{padding:7px 9px}.myr-sum span{font-size:17px}.csearch{height:38px}.h-top{padding:6px 0 4px}main.home{padding-top:2px}}
 .pbar{display:block;height:6px;border-radius:99px;background:#E2E5EA;overflow:hidden;margin-top:6px}
 .pbar i{display:block;height:100%;background:#1E9E5A}
+
+/* ---- v85: брендли тўқ сариқ юқори қисм: логотипдан қидирув сатригача ---- */
+header{background:var(--accent)!important}
+.langbtn{background:rgba(255,255,255,.92)!important}
+main:has(.heroband){padding-top:0}
+.heroband{background:var(--accent);margin:0 -14px 14px;padding:4px 14px 16px;border-radius:0 0 24px 24px}
+.heroband .csearch{margin:0;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 </style>
 </head>
 <body>
@@ -903,7 +910,7 @@ function renderHome(){
   const ap = (id) => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${t.e}</span>${t.name}</button>`; };
   const active = (S.orders || []).filter(o => o.stage < stagesFor(o).length - 1).length;
   document.getElementById("view").innerHTML = `<div class="app wide">
-    <form class="csearch" id="homesearch" style="margin:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="homeq" type="search" placeholder="Найти: цемент, плитка, краска…" aria-label="Поиск по каталогу" autocomplete="off"></form>
+    <div class="heroband"><form class="csearch" id="homesearch" style="margin:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="homeq" type="search" placeholder="Найти: цемент, плитка, краска…" aria-label="Поиск по каталогу" autocomplete="off"></form></div>
     <div id="hsres" class="hsres" hidden></div>
     ${m && !S.mkOpen ? `<div class="th"><h2 class="t">Ваш рынок</h2><button class="lnk" data-mkopen>Другой рынок ›</button></div>
     <div class="mkl">${mkCard(m)}</div>`
