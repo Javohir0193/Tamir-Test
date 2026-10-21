@@ -1,0 +1,47 @@
+# Ҳар кеча test базанинг тўлиқ бэкапи (Supabase бепул тарифида автоматик бэкап йўқ).
+# Иккита махфий калит керак: GitHub → Settings → Secrets and variables → Actions:
+#   SUPABASE_DB_URL     — Supabase → Connect → «Session pooler» URI (паролли)
+#   BACKUP_PASSPHRASE   — ўзингиз ўйлаб топган узун парол (бэкап шу билан шифрланади)
+# Калитлар қўйилмагунча workflow ҳеч нарса қилмайди. Репозиторий очиқ, шунинг учун файл фақат шифрланган ҳолда сақланади.
+# Тиклаш: артефактни юклаб, gpg -d backup.sql.gz.gpg | gunzip > backup.sql, кейин янги базада psql -f backup.sql
+name: Backup
+
+on:
+  schedule:
+    - cron: "15 22 * * *"   # Тошкент вақти 03:15
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    env:
+      DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      PASS: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Калитлар борми
+        id: chk
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$PASS" ]; then echo "Калитлар қўйилмаган, ўтказиб юборилди"; echo "run=no" >> "$GITHUB_OUTPUT"; else echo "run=yes" >> "$GITHUB_OUTPUT"; fi
+      - name: pg_dump 17 ўрнатиш
+        if: steps.chk.outputs.run == 'yes'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-17
+      - name: Бэкап ва шифрлаш
+        if: steps.chk.outputs.run == 'yes'
+        run: |
+          set -o pipefail
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" --no-owner --no-privileges --schema=public --schema=ops \
+            | gzip -9 | gpg --batch --yes --pinentry-mode loopback --passphrase "$PASS" --symmetric --cipher-algo AES256 -o backup.sql.gz.gpg
+          ls -l backup.sql.gz.gpg
+      - uses: actions/upload-artifact@v4
+        if: steps.chk.outputs.run == 'yes'
+        with:
+          name: tamir-test-backup-${{ github.run_id }}
+          path: backup.sql.gz.gpg
+          retention-days: 7
