@@ -1,0 +1,24 @@
+# Netlify хавфсизлик сарлавҳалари. Netlify бу файлни сайт илдизидан ўзи ўқийди.
+# CSP ҳозирча фақат СИНОВ режимида (Report-Only): ҳеч нарсани блокламайди, бузилишлар браузер консолида кўринади.
+# 1–2 ҳафта консол тоза бўлса, "Content-Security-Policy-Report-Only" ни "Content-Security-Policy" га алмаштирамиз.
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), payment=(), geolocation=(self)
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://telegram.org https://api-maps.yandex.ru https://*.yandex.ru https://*.yandex.net https://yastatic.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://*.yandex.ru https://*.yandex.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.yandex.ru https://*.yandex.net; frame-src https://*.yandex.ru https://*.yandex.net; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'
+
+# Админ панелни бошқа сайт ичига (iframe) қўйиб бўлмасин — clickjacking'дан ҳимоя.
+/admin.html
+  X-Frame-Options: DENY
+
+/admin
+  X-Frame-Options: DENY
+
+# Service worker ва config ҳар доим янги версияда олинсин.
+/sw.js
+  Cache-Control: no-cache
+
+/config.js
+  Cache-Control: no-cache
