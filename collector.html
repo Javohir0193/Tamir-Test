@@ -12,6 +12,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
 <script src="icons.js"></script>
+<script src="translit.js"></script>
+<script src="lang.js"></script>
 <script src="maps.js"></script>
 
 <script src="catalog.js"></script>
@@ -31,7 +33,7 @@ input,button,select{font:inherit;color:inherit}
 input,select{font-size:16px!important}
 [hidden]{display:none!important}
 header{position:sticky;top:0;z-index:7;background:#F97316;color:#1B1F24;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-radius:0 0 18px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
+header{padding-right:70px}header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
 header button{border:0;border-radius:10px;background:rgba(255,255,255,.92);color:#1B1F24;font:inherit;font-weight:600;font-size:13px;padding:7px 11px}
 .lg{max-width:360px;margin:12vh auto 0;text-align:center;padding:0 16px}.lg h1{font-size:24px}
 .wrap{max-width:680px;margin:0 auto;padding:10px 12px 150px}
@@ -111,7 +113,9 @@ const fmt = n => Math.round(n).toLocaleString("ru-RU").replace(/ /g, " ");
 const num = s => +String(s).replace(",", ".").replace(/[^\d.]/g, "") || 0;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 const $ = id => document.getElementById(id);
-const pname = (id, n) => (UZ.get(id) || {}).n || n;
+const ruMode = () => window.LG && LG.lang() === "ru";
+const pname = (id, n) => ruMode() ? n : (UZ.get(id) || {}).n || n;
+window.addEventListener("langchange", () => { try { if (S.d) render(); } catch (e) {} });
 const unit = u => UNIT[u] || u;
 function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2400); }
 async function call(body){
@@ -196,7 +200,7 @@ function pricesHTML(){
     ${S.d.shops.map(s => `<option value="${s.id}" ${+S.pshop === s.id ? "selected" : ""}>${esc(s.name)} · ${esc(s.row)}</option>`).join("")}</select></label></div>
     ${S.pshop ? `<label class="search"><input id="pq" type="search" placeholder="Товар қидириш…" value="${esc(S.pq)}"></label>
       <div class="card">${list.map(p => { const o = S.poff[p.id];
-        return `<div class="pitem"><div><b>${esc(pname(p.id, p.name))}</b><div class="muted">${esc((UZ.get(p.id) || {}).s || p.spec)}</div></div>
+        return `<div class="pitem"><div><b>${esc(pname(p.id, p.name))}</b><div class="muted">${esc(ruMode() ? p.spec : (UZ.get(p.id) || {}).s || p.spec)}</div></div>
         <div class="row"><input inputmode="numeric" data-pp="${p.id}" class="${o ? "set" : ""}" value="${o ? fmt(o.price) : ""}" placeholder="нарх"><span class="muted">/${esc(unit(p.unit))}</span></div>
         ${o ? `<div style="grid-column:1/-1" class="row"><span class="muted sp">Сақланган ✓</span><span class="sw"><button class="y" data-pst="${p.id}:1" aria-pressed="${o.in_stock}">Бор</button><button class="n" data-pst="${p.id}:0" aria-pressed="${!o.in_stock}">Йўқ</button></span></div>` : ""}</div>`; }).join("") || `<div class="muted">Топилмади.</div>`}</div>
       <button class="btn" style="width:100%" data-newp>➕ Каталогда йўқ янги товар</button>` : `<div class="msg">Дўконни танланг, кейин унинг нархларини ёзасиз. Ҳар бир нарх дарров сақланади.</div>`}`;
@@ -308,6 +312,17 @@ document.addEventListener("change", async e => {
 });
 document.addEventListener("input", e => { if (e.target.id === "pq") { S.pq = e.target.value; const pos = e.target.selectionStart; render(); const q = $("pq"); q.focus(); q.setSelectionRange(pos, pos); } });
 
+let LASTSIG = null, SEEN = new Set(), PB = false, LASTFULL = Date.now();
+function beepC(){ try { const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = .2; o.start(); setTimeout(() => { o.stop(); a.close(); }, 350); } catch (e) {} try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {} }
+async function pingTick(force){
+  if (PB || (document.hidden && !force)) return; PB = true;
+  try {
+    const r = await call({ action:"c_ping" });
+    const fresh = r.open.filter(n => !SEEN.has(n));
+    if (fresh.length) { fresh.forEach(n => SEEN.add(n)); beepC(); toast("Янги буюртма №" + fresh.join(", №")); }
+    if (r.sig !== LASTSIG || Date.now() - LASTFULL > 30000) { LASTSIG = r.sig; LASTFULL = Date.now(); await refreshData(); }
+  } catch (e) {} finally { PB = false; }
+}
 function dropSes(){ SES = ""; try { localStorage.removeItem("col_ses"); } catch (e) {} clearInterval(boot.iv); $("nav").hidden = true; $("sticky").hidden = true; }
 async function sbRpc(fn, args){
   const r = await fetch(CFGC.supabaseUrl + "/rest/v1/rpc/" + fn, { method:"POST", headers:{ apikey:CFGC.supabaseKey, Authorization:"Bearer " + CFGC.supabaseKey, "content-type":"application/json" }, body:JSON.stringify(args || {}) });
@@ -339,7 +354,7 @@ async function boot(){
   try {
     await load(); $("nav").hidden = false; $("hme").textContent = (S.d.me && S.d.me.name) || "";
     if (!IN_TG) { $("hout").hidden = false; $("hout").onclick = () => { dropSes(); loginView(); }; }
-    render(); clearInterval(boot.iv); boot.iv = setInterval(refreshData, 8000);
+    render(); LASTSIG = null; SEEN = new Set((S.d.open || []).map(o => o.no)); clearInterval(boot.iv); boot.iv = setInterval(pingTick, 3000); document.addEventListener("visibilitychange", () => { if (!document.hidden && (SES || IN_TG)) pingTick(true); });
   } catch (err) { if (err.message !== "auth") $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 }
 boot();
