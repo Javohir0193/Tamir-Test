@@ -2,8 +2,9 @@
 <html lang="uz">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#F97316">
 <title>Ta'mir · Админ</title>
 <style>
 :root{--bg:#F3F4F6;--c:#fff;--ink:#1B1F24;--mu:#6B7280;--ln:#E5E7EB;--ac:#F97316;--g:#1F9D55;--gb:#E6F6ED;--r:#D93025;--rb:#FDECEA;--y:#B7791F;--yb:#FFF6DB;--bl:#2563EB}
@@ -19,7 +20,7 @@ button{cursor:pointer}
 .btn.sm{padding:6px 10px;font-size:13px}
 .btn.red{background:var(--r);color:#fff}
 .btn:disabled{opacity:.5}
-header{position:sticky;top:0;z-index:5;background:var(--ac);border-bottom:0;color:#1B1F24;border-radius:0 0 18px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+header{padding-top:env(safe-area-inset-top,0);position:sticky;top:0;z-index:5;background:var(--ac);border-bottom:0;color:#1B1F24;border-radius:0 0 18px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
 header .mu{color:rgba(27,31,36,.78)}header .btn.alt{background:rgba(255,255,255,.92);color:#1B1F24;border:0}
 .hd{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 14px}
 .hd h1{font-size:18px;margin:0;flex:1}
@@ -53,7 +54,7 @@ td.n,th.n{text-align:right;white-space:nowrap}
 .sbox{background:var(--bg);width:100%;max-width:780px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:14px}
 @media(min-width:800px){.sheet{align-items:center}.sbox{border-radius:16px}}
 .kv{display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:14px}.kv span:nth-child(even){text-align:right;font-weight:600}
-.login{max-width:420px;margin:12vh auto;padding:0 16px}
+.login{max-width:420px;margin:12vh auto;padding:0 16px}.login.card{width:calc(100% - 32px);padding:16px}
 .msg{margin:10px 0;color:var(--mu)}
 .err{color:var(--r);font-weight:600}
 .set{display:flex;gap:8px;align-items:center;margin:6px 0}.set label{flex:1;font-size:14px}.set small{display:block;color:var(--mu)}.set input{width:130px;text-align:right}
@@ -92,6 +93,7 @@ nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
 <script>
 "use strict";
 const CFG = window.TAMIR_CONFIG || {};
+const LBAR = `<header><div class="hd"><h1>Ta'mir · Админ</h1></div></header>`;
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const fmt = n => Math.round(Number(n) || 0).toLocaleString("ru-RU").replace(/,/g, " ");
@@ -117,10 +119,10 @@ async function rpc(name, args){
 
 /* ---------- Кириш ---------- */
 async function init(){
-  if (!window.supabase || !CFG.supabaseUrl) { $("app").innerHTML = `<div class="login"><p class="err">Базага уланиб бўлмади</p></div>`; return; }
+  if (!window.supabase || !CFG.supabaseUrl) { $("app").innerHTML = LBAR + `<div class="login"><p class="err">Базага уланиб бўлмади</p></div>`; return; }
   sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
   const cur = await sb.auth.getSession();
-  if (!cur.data.session) { const r = await sb.auth.signInAnonymously(); if (r.error) { $("app").innerHTML = `<div class="login"><p class="err">${esc(r.error.message)}</p></div>`; return; } }
+  if (!cur.data.session) { const r = await sb.auth.signInAnonymously(); if (r.error) { $("app").innerHTML = LBAR + `<div class="login"><p class="err">${esc(r.error.message)}</p></div>`; return; } }
   await gate();
 }
 async function profile(){ const r = await sb.rpc("my_profile"); return r.error ? null : r.data; }
@@ -134,12 +136,12 @@ async function gate(){
     const m = (e && e.message) || "";
     if (/find the function|admin_me/.test(m) && !/wrong code/.test(m)) return legacyView();
     if (/wrong code|admin_login/.test(m)) { dropSession(); return pinView(errText(e)); }
-    $("app").innerHTML = `<div class="login"><p class="err">${esc(errText(e))}</p><p class="mu">7-schema-admin2.sql базага ишга туширилганми?</p><button class="btn" onclick="location.reload()">Қайта уриниш</button></div>`;
+    $("app").innerHTML = LBAR + `<div class="login"><p class="err">${esc(errText(e))}</p><p class="mu">7-schema-admin2.sql базага ишга туширилганми?</p><button class="btn" onclick="location.reload()">Қайта уриниш</button></div>`;
   }
 }
 function dropSession(){ CODE = ""; S.me = null; try { sessionStorage.removeItem("acode"); } catch(_){} }
 function loginView(){
-  $("app").innerHTML = `<div class="login card"><h2>Админ кириши</h2><p class="mu">Аввал Telegram орқали кирасиз, кейин шахсий PIN киритасиз.</p>
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>Админ кириши</h2><p class="mu">Аввал Telegram орқали кирасиз, кейин шахсий PIN киритасиз.</p>
     <p><a class="btn" id="tg" target="_blank" rel="noopener" href="#" style="display:inline-block;text-decoration:none">Telegram'ни очиш</a></p><p class="msg" id="lm">Тайёрланмоқда…</p></div>`;
   sb.rpc("login_start", { p_consent:true }).then(r => {
     if (r.error || !r.data) { $("lm").textContent = "Киришни бошлаб бўлмади. Бироздан кейин қайта уриниб кўринг."; return; }
@@ -148,11 +150,11 @@ function loginView(){
   });
 }
 function notAdminView(p){
-  $("app").innerHTML = `<div class="login card"><h2>Рухсат йўқ</h2><p>Сиз <b>${esc(p.name || p.phone || "")}</b> сифатида кирдингиз, лекин бу ҳисоб админ эмас.</p><button class="btn alt" id="lo">Чиқиш</button></div>`;
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>Рухсат йўқ</h2><p>Сиз <b>${esc(p.name || p.phone || "")}</b> сифатида кирдингиз, лекин бу ҳисоб админ эмас.</p><button class="btn alt" id="lo">Чиқиш</button></div>`;
   $("lo").onclick = async () => { await sb.rpc("logout"); location.reload(); };
 }
 function pinView(err){
-  $("app").innerHTML = `<div class="login card"><h2>PIN</h2><p class="err" id="pe">${esc(err || "")}</p>
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>PIN</h2><p class="err" id="pe">${esc(err || "")}</p>
     <p><input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Кириш</button></div>`;
   const go = async () => {
     const pin = $("pin").value.trim(); if (!pin) return;
@@ -164,7 +166,7 @@ function pinView(err){
   $("go").onclick = go; $("pin").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
 }
 function setPinView(err){
-  $("app").innerHTML = `<div class="login card"><h2>Янги PIN ўрнатиш</h2><p class="mu">6–12 та рақам. Уни ҳеч кимга айтманг.</p><p class="err" id="pe">${esc(err || "")}</p>
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>Янги PIN ўрнатиш</h2><p class="mu">6–12 та рақам. Уни ҳеч кимга айтманг.</p><p class="err" id="pe">${esc(err || "")}</p>
     <p><input id="oc" type="password" placeholder="Эски админ коди (фақат эга биринчи марта)" autocomplete="off" style="width:100%"></p>
     <p><input id="p1" type="password" inputmode="numeric" placeholder="Янги PIN" autocomplete="off" style="width:100%"></p>
     <p><input id="p2" type="password" inputmode="numeric" placeholder="PIN'ни такрорланг" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Сақлаш</button></div>`;
@@ -176,7 +178,7 @@ function setPinView(err){
   };
 }
 function legacyView(err){
-  $("app").innerHTML = `<div class="login card"><h2>Админ коди</h2><p class="err">${esc(err || "")}</p>
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>Админ коди</h2><p class="err">${esc(err || "")}</p>
     <p><input id="ac" type="password" placeholder="Код" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Кириш</button></div>`;
   const go = async () => { CODE = $("ac").value.trim(); if (!CODE) return; try { await load(); S.me = { name:"умумий код", roles:["owner"] }; shell(); } catch(e){ CODE = ""; legacyView(errText(e)); } };
   $("go").onclick = go; $("ac").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
