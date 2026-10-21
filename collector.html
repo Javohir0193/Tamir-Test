@@ -254,7 +254,7 @@ document.addEventListener("click", async e => {
   else if (ds.openo) { S.open = +ds.openo; S.sel = {}; S.qty = {}; S.price = {}; render(); window.scrollTo(0, 0); refreshData(); }
   else if ("back" in ds) { S.open = null; render(); refreshData(); }
   else if ("cancel" in ds) { S.form = null; render(); }
-  else if (ds.claim) act(async () => { await call({ action:"c_claim", no:+ds.claim }); S.open = +ds.claim; }, "Буюртма сизники ✅");
+  else if (ds.claim) act(async () => { await call({ action:"c_claim", no:+ds.claim }); S.open = +ds.claim; }, "Буюртма сизники");
   else if (ds.miss) act(() => call({ action:"c_missing", no:S.open, line_no:+ds.miss, on:true }), "Топилмади деб белгиланди");
   else if (ds.unmiss) act(() => call({ action:"c_missing", no:S.open, line_no:+ds.unmiss, on:false }));
   else if ("buy" in ds) {
@@ -267,18 +267,18 @@ document.addEventListener("click", async e => {
     pickPoint((lat, lng) => act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, fleet:true, lat, lng, note }); }, "🚕 Паркка юборилди: ҳайдовчилар ботида"));
   }
   else if (ds.hand) act(async () => { await call({ action:"c_done", no:S.open }).catch(() => {}); await call({ action:"c_handoff", no:S.open, ...(ds.hand === "self" ? { self:true } : { driver_id:+ds.hand }) }); },
-    ds.hand === "self" ? "Ботда юклаш рўйхати келди 🚗" : "Ҳайдовчига топширилди 🚚");
+    ds.hand === "self" ? "Ботда юклаш рўйхати келди" : "Ҳайдовчига топширилди");
   else if (ds.pst) { const [id, v] = ds.pst.split(":"); const o = S.poff[id]; act(async () => { await call({ action:"c_price", shop_id:+S.pshop, product_id:+id, price:o.price, in_stock:v === "1" }); S.poff[id].in_stock = v === "1"; }); }
   else if ("newp" in ds) { S.form = "product"; render(); }
   else if ("newshop" in ds) { S.form = "shop"; render(); }
   else if ("nssave" in ds) act(async () => {
     const r = await call({ action:"c_addshop", name:$("ns_name").value, row:$("ns_row").value, phone:$("ns_phone").value, card:$("ns_card").value });
     S.form = null; if (S.open) { S.shop = String(r.shop.id); S.shopOffers = {}; }
-  }, "Дўкон қўшилди ✅");
+  }, "Дўкон қўшилди");
   else if ("npsave" in ds) act(async () => {
     await call({ action:"c_newproduct", cat:$("np_cat").value, name:$("np_name").value, spec:$("np_spec").value, unit:$("np_unit").value, price:num($("np_price").value), shop_id:+S.pshop });
     S.form = null;
-  }, "Админга юборилди ✅");
+  }, "Админга юборилди");
 });
 document.addEventListener("change", async e => {
   const t = e.target;

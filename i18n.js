@@ -375,6 +375,10 @@
    ["Алмазарский район", "Олмазор тумани"], ["Зангиатинский район", "Зангиота тумани"]
   ].forEach(function (x) { UZ[x[0]] = x[1]; });
 
+  // Матн бошидаги эмодзилар иконкага алмаштирилади (icons.js) — шунинг учун таржима калитларини эмодзисиз ҳам қўшамиз
+  var STRIP = function (x) { return window.IC && IC.LEAD ? x.replace(IC.LEAD, "").trim() : x; };
+  if (window.IC && IC.LEAD) Object.keys(UZ).forEach(function (k) { if (IC.LEAD.test(k)) { var a = STRIP(k), b = STRIP(UZ[k]); if (a && !(a in UZ)) UZ[a] = b; } });
+
   var KEEP = { "СтройМаркет": 1, "СТРОЙМАРКЕТ": 1, "м²": 1, "м": 1, "м": 1, "мм": 1, "см": 1, "кг": 1, "Вт": 1, "л": 1, "В": 1, "М": 1, "ПН": 1, "ПП": 1, "ПС": 1, "М400": 1, "М500": 1, "М100": 1 };
 
   function T(x) { var r = tr(x); return r === null ? x : r; }
@@ -436,6 +440,10 @@
   }
 
   // Возвращает перевод или null, если переводить нечего
+  if (window.IC && IC.ALT) RULES.slice().forEach(function (r) {
+    var src = r[0].source, re = new RegExp("^\\^(?:" + IC.ALT + ")\\uFE0F?\\s?");
+    if (re.test(src)) RULES.push([new RegExp(src.replace(re, "^")), function (m) { var x = r[1](m); return x === null ? null : STRIP(x); }]);
+  });
   function tr(core) {
     if (!HAS_RU.test(core)) return null;
     if (Object.prototype.hasOwnProperty.call(UZ, core)) return UZ[core];

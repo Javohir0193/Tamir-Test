@@ -17,15 +17,18 @@ header h1{font-size:18px;margin:0}header small{display:block;opacity:.75}
 .pulse{animation:pls 1.8s ease-in-out infinite}
 .dmap{height:62vh;border-radius:14px;overflow:hidden;background:#e5e7eb}
 .tabs{display:flex;background:var(--c);border-bottom:1px solid var(--ln);position:sticky;top:58px;z-index:4}
-.tabs button{flex:1;border:0;background:none;padding:12px 4px;font:inherit;font-weight:600;color:var(--mu);border-bottom:3px solid transparent}
-.tabs button.on{color:var(--ink);border-color:var(--y)}.tabs i{font-style:normal;background:var(--r);color:#fff;border-radius:10px;padding:0 6px;font-size:12px;margin-left:4px}
+.tabs button{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;border:0;background:none;padding:13px 2px;font:inherit;font-size:13.5px;font-weight:600;color:var(--mu);border-bottom:3px solid transparent}.tabs button svg{flex:none;width:17px;height:17px;vertical-align:0!important}
+.tabs button.on{color:var(--ink);border-color:var(--y)}.tabs i{font-style:normal;background:var(--r);color:#fff;border-radius:10px;padding:0 5px;font-size:11px;line-height:16px;margin-left:1px;flex:none}
 main{padding:12px 16px;max-width:560px;margin:0 auto}
 .card{background:var(--c);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .card h2{font-size:16px;margin:0 0 6px}.mu{color:var(--mu);font-size:14px}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .btn{border:0;border-radius:12px;padding:13px 16px;font:inherit;font-weight:700;background:var(--y);color:#1B1F24;flex:1;min-width:120px;text-align:center;text-decoration:none;display:inline-block}
 .btn.alt{background:var(--bg);color:var(--ink);border:1px solid var(--ln)}.btn.g{background:var(--g);color:#fff}.btn[disabled]{opacity:.45}
 .fee{font-size:20px;font-weight:800}.pt{display:flex;gap:8px;margin:6px 0}.pt b{width:22px;height:22px;border-radius:50%;background:var(--y);color:#1B1F24;text-align:center;font-size:13px;line-height:22px;flex:none}
-.ln{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--ln)}.ln input{width:22px;height:22px;flex:none}.ln .sh{font-size:13px;color:var(--mu)}
+.ln{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--ln)}.ln input{appearance:none;-webkit-appearance:none;width:26px;height:26px;flex:none;border:2px solid #C5CAD3;border-radius:8px;background:#fff center/16px no-repeat;margin:0}
+.ln input:checked{background-color:var(--y);border-color:var(--y);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231B1F24' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+.ln input:checked:disabled{background-color:var(--g);border-color:var(--g);opacity:.9;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E")}
+.ln input:disabled:not(:checked){opacity:.5}.ln .sh{font-size:13px;color:var(--mu)}
 .shop{font-weight:700;margin-top:8px}.pill{display:inline-block;border-radius:8px;padding:2px 8px;font-size:13px;font-weight:600;background:var(--gb);color:var(--g)}
 .kv{display:grid;grid-template-columns:1fr auto;gap:8px 12px}.kv b{text-align:right}
 .center{text-align:center;padding:40px 16px}.center h1{font-size:24px}.toast{position:fixed;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));background:#1B1F24;color:#fff;border-radius:12px;padding:12px 14px;opacity:0;pointer-events:none;transition:.2s;z-index:9}.toast.show{opacity:1}
@@ -129,7 +132,7 @@ document.addEventListener("click", e => {
   if (t.tagName === "BUTTON" && (t.dataset.claim || t.dataset.go || t.dataset.dn) && !t.disabled) { t.disabled = true; t.classList.remove("pulse"); t.dataset.txt = t.textContent; t.textContent = "⏳ …"; setTimeout(() => { if (document.body.contains(t)) { t.disabled = false; t.textContent = t.dataset.txt; } }, 8000); }
   if (t.dataset.t) { S.tab = t.dataset.t; draw(); return; }
   if (t.dataset.claim) { act(async () => { const ok = await rpc("drv_claim", { p_session:SES, p_no:+t.dataset.claim }); if (!ok) throw new Error("Бу буюртмани бошқа ҳайдовчи олди."); S.tab = "mine"; }, "Сизники! Товарларни юкланг."); return; }
-  if (t.dataset.go) { act(async () => { const r = await rpc("drv_go", { p_session:SES, p_no:+t.dataset.go }); if (r !== "ok") throw new Error(r === "not_loaded" ? "Ҳали юкланмаган товар бор." : "Бажариб бўлмади."); S.tab = "map"; }, "Оқ йўл! Харита очилди 🗺"); return; }
+  if (t.dataset.go) { act(async () => { const r = await rpc("drv_go", { p_session:SES, p_no:+t.dataset.go }); if (r !== "ok") throw new Error(r === "not_loaded" ? "Ҳали юкланмаган товар бор." : "Бажариб бўлмади."); S.tab = "map"; }, "Оқ йўл! Харита очилди"); return; }
   if (t.dataset.dn) { if (!confirm("Буюртма мижозга топширилдими?")) return; act(async () => { const r = await rpc("drv_done", { p_session:SES, p_no:+t.dataset.dn }); if (r !== "ok") throw new Error("Бажариб бўлмади."); }, "Раҳмат!"); return; }
   if (t.id === "out") { SES = ""; try { localStorage.removeItem("drv_ses"); } catch (x) {} loginView(); return; }
   if (t.id === "notif") { try { Notification.requestPermission().then(p => toast(p === "granted" ? "Рухсат берилди" : "Рухсат берилмади")); } catch (x) { toast("Бу қурилмада ишламайди"); } return; }
