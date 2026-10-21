@@ -107,10 +107,11 @@ header nav button b{font-size:inherit}
 header nav button .sk{width:22px!important;height:22px!important}
 }
 .sticky{bottom:54px!important}.wrap{padding-bottom:130px!important}
-header{padding-right:14px;justify-content:space-between;gap:8px}
-header b:first-child{flex:none!important}
-header #hme{display:block!important;flex:none;max-width:38vw;text-align:center}
-header #sndBtn{position:static!important;flex:none;width:36px;height:32px}
+header{padding-right:14px;gap:6px}
+header b:first-child{order:1;flex:1!important}
+header #hme{display:block!important;position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));height:32px;line-height:32px;max-width:36vw;text-align:center!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header #sndBtn{position:static!important;order:2;flex:none;width:36px;height:32px}
+header #hout{order:2}
 @keyframes claimGlow{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.75);filter:brightness(1)}50%{box-shadow:0 0 0 9px rgba(249,115,22,0);filter:brightness(1.12)}}
 [data-claim]{animation:claimGlow 1.3s ease-in-out infinite}
 </style>
