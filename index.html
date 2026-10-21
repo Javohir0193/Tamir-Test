@@ -709,7 +709,7 @@ function carSvg(id){
 const ZONES = [["near", "Рядом", "≈ 10 мин"], ["mid", "Средне", "≈ 20 мин"], ["far", "Далеко", "≈ 30 мин"]];
 const SIZE_TXT = { large:"Большой рынок", medium:"Средний рынок", small:"Небольшой рынок" };
 const S = { car:"l", carMk:0, carFrom:"", tab:"home", mk:+loadJSON("market", 0) || 0, mkOpen:false, markets:MARKETS0, cat:"all", grp:"all", q:"", task:null, size:{}, sm:{}, jobs:{}, view:"home", plan:loadJSON("plan", {}), pending:{}, chk:{},
-            cart:loadJSON("cart", {}), orders:loadJSON("orders", []), seller:false, adminMsg:"",
+            cart:loadJSON("cart", {}), orders:loadJSON("orders", []), seller:false,
             form:{ name:"", phone:"", addr:"", mode:"delivery", note:"", day:0, slot:0, zone:"mid", body:"" } };
 Object.keys(S.cart).forEach(k => { if (!byId(+k)) delete S.cart[k]; });   // убрать из корзины удалённые товары (бывшие услуги мастеров)
 const saveCart = () => saveJSON("cart", S.cart);
@@ -1287,8 +1287,9 @@ function validate(){
   m.textContent = ""; return true;
 }
 // ===== Общая база (Supabase) =====
-let sb = null, dbReady = false, adminCode = "";
-try { adminCode = sessionStorage.getItem("adminCode") || ""; } catch(e){}
+let sb = null, dbReady = false;
+// Старый режим продавца по общему коду убран: заказами управляют только в admin.html (Telegram + PIN).
+try { sessionStorage.removeItem("adminCode"); } catch(e){}
 const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mode, total:Number(r.total), goods:r.goods, work:r.work,
   slot:r.slot, stage:r.stage, times:(r.times && r.times.length ? r.times : [Date.parse(r.created_at)]), items:r.items || [],
   name:r.customer_name, phone:r.phone, addr:r.address, note:r.note,
@@ -1300,7 +1301,7 @@ const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mod
 async function loadOrders(quiet){
   if (!dbReady) return;
   try {
-    const q = S.seller && adminCode ? await sb.rpc("admin_list_orders", { p_code:adminCode }) : await sb.from("orders").select("*").order("no", { ascending:false });
+    const q = await sb.from("orders").select("*").order("no", { ascending:false });
     if (q.error) throw q.error;
     const prev = JSON.stringify((S.orders || []).map(o => [o.no, o.status, o.payStatus, o.payDue]));
     S.orders = q.data.map(fromRow);
@@ -1507,7 +1508,6 @@ async function initDB(){
     dbReady = true; S.orders = [];
     loadCatalog(); loadMarkets(); loadSettings(); flushEvents();
     await loadProfile();
-    if (adminCode) S.seller = true;
     await loadOrders();
     sb.channel("orders-live").on("postgres_changes", { event:"*", schema:"public", table:"orders" }, loadOrders).subscribe();
     setInterval(() => loadOrders(true), 15000);
@@ -1539,19 +1539,6 @@ function afterOrder(no){
   Object.keys(S.pending).forEach(k => { S.plan[k] = no; }); S.pending = {}; saveJSON("plan", S.plan);
   S.cart = {}; saveCart();
 }
-async function adminLogin(code){
-  const r = await sb.rpc("admin_list_orders", { p_code:code });
-  if (r.error){ S.adminMsg = /admin_login_required/.test(r.error.message || "") ? "Сначала войдите через Telegram с аккаунтом администратора (кнопка выше)." : "Неверный код."; return false; }
-  adminCode = code; try { sessionStorage.setItem("adminCode", code); } catch(e){}
-  S.seller = true; S.adminMsg = ""; S.orders = r.data.map(fromRow); return true;
-}
-async function adminAdvance(o){
-  const max = stagesFor(o).length - 1;
-  const r = await sb.rpc("admin_advance", { p_code:adminCode, p_no:o.no, p_max:max });
-  if (r.error){ toast("Не удалось сменить статус"); console.error(r.error); return; }
-  await loadOrders();
-}
-
 // ===== Заказы и статусы =====
 const STAGES = {
   delivery:[["Принят","Мы получили заказ и скоро позвоним для подтверждения"],["Подтверждён","Проверили наличие и согласовали детали"],["Собирается","Товар собирают на складе"],["В пути","Курьер везёт заказ по вашему адресу"],["Доставлен","Заказ получен. Спасибо!"]],
@@ -1570,10 +1557,7 @@ const nextNo = () => 1001 + S.orders.length;
 const syncNote = () => dbReady ? "" : `<p class="note">Демо-режим: заказы хранятся только на этом телефоне. Чтобы они были видны на всех устройствах, подключите базу (см. README).</p>`;
 function sellerBox(){
   if (!dbReady) return `<label class="seller"><input type="checkbox" id="sellerMode" ${S.seller ? "checked" : ""}>Для продавца (демо): менять статусы заказов</label>`;
-  if (S.seller) return `<div class="seller"><span>Режим продавца включён: видны все заказы.</span><button class="btn alt" data-adminout style="width:auto;padding:8px 12px">Выйти</button></div>`;
-  return `<section class="panel"><h2>Для продавца</h2><p class="hint">Введите код, чтобы видеть все заказы и менять статусы.</p>
-    <label>Код<input type="password" id="adminCode" autocomplete="off"></label><p class="msg">${esc(S.adminMsg || "")}</p>
-    <button class="btn dark" data-adminin>Войти</button></section>`;
+  return "";
 }
 const PAYLOGO = { click:"pay-click.png", payme:"pay-payme.png" };
 const PAYNAME = { click:"Click", payme:"Payme", test:"Тест (без денег)" };
@@ -1907,14 +1891,10 @@ document.addEventListener("click", e => {
   if (t.dataset.advance) {
     const o = S.orders.find(x => x.no === +t.dataset.advance);
     if (o && o.stage < stagesFor(o).length - 1) {
-      if (dbReady) { t.disabled = true; adminAdvance(o); }
-      else { o.stage++; o.times[o.stage] = Date.now(); saveOrders(); renderOrders(); }
+      if (!dbReady) { o.stage++; o.times[o.stage] = Date.now(); saveOrders(); renderOrders(); }
     }
     return;
   }
-  if (t.hasAttribute("data-adminin")) { const c = document.getElementById("adminCode").value.trim(); if (!c) return; t.disabled = true;
-    adminLogin(c).then(ok => { if (ok) renderOrders(); else { t.disabled = false; renderOrders(); } }); return; }
-  if (t.hasAttribute("data-adminout")) { S.seller = false; adminCode = ""; try { sessionStorage.removeItem("adminCode"); } catch(e){} loadOrders().then(renderOrders); return; }
   if (t.id === "copyOrder") {
     logEvent("checkout", { n:Object.keys(S.cart).length });
     if (needLogin()) { openLogin(); return; }
