@@ -35,8 +35,9 @@
     function Marker(ll, o) { this._ll = ll; this._t = (o && o.icon && o.icon._t) || "📍"; }
     Marker.prototype.addTo = function (map) {
       this._pm = new ymaps.Placemark(this._ll, { t: this._t }, { iconLayout: Tpl, iconShape: { type: "Rectangle", coordinates: [[-20, -36], [20, 0]] } });
-      map._m.geoObjects.add(this._pm); return this;
+      this._map = map; map._m.geoObjects.add(this._pm); return this;
     };
+    Marker.prototype.remove = function () { if (this._pm && this._map) this._map._m.geoObjects.remove(this._pm); return this; };
     Marker.prototype.setLatLng = function (ll) { this._ll = ll; if (this._pm) this._pm.geometry.setCoordinates(ll); return this; };
     window.L = {
       __ya: true,

@@ -13,6 +13,9 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,system-ui,sans-serif;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 header{background:var(--y);color:#1B1F24;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;position:sticky;top:0;z-index:5}
 header h1{font-size:18px;margin:0}header small{display:block;opacity:.75}
+@keyframes pls{0%,100%{box-shadow:0 0 0 0 rgba(255,217,47,0);transform:scale(1);opacity:1}50%{box-shadow:0 0 0 10px rgba(255,217,47,.45);transform:scale(1.03);opacity:.8}}
+.pulse{animation:pls 1.8s ease-in-out infinite}
+.dmap{height:62vh;border-radius:14px;overflow:hidden;background:#e5e7eb}
 .tabs{display:flex;background:var(--c);border-bottom:1px solid var(--ln);position:sticky;top:58px;z-index:4}
 .tabs button{flex:1;border:0;background:none;padding:12px 4px;font:inherit;font-weight:600;color:var(--mu);border-bottom:3px solid transparent}
 .tabs button.on{color:var(--ink);border-color:var(--y)}.tabs i{font-style:normal;background:var(--r);color:#fff;border-radius:10px;padding:0 6px;font-size:12px;margin-left:4px}
@@ -31,6 +34,7 @@ main{padding:12px 16px;max-width:560px;margin:0 auto}
 <body>
 <div id="app"></div><div class="toast" id="toast"></div>
 <script src="config.js"></script>
+<script src="maps.js"></script>
 <script>
 "use strict";
 const C = window.TAMIR_CONFIG || {}, BOT = C.env === "test" ? "tamir_test1_bot" : "tamir_sotuvchi_bot";
@@ -85,7 +89,7 @@ function openCard(o){
   <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "Бозор")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
   <div class="pt"><b>🏠</b><div>Мижоз: ${esc(o.address || "—")}</div></div>
   <div class="mu">🕒 ${esc(o.slot || "")} · 🧺 ${o.lines.length} қатор</div>
-  <div class="row">${pa}<button class="btn" data-claim="${o.no}">🙋 Мен оламан</button></div></div>`;
+  <div class="row"><button class="btn pulse" data-claim="${o.no}">🙋 Мен оламан</button></div></div>`;
 }
 function mineCard(o){
   const done = o.stage >= 4, go = o.stage < 3, allL = o.lines.every(l => l.loaded);
@@ -99,7 +103,7 @@ function mineCard(o){
   <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
   <div class="pt"><b>🏠</b><div>Мижоз: ${esc(o.address || "—")}<br><span class="mu">${esc(o.customer || "")} · <a href="tel:${esc(o.phone)}">${esc(o.phone || "")}</a></span></div></div>
   ${o.note ? `<div class="mu">💬 ${esc(o.note)}</div>` : ""}${ls}
-  ${done ? "" : `<div class="row">${pa}${pb}</div><div class="row">${go ? `<button class="btn" data-go="${o.no}" ${allL ? "" : "disabled"}>🚚 Йўлга чиқдим${allL ? "" : " (" + o.lines.filter(l => l.loaded).length + "/" + o.lines.length + ")"}</button>` : `<button class="btn g" data-dn="${o.no}">✅ Топширдим</button>`}</div>`}</div>`;
+  ${done ? "" : `<div class="row">${go ? `<button class="btn" data-go="${o.no}" ${allL ? "" : "disabled"}>🚚 Йўлга чиқдим${allL ? "" : " (" + o.lines.filter(l => l.loaded).length + "/" + o.lines.length + ")"}</button>` : `<button class="btn g" data-dn="${o.no}">✅ Топширдим</button>`}</div>`}</div>`;
 }
 function draw(){
   const d = S.d; if (!d) return;
@@ -107,24 +111,22 @@ function draw(){
   let body = "";
   if (S.tab === "open") body = open.length ? open.map(openCard).join("") : `<div class="card center mu">Ҳозир очиқ буюртма йўқ.<br>Янгиси тушганда овоз чиқади (илова очиқ бўлса).</div>`;
   else if (S.tab === "mine") body = mine.length ? mine.map(mineCard).join("") : `<div class="card center mu">Сизда буюртма йўқ.</div>`;
+  else if (S.tab === "map") { const go = mine.filter(o => o.stage === 3 && o.lat);
+    body = `<div id="dmapph"></div><div class="card"><div>${go.length ? "🚚 Йўлдасиз: мижоз манзили харитада белгиланган." : "Йўлга чиққунча харитада фақат сиз турган жой кўринади."}</div>
+    ${go.length ? `<div class="row"><a class="btn alt" data-nav="${go[0].lat},${go[0].lng}" href="${nav(go[0].lat, go[0].lng)}" target="_blank" rel="noopener">🧭 Навигатор (Яндекс)</a></div>` : ""}</div>`; }
   else { const e = d.earn || {}; body = `<div class="card"><h2>Ҳисоб</h2><div class="kv"><span>Тўланиши керак</span><b>${fmt(e.due)} сўм</b><span>Кутилмоқда (24 соат / мижоз тасдиғи)</span><b>${fmt((e.waiting || 0) + (e.held || 0))} сўм</b><span>Тўланган</span><b>${fmt(e.paid)} сўм</b></div>
     <p class="mu">Ҳақ буюртма етказилгач, мижоз «Олдим» деганда ёки 24 соатдан кейин «Тўланиши керак»га ўтади.</p></div>
     <div class="card"><div class="row" style="margin:0"><button class="btn alt" id="notif">🔔 Огоҳлантиришга рухсат</button><button class="btn alt" id="out">Чиқиш</button></div></div>`; }
   $("app").innerHTML = `<header><h1>🚚 ${esc(d.me.name)}</h1><small>${esc(d.me.car || "")}${d.me.fleet ? " · " + esc(d.me.fleet) : " · паркка бириктирилмаган"}</small></header>
-  <div class="tabs"><button data-t="open" class="${S.tab === "open" ? "on" : ""}">Очиқ${open.length ? `<i>${open.length}</i>` : ""}</button><button data-t="mine" class="${S.tab === "mine" ? "on" : ""}">Менинг${act.length ? `<i>${act.length}</i>` : ""}</button><button data-t="earn" class="${S.tab === "earn" ? "on" : ""}">Ҳисоб</button></div><main>${body}</main>`;
+  <div class="tabs"><button data-t="open" class="${S.tab === "open" ? "on" : ""}">Очиқ${open.length ? `<i>${open.length}</i>` : ""}</button><button data-t="mine" class="${S.tab === "mine" ? "on" : ""}">Менинг${act.length ? `<i>${act.length}</i>` : ""}</button><button data-t="map" class="${S.tab === "map" ? "on" : ""}">🗺 Харита</button><button data-t="earn" class="${S.tab === "earn" ? "on" : ""}">Ҳисоб</button></div><main>${body}</main>`;
+  if (S.tab === "map") mountMap();
 }
 async function act(fn, ok){ if (S.busy) return; S.busy = true; try { const r = await fn(); await load(); if (ok) toast(ok); return r; } catch (e) { toast(e.message); } finally { S.busy = false; } }
 document.addEventListener("click", e => {
   const t = e.target.closest("button,input,a"); if (!t) return;
   if (t.dataset.t) { S.tab = t.dataset.t; draw(); return; }
   if (t.dataset.claim) { act(async () => { const ok = await rpc("drv_claim", { p_session:SES, p_no:+t.dataset.claim }); if (!ok) throw new Error("Бу буюртмани бошқа ҳайдовчи олди."); S.tab = "mine"; }, "Сизники! Товарларни юкланг."); return; }
-  if (t.dataset.go) {
-    const ord = ((S.d && S.d.mine) || []).find(x => x.no === +t.dataset.go), tolat = ord && ord.lat ? `${ord.lat},${ord.lng}` : "";
-    let w = null; if (tolat) { try { w = window.open("", "_blank"); } catch (e) {} }
-    act(async () => { const r = await rpc("drv_go", { p_session:SES, p_no:+t.dataset.go }); if (r !== "ok") { try { w && w.close(); } catch (e) {} throw new Error(r === "not_loaded" ? "Ҳали юкланмаган товар бор." : "Бажариб бўлмади."); }
-      if (w && tolat) { const fb = `https://yandex.uz/maps/?rtext=~${tolat}&rtt=auto`;
-        if (navigator.geolocation) navigator.geolocation.getCurrentPosition(p => { w.location.href = `https://yandex.uz/maps/?rtext=${p.coords.latitude},${p.coords.longitude}~${tolat}&rtt=auto`; }, () => { w.location.href = fb; }, { enableHighAccuracy:true, timeout:6000, maximumAge:30000 });
-        else w.location.href = fb; } }, "Оқ йўл! Харита очилмоқда…"); return; }
+  if (t.dataset.go) { act(async () => { const r = await rpc("drv_go", { p_session:SES, p_no:+t.dataset.go }); if (r !== "ok") throw new Error(r === "not_loaded" ? "Ҳали юкланмаган товар бор." : "Бажариб бўлмади."); S.tab = "map"; }, "Оқ йўл! Харита очилди 🗺"); return; }
   if (t.dataset.dn) { if (!confirm("Буюртма мижозга топширилдими?")) return; act(async () => { const r = await rpc("drv_done", { p_session:SES, p_no:+t.dataset.dn }); if (r !== "ok") throw new Error("Бажариб бўлмади."); }, "Раҳмат!"); return; }
   if (t.id === "out") { SES = ""; try { localStorage.removeItem("drv_ses"); } catch (x) {} loginView(); return; }
   if (t.id === "notif") { try { Notification.requestPermission().then(p => toast(p === "granted" ? "Рухсат берилди" : "Рухсат берилмади")); } catch (x) { toast("Бу қурилмада ишламайди"); } return; }
@@ -139,13 +141,42 @@ document.addEventListener("click", e => {
     p => window.open(`https://yandex.uz/maps/?rtext=${p.coords.latitude},${p.coords.longitude}~${to}&rtt=auto`, "_blank"),
     () => window.open(a.href, "_blank"), { enableHighAccuracy:true, timeout:6000, maximumAge:30000 });
 });
+const LEAF = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/"; let leafletP = null;
+function loadLeaflet(){ if (window.TAMIR_YMAPS) return loadYandexAsL(); if (window.L) return Promise.resolve();
+  if (!leafletP) leafletP = new Promise((res, rej) => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = LEAF + "leaflet.min.css"; document.head.appendChild(l);
+    const sc = document.createElement("script"); sc.src = LEAF + "leaflet.min.js"; sc.onload = res; sc.onerror = () => { leafletP = null; rej(new Error("map")); }; document.head.appendChild(sc); });
+  return leafletP; }
+const mkIcon = h => L.divIcon({ html:h, className:"mk", iconSize:[40, 40], iconAnchor:[20, 20] });
+let DM = null, FITKEY = "";
+async function mountMap(){
+  const ph = $("dmapph"); if (!ph) return;
+  try { await loadLeaflet(); } catch (e) { ph.textContent = "Харита юкланмади. Интернетни текширинг."; return; }
+  if (!DM) { const el = document.createElement("div"); el.className = "dmap"; ph.appendChild(el);
+    const map = L.map(el, { zoomControl:false }); L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom:19, attribution:"© OpenStreetMap" }).addTo(map);
+    map.setView(S.pos ? [S.pos.lat, S.pos.lng] : [41.3111, 69.2797], S.pos ? 16 : 11); DM = { el, map, me:null, cust:new Map() }; FITKEY = ""; }
+  else { ph.appendChild(DM.el); }
+  setTimeout(() => { DM.map.invalidateSize(); refreshMap(); }, 60); trackLoc();
+}
+function refreshMap(){
+  if (!DM || !S.d) return;
+  const go = (S.d.mine || []).filter(o => o.stage === 3 && o.lat);
+  if (S.pos) { const ll = [S.pos.lat, S.pos.lng]; if (!DM.me) DM.me = L.marker(ll, { icon:mkIcon("🚚") }).addTo(DM.map); else DM.me.setLatLng(ll); }
+  for (const [no, m] of DM.cust) if (!go.some(o => o.no === no)) { try { m.remove(); } catch (e) {} DM.cust.delete(no); }
+  for (const o of go) if (!DM.cust.has(o.no)) DM.cust.set(o.no, L.marker([o.lat, o.lng], { icon:mkIcon("🏠") }).addTo(DM.map));
+  const key = go.map(o => o.no).join(",");
+  if (go.length) { if (key !== FITKEY) { FITKEY = key; const pts = go.map(o => [o.lat, o.lng]).concat(S.pos ? [[S.pos.lat, S.pos.lng]] : []); if (pts.length > 1) DM.map.fitBounds(pts, { padding:[50, 50], maxZoom:16 }); else DM.map.setView(pts[0], 15); } }
+  else { FITKEY = ""; if (S.pos) DM.map.setView([S.pos.lat, S.pos.lng], 16); }
+}
+// Жойлашув: илова очиқ турганда доим кузатилади (харитада ўзингиз кўринасиз). Серверга — фақат йўлга чиққанда.
 function trackLoc(){
   const on = S.d && (S.d.mine || []).some(o => o.stage === 3);
-  if (on && WID == null && navigator.geolocation) {
-    WID = navigator.geolocation.watchPosition(p => { if (Date.now() - LAST < 12000) return; LAST = Date.now(); rpc("drv_loc", { p_session:SES, p_lat:p.coords.latitude, p_lng:p.coords.longitude }).catch(() => {}); },
-      () => toast("Жойлашув рухсати керак: мижоз сизни харитада кўриши учун"), { enableHighAccuracy:true, maximumAge:5000 });
-    try { navigator.wakeLock && navigator.wakeLock.request("screen").then(w => WAKE = w).catch(() => {}); } catch (e) {}
-  } else if (!on && WID != null) { navigator.geolocation.clearWatch(WID); WID = null; try { WAKE && WAKE.release(); } catch (e) {} }
+  if (S.d && WID == null && navigator.geolocation) {
+    WID = navigator.geolocation.watchPosition(p => { S.pos = { lat:p.coords.latitude, lng:p.coords.longitude }; refreshMap();
+      if (!(S.d && (S.d.mine || []).some(o => o.stage === 3)) || Date.now() - LAST < 12000) return; LAST = Date.now(); rpc("drv_loc", { p_session:SES, p_lat:p.coords.latitude, p_lng:p.coords.longitude }).catch(() => {}); },
+      () => toast("Жойлашув рухсати керак: харитада ва мижоз учун"), { enableHighAccuracy:true, maximumAge:5000 });
+  }
+  if (on && !WAKE) { try { navigator.wakeLock && navigator.wakeLock.request("screen").then(w => WAKE = w).catch(() => {}); } catch (e) {} }
+  else if (!on && WAKE) { try { WAKE.release(); } catch (e) {} WAKE = null; }
 }
 function boot(){ if (!SES) return loginView(); load(); }
 setInterval(() => { if (SES && !document.hidden && !S.busy) load(); }, 8000);
