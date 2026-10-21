@@ -137,7 +137,6 @@ async function gate(){
   try { S.me = await rpc("admin_me"); await load(); shell(); }
   catch(e){
     const m = (e && e.message) || "";
-    if (/find the function|admin_me/.test(m) && !/wrong code/.test(m)) return legacyView();
     if (/wrong code|admin_login/.test(m)) { dropSession(); return pinView(errText(e)); }
     $("app").innerHTML = LBAR + `<div class="login"><p class="err">${esc(errText(e))}</p><p class="mu">7-schema-admin2.sql базага ишга туширилганми?</p><button class="btn" onclick="location.reload()">Қайта уриниш</button></div>`;
   }
@@ -162,7 +161,7 @@ function pinView(err){
   const go = async () => {
     const pin = $("pin").value.trim(); if (!pin) return;
     const r = await sb.rpc("admin_login", { p_pin:pin });
-    if (r.error) { if (/pin_not_set/.test(r.error.message)) return setPinView(); if (/find the function/.test(r.error.message)) return legacyView(); $("pe").textContent = errText(r.error); return; }
+    if (r.error) { if (/pin_not_set/.test(r.error.message)) return setPinView(); $("pe").textContent = errText(r.error); return; }
     if (r.data && r.data.error) { $("pe").textContent = r.data.error === "locked" ? ERR.locked : "PIN нотўғри"; $("pin").value = ""; return; }
     CODE = r.data.token; try { sessionStorage.setItem("acode", CODE); } catch(e){} gate();
   };
@@ -179,12 +178,6 @@ function setPinView(err){
     if (r.error) { $("pe").textContent = errText(r.error); return; }
     pinView("PIN ўрнатилди. Энди кириш.");
   };
-}
-function legacyView(err){
-  $("app").innerHTML = LBAR + `<div class="login card"><h2>Админ коди</h2><p class="err">${esc(err || "")}</p>
-    <p><input id="ac" type="password" placeholder="Код" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Кириш</button></div>`;
-  const go = async () => { CODE = $("ac").value.trim(); if (!CODE) return; try { await load(); S.me = { name:"умумий код", roles:["owner"] }; shell(); } catch(e){ CODE = ""; legacyView(errText(e)); } };
-  $("go").onclick = go; $("ac").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
 }
 
 /* ---------- Маълумот ---------- */
