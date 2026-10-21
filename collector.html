@@ -221,7 +221,8 @@ function render(){
   $("app").innerHTML = h;
   stickyOrder(S.tab === "orders" && !S.form ? o : null);
 }
-async function refreshData(){ try { await load(); if (!document.activeElement || !document.activeElement.matches("input,select")) render(); } catch (e) {} }
+let RAW = "";
+async function refreshData(){ try { await load(); const raw = JSON.stringify(S.d); if (raw === RAW) return; if (!document.activeElement || !document.activeElement.matches("input,select,textarea")) { RAW = raw; const y = window.scrollY; render(); window.scrollTo(0, y); } } catch (e) {} }
 async function loadShopOffers(id){ S.shopOffers = id && id !== "new" ? (await call({ action:"c_offers", shop_id:+id })).offers : {}; }
 const LEAF = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/"; let leafletP = null;
 function loadLeaflet(){ if (window.TAMIR_YMAPS) return loadYandexAsL(); if (window.L) return Promise.resolve();
@@ -243,7 +244,7 @@ async function pickPoint(onOk){
   ov.querySelector("#pkme").onclick = me; me();
   ov.querySelector("#pkok").onclick = () => { const c = map.getCenter(); close(); onOk(+c.lat.toFixed(6), +c.lng.toFixed(6)); };
 }
-async function act(fn, okMsg){ try { await fn(); await load(); render(); if (okMsg) toast(okMsg); if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); } catch (e) { toast(e.message); } }
+async function act(fn, okMsg){ try { await fn(); await load(); RAW = JSON.stringify(S.d); render(); if (okMsg) toast(okMsg); if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); } catch (e) { toast(e.message); } }
 
 document.addEventListener("click", async e => {
   const b = e.target.closest("button,[data-openo]"); if (!b) return;
