@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Йиғувчи кабинети — Ta'mir</title>
+<meta name="theme-color" content="#F97316">
+<link rel="manifest" href="manifest-collector.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Ta'mir · Йиғувчи</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -26,6 +29,11 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.35 Rubik,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
 input,button,select{font:inherit;color:inherit}
 input,select{font-size:16px!important}
+[hidden]{display:none!important}
+header{position:sticky;top:0;z-index:7;background:#F97316;color:#1B1F24;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-radius:0 0 18px 18px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+header b{flex:1;font-size:17px}header span{font-size:13px;color:rgba(27,31,36,.78)}
+header button{border:0;border-radius:10px;background:rgba(255,255,255,.92);color:#1B1F24;font:inherit;font-weight:600;font-size:13px;padding:7px 11px}
+.lg{max-width:360px;margin:12vh auto 0;text-align:center;padding:0 16px}.lg h1{font-size:24px}
 .wrap{max-width:680px;margin:0 auto;padding:10px 12px 150px}
 h1{font-size:20px;margin:4px 0 10px}
 h2{font-size:15px;margin:16px 2px 8px;color:var(--muted);font-weight:600}
@@ -77,6 +85,7 @@ a{color:inherit}
 </style>
 </head>
 <body>
+<header id="hdr" hidden><b>Ta'mir · Йиғувчи</b><span id="hme"></span><button id="hout" hidden>Чиқиш</button></header>
 <div class="wrap" id="app"><div class="msg">Юкланмоқда…</div></div>
 <div class="sticky" id="sticky" hidden></div>
 <nav id="nav" hidden>
@@ -89,6 +98,9 @@ a{color:inherit}
 // Кабинет йиғувчи (сборщика рынка). Открывается из бота @tamir_sotuvchi_bot.
 const API = (window.TAMIR_CONFIG || {}).botApi || "https://agajmytkjpkihvaurqij.supabase.co/functions/v1/tg-bot";
 const TG = window.Telegram && window.Telegram.WebApp;
+const IN_TG = !!(TG && TG.initData);
+let SES = ""; try { SES = localStorage.getItem("col_ses") || ""; } catch (e) {}
+const CFGC = window.TAMIR_CONFIG || {}, BOTU = CFGC.env === "test" ? "tamir_test1_bot" : "tamir_sotuvchi_bot";
 const TC = window.TAMIR_CATALOG || { core:[], items:[], units:{} };
 const UZ = new Map();
 (TC.core || []).forEach(([id, base, n, s]) => UZ.set(id, { n, s }));
@@ -103,8 +115,9 @@ const pname = (id, n) => (UZ.get(id) || {}).n || n;
 const unit = u => UNIT[u] || u;
 function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2400); }
 async function call(body){
-  const r = await fetch(API, { method:"POST", headers:{ "content-type":"application/json", "x-init-data":TG.initData }, body:JSON.stringify(body) });
+  const r = await fetch(API, { method:"POST", headers:Object.assign({ "content-type":"application/json" }, IN_TG ? { "x-init-data":TG.initData } : { "x-col-session":SES }), body:JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && !IN_TG) { dropSes(); loginView("Сессия тугади, қайта киринг."); throw new Error("auth"); }
   if (!r.ok) throw new Error(j.error || "Хато. Қайта уриниб кўринг.");
   return j;
 }
@@ -245,7 +258,7 @@ async function pickPoint(onOk){
   ov.querySelector("#pkme").onclick = me; me();
   ov.querySelector("#pkok").onclick = () => { const c = map.getCenter(); close(); onOk(+c.lat.toFixed(6), +c.lng.toFixed(6)); };
 }
-async function act(fn, okMsg){ try { await fn(); await load(); RAW = JSON.stringify(S.d); render(); if (okMsg) toast(okMsg); if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); } catch (e) { toast(e.message); } }
+async function act(fn, okMsg){ try { await fn(); await load(); RAW = JSON.stringify(S.d); render(); if (okMsg) toast(okMsg); if (TG && TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); } catch (e) { toast(e.message); } }
 
 document.addEventListener("click", async e => {
   const b = e.target.closest("button,[data-openo]"); if (!b) return;
@@ -295,12 +308,41 @@ document.addEventListener("change", async e => {
 });
 document.addEventListener("input", e => { if (e.target.id === "pq") { S.pq = e.target.value; const pos = e.target.selectionStart; render(); const q = $("pq"); q.focus(); q.setSelectionRange(pos, pos); } });
 
-(async () => {
-  if (!TG || !TG.initData) { $("app").innerHTML = `<div class="msg">Бу саҳифа Telegram'даги <b>@tamir_sotuvchi_bot</b> ботида «🧺 Йиғувчи кабинети» тугмаси орқали очилади.</div>`; return; }
-  TG.ready(); TG.expand();
-  try { await load(); $("nav").hidden = false; render(); setInterval(refreshData, 8000); }
-  catch (err) { $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
-})();
+function dropSes(){ SES = ""; try { localStorage.removeItem("col_ses"); } catch (e) {} clearInterval(boot.iv); $("nav").hidden = true; $("sticky").hidden = true; }
+async function sbRpc(fn, args){
+  const r = await fetch(CFGC.supabaseUrl + "/rest/v1/rpc/" + fn, { method:"POST", headers:{ apikey:CFGC.supabaseKey, Authorization:"Bearer " + CFGC.supabaseKey, "content-type":"application/json" }, body:JSON.stringify(args || {}) });
+  const j = await r.json().catch(() => null); if (!r.ok) throw new Error((j && (j.message || j.hint)) || "Хато"); return j;
+}
+function loginView(msg){
+  $("hdr").hidden = false; $("hout").hidden = true; $("hme").textContent = "";
+  $("app").innerHTML = `<div class="lg"><h1>Йиғувчи кабинети</h1><p class="muted">Telegram ботдаги йиғувчи аккаунтингиз орқали киринг.</p><button class="btn" id="lgb" style="width:100%">Telegram орқали кириш</button><p class="muted" id="lgm">${esc(msg || "")}</p></div>`;
+  $("lgb").onclick = async () => {
+    $("lgb").disabled = true;
+    try {
+      const tok = await sbRpc("col_login_new");
+      window.open("https://t.me/" + BOTU + "?start=clogin_" + tok, "_blank");
+      $("lgm").textContent = "Telegram очилди: «Start» ни босиб, шу ерга қайтинг…";
+      for (let i = 0; i < 150; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const r = await sbRpc("col_login_check", { p_token:tok });
+        if (r.status === "ok") { SES = r.session; try { localStorage.setItem("col_ses", SES); } catch (e) {} return boot(); }
+        if (r.status === "expired") break;
+      }
+      loginView("Вақт тугади. Қайта уриниб кўринг.");
+    } catch (e) { loginView(e.message); }
+  };
+}
+async function boot(){
+  $("hdr").hidden = false;
+  if (!IN_TG && !SES) return loginView();
+  if (IN_TG) { TG.ready(); TG.expand(); }
+  try {
+    await load(); $("nav").hidden = false; $("hme").textContent = (S.d.me && S.d.me.name) || "";
+    if (!IN_TG) { $("hout").hidden = false; $("hout").onclick = () => { dropSes(); loginView(); }; }
+    render(); clearInterval(boot.iv); boot.iv = setInterval(refreshData, 8000);
+  } catch (err) { if (err.message !== "auth") $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+}
+boot();
 </script>
 </body>
 </html>
