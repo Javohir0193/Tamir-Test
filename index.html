@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ta'mir — стройматериалы с рынка</title>
-<meta name="theme-color" content="#F97316">
+<meta name="theme-color" content="#0A0E17">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>:root{
   --bg:#F5F5F7; --surface:#FFFFFF; --ink:#333333; --muted:#6F6F78; --line:#E8E8EC;
   --accent:#F97316; --accent-dark:#E8620A; --accent-ink:#333333; --steel:#333333; --danger:#B3261E;
@@ -472,6 +472,173 @@ header .h-top nav .badge{top:2px;right:calc(50% - 20px)}
 main,main.home{padding-bottom:64px!important}footer{padding-bottom:64px!important}
 @keyframes lgp{0%,100%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 2px rgba(249,115,22,.55)}50%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 11px rgba(249,115,22,0)}}#lgBtn,#admLang,#langBtn{animation:lgp 1.8s ease-in-out infinite}@media(prefers-reduced-motion:reduce){#lgBtn,#admLang,#langBtn{animation:none}}
 .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px))!important}
+
+/* ---- v90: QurilishExpress дизайни — тўқ фон, шиша карталар, тўқ сариқ градиент, Inter ---- */
+:root{
+  --bg:#0A0E17; --surface:#121621; --ink:#FFFFFF; --muted:rgba(255,255,255,.55); --line:rgba(255,255,255,.08);
+  --accent:#F97316; --accent-dark:#EA580C; --accent-ink:#FFFFFF; --steel:#10B981; --danger:#FB7185;
+  --glass:rgba(255,255,255,.03); --glass-2:rgba(255,255,255,.06); --glass-line:rgba(255,255,255,.07);
+  --grad:linear-gradient(135deg,#F97316,#EA580C); --grad-text:linear-gradient(135deg,#F97316,#FBBF24);
+  --green:#10B981; --gold:#FBBF24; --blue:#60A5FA;
+  color-scheme:dark;
+}
+body,h1,h2,h3,.card h3,.price,.price small,.total,.sub,.sec,.task b,.tiles b,.num{font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{background:var(--bg)!important;color:var(--ink)}
+body::before,#sabar{background:var(--bg)!important}
+h1,h2,h3{letter-spacing:-.02em}
+.big{font-size:28px;font-weight:900;letter-spacing:-.03em}
+.app h2.t,.sechead,.ghead h3{font-weight:800;letter-spacing:-.02em}
+:focus-visible{outline-color:var(--gold)}
+::placeholder{color:rgba(255,255,255,.35)}
+option{background:var(--surface);color:var(--ink)}
+input[type=radio],input[type=checkbox],.krow input,.job input{accent-color:var(--accent)!important}
+
+/* юқори панел */
+header{background:rgba(10,14,23,.86)!important;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-bottom:1px solid var(--glass-line)}
+.logo,.f-logo{color:var(--ink)}
+.wm .hm{color:var(--accent)}
+.wm .hm path[stroke]{stroke:var(--bg)}
+.wm .tp path{fill:var(--gold)}
+header .h-top nav button{color:rgba(255,255,255,.6)!important}
+header .h-top nav button:hover{color:var(--ink)!important}
+header .h-top nav button[aria-current="page"]{background:rgba(249,115,22,.1);color:var(--accent)!important;box-shadow:inset 0 0 0 1px rgba(249,115,22,.22)}
+header .h-top nav button[aria-current="page"] .ni{stroke:var(--accent);fill:rgba(249,115,22,.18)}
+header .h-top nav .badge{background:var(--grad)!important;color:#fff!important;box-shadow:0 0 0 2px var(--bg)}
+.langbtn{background:var(--grad)!important;color:#fff!important;animation-name:lgp2!important}
+@keyframes lgp2{0%,100%{box-shadow:0 8px 24px rgba(249,115,22,.35),0 0 0 2px var(--bg),0 0 0 2px rgba(249,115,22,.55)}50%{box-shadow:0 8px 24px rgba(249,115,22,.35),0 0 0 2px var(--bg),0 0 0 11px rgba(249,115,22,0)}}
+.heroband{background:transparent}
+.heroband .csearch{box-shadow:none}
+
+/* қидирув ва майдонлар */
+.csearch,.hsearch,.search{background:var(--glass-2);border:1px solid var(--line);border-radius:14px}
+.csearch svg{stroke:rgba(255,255,255,.35)}
+.csearch input,.hsearch input{color:var(--ink)}
+.hsearch button{background:var(--grad);color:#fff}
+.hsres{background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.hsrow{border-bottom-color:var(--line)}
+.hse{background:color-mix(in srgb,var(--c) 20%,var(--surface));border-radius:12px}
+.hsm small,.hsempty{color:var(--muted)}
+label{color:var(--muted);font-weight:600}
+label input,label select,label textarea,.acknote textarea{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px;color:var(--ink);padding:12px 16px}
+label input:focus,label select:focus,label textarea:focus,.acknote textarea:focus{border-color:rgba(249,115,22,.5);outline:none}
+
+/* кнопкалар */
+.btn{background:var(--grad);color:#fff;font-weight:700;border-radius:14px;box-shadow:0 6px 20px rgba(249,115,22,.25)}
+.btn:hover{background:var(--grad);filter:brightness(1.08)}
+.btn.lg{min-height:56px;border-radius:16px;box-shadow:0 8px 32px rgba(249,115,22,.3)}
+.btn.alt{background:var(--glass);border:1px solid var(--line);color:var(--ink);box-shadow:none}
+.btn.alt:hover{background:var(--glass-2);filter:none}
+.btn.dark{background:var(--glass-2);border:1px solid var(--line);color:var(--ink);box-shadow:none}
+.btn.tg{background:#2AABEE;color:#fff;box-shadow:0 6px 20px rgba(42,171,238,.25)}
+.btn.paybtn,.btn.lg.paybtn{background:#fff;border:0;border-radius:16px;box-shadow:none;color:var(--bg)}
+.btn.paybtn:hover{filter:brightness(.95)}
+.lnk,.th .lnk,.cheap-h button,.myr-h button{color:var(--accent);text-decoration:none;font-weight:700}
+.back{color:var(--muted)}
+.back:hover{color:var(--ink)}
+.step{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:14px}
+.step button{color:rgba(255,255,255,.5)}
+.step button[data-inc]{color:var(--accent)}
+.step .qin{font-weight:800}
+.chip{background:rgba(255,255,255,.04);border:1px solid var(--glass-line);border-radius:10px;color:var(--muted);font-weight:600}
+.chip:hover{color:var(--ink)}
+.chip[aria-pressed="true"]{background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);color:var(--accent)}
+.seg button{background:var(--glass);border:1px solid var(--line);border-radius:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--grad);border-color:transparent;color:#fff}
+
+/* шиша карталар */
+.panel,.order,.stage,.myr,.cheapc,.sp-o,.task,.tiles div,.preset,.job,.gtile,.rq,.wideb,.mkt,.car,.zone,.carsel,.calc6 .ap,.mkcur,.st3,.dcard,.acc,.hero{background:var(--glass);border:1px solid var(--glass-line);color:var(--ink)}
+.panel,.order,.stage,.myr,.cheapc,.hero{border-radius:24px}
+.panel,.order{padding:20px}
+.panel h2,.order h2{font-weight:800}
+.mkt,.car,.zone,.carsel,.rq,.wideb,.gtile,.task,.sp-o,.dcard{border-radius:18px}
+.mkt,.car,.zone,.carsel{border-width:2px}
+.mkt.on,.car.on,.zone.on,.carsel.on,.modes label:has(input:checked){border-color:var(--accent);background:rgba(249,115,22,.06)}
+.gtile:hover,.mkt:hover,.car:hover,.rq:hover,.task:hover{border-color:rgba(249,115,22,.3)}
+.modes label{background:var(--glass);border:1px solid var(--line);border-radius:14px;color:var(--ink)}
+.ap .e,.rq .e{background:var(--glass-2);border-radius:18px}
+.ap{color:var(--ink)}
+.myr-g button{background:var(--glass-2);color:var(--ink)}
+.mnote{background:var(--glass);border:1px solid var(--glass-line);border-radius:14px}
+.tile{background:var(--glass)!important;border:1px solid var(--glass-line);border-radius:20px;color:var(--ink)}
+.tile small,.myr-g small,.zone small,.carsel small,.car small,.mkt small,.cheap-n,.mkcur .tx small,.sp-o summary small,.sp-i small,.drv small,.eta small,.pinrow small,.pick-bot small{color:var(--muted)}
+.cheap-n b{color:var(--ink)}
+.st3 .n,.num{background:var(--grad);color:#fff}
+.hero-img{background:radial-gradient(circle at 85% 0%,rgba(249,115,22,.22),transparent 70%),var(--glass)}
+.hero-img .bigtxt{color:rgba(255,255,255,.05)}
+.hero-img .badge3{background:var(--grad);box-shadow:0 0 0 8px rgba(249,115,22,.15),0 0 0 20px rgba(249,115,22,.05)}
+.banner,.sp-top{background:linear-gradient(135deg,rgba(249,115,22,.18),rgba(249,115,22,.04));border:1px solid rgba(249,115,22,.2);border-radius:24px}
+.banner p,.sp-top small{color:var(--muted)}
+.banner .go,.mkcur.none button,.wideb .cnt{background:var(--grad);color:#fff}
+.mkcur button{background:var(--glass-2);color:var(--ink)}
+.mkcur.none{background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.2)}
+.calchint{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);color:var(--ink)}
+.calchint small,.calchint .ar{color:var(--muted)}
+.sp-row div{background:var(--glass-2)}
+.sp-total{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sp-o[open] summary{border-bottom-color:var(--line)}
+.sp-i{border-bottom-color:var(--line)}
+
+/* маҳсулот карточкаси */
+.card{background:var(--glass);border:1px solid var(--glass-line);border-radius:24px;transition:border-color .2s,transform .2s}
+.card:hover{box-shadow:none;border-color:rgba(249,115,22,.3);transform:translateY(-2px)}
+.pic{height:140px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.01))}
+.card .body{padding:16px 16px 18px;gap:6px}
+.card h3{font-weight:700}
+.price{font-weight:900;font-size:20px;letter-spacing:-.02em}
+.price small{color:var(--muted);font-weight:500}
+.grid{gap:16px}
+
+/* нарх даражаси */
+.pbar3{background:linear-gradient(90deg,#10B981 0%,#FBBF24 50%,#F43F5E 100%)}
+.pbar3 i{border-color:var(--bg)}
+.mkt small.cheap,.cheap-n small.cheap,.cheap-ok,.pinrow .pinok{color:#34D399}
+.mkt small.mid,.cheap-n small.mid{color:var(--gold)}
+.mkt small.dear,.cheap-n small.dear{color:var(--danger)}
+.car .cp{color:var(--accent);background:rgba(249,115,22,.12)}
+.mn small.shop,.cov{color:var(--blue)}
+
+/* сават ва жами */
+.line .sum{font-weight:800}
+.total{font-weight:900}
+.total>span:last-child{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.myr-ord .bar,.pbar{background:var(--line)}
+.myr-ord .bar i{background:var(--grad)}
+.pbar i{background:var(--green)}
+
+/* буюртмалар ва ҳолат */
+.pill{background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.22);border-radius:8px;color:var(--accent);font-size:12px;font-weight:700;padding:4px 12px}
+.pill.done,.okb{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.22);color:var(--green)}
+.sp-i small.okb{color:var(--green)}
+.tl li i{width:20px;height:20px;border:2px solid rgba(255,255,255,.14);background:var(--bg)}
+.tl li.done{color:var(--green);font-weight:600}
+.tl li.done i{background:var(--green);border-color:var(--green)}
+.tl li.done::before{background:var(--green)}
+.tl li.now{color:var(--accent);font-weight:700}
+.tl li.now i{background:var(--grad);border-color:var(--accent);box-shadow:0 0 0 6px rgba(249,115,22,.15)}
+.paybox{background:var(--glass);border:1px solid var(--line);border-radius:18px}
+.paybox.exp{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.35)}
+.plate{background:#fff;color:var(--bg);border-color:var(--bg)}
+.eta{font-weight:900;letter-spacing:-.02em}
+
+/* карта */
+.mapbox{background:var(--glass);border:1px solid var(--glass-line);border-radius:20px}
+.mapbox .leaflet-tile-pane,.pick-map .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9)}
+.leaflet-container{background:var(--bg)!important}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--surface)!important;color:var(--ink)!important}
+.leaflet-bar a{background:var(--surface)!important;color:var(--ink)!important;border-color:var(--line)!important}
+.leaflet-control-attribution{background:rgba(10,14,23,.75)!important;color:var(--muted)!important}
+.leaflet-control-attribution a{color:var(--ink)!important}
+.pick{background:var(--bg)}
+.pick-top .x{background:var(--glass-2);color:var(--ink)}
+
+/* ойналар, хабарлар, пастки қисм */
+.sheet,.rcp{background:rgba(5,7,12,.7)}
+.sbox,.rcpbox{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0}
+.rcpbox hr{border-top-color:var(--line)}
+.toast{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
+footer{background:var(--bg);border-top:1px solid var(--glass-line)}
+footer p,footer .f-bottom{color:var(--muted)}
+footer .f-bottom{border-top-color:var(--line)}
 </style>
 </head>
 <body>
