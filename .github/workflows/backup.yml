@@ -24,7 +24,19 @@ jobs:
       - name: Калитлар борми
         id: chk
         run: |
-          if [ -z "$DB_URL" ] || [ -z "$PASS" ]; then echo "Калитлар қўйилмаган, ўтказиб юборилди"; echo "run=no" >> "$GITHUB_OUTPUT"; else echo "run=yes" >> "$GITHUB_OUTPUT"; fi
+          if [ -z "$DB_URL" ] || [ -z "$PASS" ]; then echo "Калитлар қўйилмаган, ўтказиб юборилди"; echo "run=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          case "$DB_URL" in
+            postgresql://*|postgres://*) ;;
+            *) echo "::error::SUPABASE_DB_URL «postgresql://» билан бошланмаяпти. Қаторни қайта ёзинг (бўш жой ва қўштирноқсиз)."; exit 1 ;;
+          esac
+          case "$DB_URL" in
+            *"[YOUR-PASSWORD]"*|*"["*|*"]"*) echo "::error::SUPABASE_DB_URL ичида [ ] қавслар қолган: [YOUR-PASSWORD] ўрнига паролни қавссиз ёзинг."; exit 1 ;;
+          esac
+          case "$DB_URL" in
+            *"@aws-"*pooler.supabase.com*) case "$DB_URL" in postgresql://postgres.*|postgres://postgres.*) ;; *) echo "::error::Pooler учун фойдаланувчи postgres.ЛОЙИҲА_КОДИ бўлиши керак."; exit 1 ;; esac ;;
+          esac
+          echo "Ҳост: $(printf '%s' "$DB_URL" | sed -E 's#^[a-z]+://[^@]*@([^:/]+).*#\1#')"
+          echo "run=yes" >> "$GITHUB_OUTPUT"
       - name: pg_dump 17 ўрнатиш
         if: steps.chk.outputs.run == 'yes'
         run: |
