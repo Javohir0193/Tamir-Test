@@ -2,6 +2,8 @@
 // Ишлатиш: IC.i("map", 22) → <svg>…; IC.pin() → катта харита булавкаси; IC.marker("truck") → харита белгиси.
 (function () {
   var ua = navigator.userAgent || "", ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  // window.IC_STYLE = "line" (харидор иловаси) → ҳамма жойда дизайндаги чизиқли иконкалар (қалинлиги 2), тўлдирилганлари ишлатилмайди
+  var line = window.IC_STYLE === "line", SW = line ? 2 : 1.7;
   var P = {
     pin:    ['<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>', '<path fill-rule="evenodd" d="M12 22s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12zm0-9.2a2.8 2.8 0 1 0 0-5.6 2.8 2.8 0 0 0 0 5.6z"/>'],
     map:    ['<path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6zM9 4v14M15 6v14"/>', '<path d="M15 5.1 9 3 3.4 4.9a.5.5 0 0 0-.4.5v15a.5.5 0 0 0 .7.5L9 19l6 2 5.6-1.9a.5.5 0 0 0 .4-.5v-15a.5.5 0 0 0-.7-.5zM15 19l-6-2.1V5l6 2.1z"/>'],
@@ -35,18 +37,41 @@
     car:    ['<path d="M4 16V12l2-5h12l2 5v4zM4 16v2.5M20 16v2.5M4 12h16"/><circle cx="7.5" cy="14.2" r=".9"/><circle cx="16.5" cy="14.2" r=".9"/>', '<path d="M18.9 6c-.2-.6-.8-1-1.4-1h-11c-.7 0-1.2.4-1.4 1L3 12v8a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h12v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-8zM6.5 16a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm11 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zM5 11l1.5-4.5h11L19 11z"/>'],
     star:   ['<path d="m12 3.5 2.6 5.5 6 .8-4.4 4.1 1.1 5.9L12 16.9 6.7 19.8l1.1-5.9L3.4 9.8l6-.8z"/>', '<path d="m12 17.3 6.2 3.7-1.6-7L22 9.2l-7.2-.6L12 2 9.2 8.6 2 9.2 7.5 14l-1.6 7z"/>'],
     dot:    ['<circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>', '<circle cx="12" cy="12" r="6"/>'],
-    nav:    ['<path d="M20 4 4 10.5l6.5 2.5 2.5 6.5z"/>', '<path d="M21 3 3 10.5l7 2.5 2.5 7z"/>']
+    nav:    ['<path d="M20 4 4 10.5l6.5 2.5 2.5 6.5z"/>', '<path d="M21 3 3 10.5l7 2.5 2.5 7z"/>'],
+    // Каталог ва хоналар учун (фақат чизиқли)
+    brick:  ['<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19"/>'],
+    bag:    ['<path d="M6 6.5 7.5 3h9L18 6.5"/><path d="M5.5 6.5h13l1 13.5a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z"/><path d="M9 11h6"/>'],
+    rebar:  ['<path d="M5 19 19 5M5 13l8-8M11 19l8-8"/><path d="M7 15l2 2M10 12l2 2M13 9l2 2"/>'],
+    wood:   ['<rect x="3" y="5.5" width="18" height="5.5" rx="1"/><rect x="3" y="13" width="18" height="5.5" rx="1"/><circle cx="6.5" cy="8.2" r=".9"/><circle cx="6.5" cy="15.7" r=".9"/>'],
+    plug:   ['<path d="M9 2v5M15 2v5M6 7h12v4a6 6 0 0 1-12 0zM12 17v5"/>'],
+    bulb:   ['<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2V18h6v-1.3c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/>'],
+    drop:   ['<path d="M12 2.7 17.7 8.4a8 8 0 1 1-11.4 0z"/>'],
+    pipe:   ['<path d="M3 6h10a5 5 0 0 1 5 5v10M3 11h8a2 2 0 0 1 2 2v8"/><path d="M3 4v9M16 21h4"/>'],
+    flame:  ['<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.1.3 1.5 1.4 2.6 2.5 2.6z"/>'],
+    layers: ['<path d="M12 2 2 7l10 5 10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>'],
+    shield: ['<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>'],
+    grid:   ['<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/>'],
+    brush:  ['<path d="M18.4 2.6a2 2 0 0 1 2.9 2.9L12 14.8 9.2 12z"/><path d="M7 14a3 3 0 0 0-3 3c0 1.5-1 2.5-2 3 3 1.5 7 .5 8-2a3 3 0 0 0-3-4z"/>'],
+    door:   ['<path d="M5 21V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v17M3 21h18M15 12h.01"/>'],
+    hammer: ['<path d="m15 12-8.5 8.5a2.1 2.1 0 0 1-3-3L12 9"/><path d="M17.6 15 22 10.6M20.9 11.7l-1.3-1.3c-.6-.6-.9-1.4-.9-2.2V6.9L16.2 4.4A6 6 0 0 0 12 2.7H9l.9.8A6.6 6.6 0 0 1 12 8.4v1.6l2 2h2.5c.9 0 1.7.3 2.3.9l1.3 1.3"/>'],
+    nut:    ['<path d="M12 2.5 20.2 7.3v9.4L12 21.5l-8.2-4.8V7.3z"/><circle cx="12" cy="12" r="3"/>'],
+    bed:    ['<path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/>'],
+    sun:    ['<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'],
+    flask:  ['<path d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7 15h10"/>']
   };
   var IC = {
     ios: ios,
     i: function (n, s) {
       var d = P[n]; if (!d) return ""; s = s || 20;
-      return ios ? '<svg class="ic" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px">' + d[0] + '</svg>'
+      return ios || line || !d[1] ? '<svg class="ic" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="currentColor" stroke-width="' + SW + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-4px">' + d[0] + '</svg>'
                  : '<svg class="ic" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="currentColor" aria-hidden="true" style="vertical-align:-4px">' + d[1] + '</svg>';
     },
     // Харита маркази булавкаси (тагидаги учи — аниқ нуқта)
     pin: function () {
       var id = "pg" + Math.floor(Math.random() * 1e6);
+      if (line) return '<svg viewBox="0 0 44 60" width="44" height="60" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F97316"/><stop offset="1" stop-color="#EA580C"/></linearGradient></defs>' +
+        '<ellipse cx="22" cy="57" rx="7" ry="2.4" fill="rgba(0,0,0,.35)"/><path d="M22 56C22 56 4 37.5 4 22a18 18 0 0 1 36 0c0 15.5-18 34-18 34z" fill="url(#' + id + ')" stroke="#fff" stroke-width="2"/>' +
+        '<circle cx="22" cy="22" r="6.5" fill="#fff"/></svg>';
       return ios
         ? '<svg viewBox="0 0 44 60" width="44" height="60" aria-hidden="true"><defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF6B5E"/><stop offset="1" stop-color="#D92D20"/></linearGradient></defs>' +
           '<ellipse cx="22" cy="57" rx="7" ry="2.4" fill="rgba(0,0,0,.28)"/><path d="M22 56C22 56 4 37.5 4 22a18 18 0 0 1 36 0c0 15.5-18 34-18 34z" fill="url(#' + id + ')" stroke="rgba(255,255,255,.9)" stroke-width="2"/>' +
@@ -58,17 +83,18 @@
     marker: function (n) {
       var inner = n === "A" || n === "B" ? '<b style="font:800 15px/1 system-ui">' + n + '</b>' : IC.i(n, 20);
       var bg = n === "truck" ? "#1B1F24" : n === "home" ? "#2563EB" : "#FFD92F", fg = n === "A" || n === "B" ? "#1B1F24" : "#fff";
+      if (line) { bg = n === "home" || n === "B" ? "#3B82F6" : "linear-gradient(135deg,#F97316,#EA580C)"; fg = "#fff"; }
       return '<div style="width:34px;height:34px;border-radius:50%;background:' + bg + ';color:' + fg + ';display:grid;place-items:center;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);margin:3px">' + inner + '</div>';
     }
   };
   window.IC = IC;
 
   // ---- Эмодзини автоматик иконкага алмаштириш (матн бошидаги интерфейс эмодзилари) ----
-  var G = "#1F9D55", R = "#D93025", A = "#D9822B";
+  var G = line ? "#10B981" : "#1F9D55", R = line ? "#FB7185" : "#D93025", A = line ? "#FBBF24" : "#D9822B";
   var EMAP = { "✅":["check",G], "✓":["tick"], "❌":["cross",R], "✕":["cross"], "📍":["pin"], "🏬":["store"], "🏪":["store"], "📦":["box"], "🧾":["receipt"],
     "🧺":["basket"], "🛒":["basket"], "🛍":["basket"], "🏠":["home"], "🔧":["tool"], "🛠":["tool"], "🕒":["clock"], "⏳":["clock"], "⏱":["clock"], "💳":["card"],
     "🏷":["tag"], "📱":["phone"], "👤":["user"], "💬":["chat"], "🔔":["bell"], "📷":["camera"], "⬇":["download"], "⚠️":["warning",A], "⚠":["warning",A],
-    "⚡":["bolt"], "➕":["plus"], "🙏":["heart"], "🙋":["check"], "🗺":["map"], "🚚":["truck"], "🚐":["truck"], "🚛":["truck"], "🛻":["truck"],
+    "⚡":["bolt"], "➕":["plus"], "🧪":["flask"], "🙏":["heart"], "🙋":["check"], "🗺":["map"], "🚚":["truck"], "🚐":["truck"], "🚛":["truck"], "🛻":["truck"],
     "🚗":["car"], "🚕":["car"], "🎯":["locate"], "★":["star"], "📏":["ruler"], "📐":["ruler"], "🔴":["dot",R], "🟡":["dot",A], "🟢":["dot",G] };
   var keys = Object.keys(EMAP).sort(function (a, b) { return b.length - a.length; });
   var esc = function (x) { return x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); };
@@ -79,7 +105,7 @@
     var d = P[name]; if (!d) return null;
     var sp = document.createElement("span"); sp.className = "sk";
     sp.style.cssText = "display:inline-flex;vertical-align:-.2em;margin-right:.35em;width:1.15em;height:1.15em;flex:none" + (color ? ";color:" + color : "");
-    sp.innerHTML = ios ? '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d[0] + '</svg>'
+    sp.innerHTML = ios || line || !d[1] ? '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="' + (line ? 2 : 1.8) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d[0] + '</svg>'
                        : '<svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true">' + d[1] + '</svg>';
     return sp;
   }

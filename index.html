@@ -639,6 +639,20 @@ label input:focus,label select:focus,label textarea:focus,.acknote textarea:focu
 footer{background:var(--bg);border-top:1px solid var(--glass-line)}
 footer p,footer .f-bottom{color:var(--muted)}
 footer .f-bottom{border-top-color:var(--line)}
+/* иконкалар — эмодзи ўрнига дизайндаги чизиқли SVG */
+.pic{color:color-mix(in srgb,var(--c) 55%,#fff);font-size:0}
+.pic svg{opacity:.75}
+.hse{color:color-mix(in srgb,var(--c) 55%,#fff);font-size:0}
+.gtile .ge,.ap .e,.rq .e{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:rgba(249,115,22,.12);color:var(--accent);font-size:0}
+.ap .e{width:56px;height:56px;border-radius:18px}
+.calc6 .ap .e{width:40px;height:40px;border-radius:12px;background:rgba(249,115,22,.12)}
+.calc6 .ap .e svg{width:22px;height:22px}
+.ghead h3{display:flex;align-items:center;gap:10px}
+.ghead .gi{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:rgba(249,115,22,.12);color:var(--accent)}
+.ghead .gi svg{vertical-align:0}
+.tile .emo{color:var(--accent);opacity:.55;font-size:0}
+.hero-img .badge3{color:#fff;font-size:0}
+.sk{color:inherit}
 </style>
 </head>
 <body>
@@ -670,6 +684,7 @@ footer .f-bottom{border-top-color:var(--line)}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
+<script>window.IC_STYLE = "line";</script>
 <script src="icons.js"></script>
 <script src="hidehdr.js"></script>
 <script src="pull.js"></script>
@@ -752,6 +767,13 @@ const FINISH = ["tile", "paint", "floor", "doors"];
 { const g = byIdRaw(13); if (g) g.cat = "mix"; }   // грунтовка нужна для черновых работ — переносим в «Смеси»
 for (let i = P.length - 1; i >= 0; i--) if (FINISH.includes(P[i].cat)) P.splice(i, 1);
 for (let i = CATS.length - 1; i >= 0; i--) if (FINISH.includes(CATS[i].id)) CATS.splice(i, 1);
+// Дизайндаги чизиқли иконкалар (icons.js): категория, бўлим ва хона → иконка номи. Эмодзи расм сифатида ишлатилмайди.
+const CAT_IC = { mix:"bag", brick:"brick", metal:"rebar", wood:"wood", roof:"home", elcable:"bolt", elinst:"bolt", elfin:"plug", light:"bulb",
+  pipe:"drop", sewer:"pipe", santeh:"drop", heat:"flame", gkl:"layers", insul:"shield", tile:"grid", paint:"brush", floor:"layers", doors:"door",
+  tool:"hammer", fast:"nut", work:"tool" };
+const GRP_IC = { g1:"brick", g2:"home", g3:"bolt", g4:"drop", g5:"ruler", g6:"brush", g7:"hammer" };
+const TASK_IC = { bath:"drop", kitchen:"flame", room:"bed", balcony:"sun", brick:"brick", gkl:"layers" };
+const icn = (n, s) => IC.i(n || "box", s);
 const GROUPS = TC.groups.map(g => ({ ...g, cats:g.cats.filter(c => !FINISH.includes(c)) })).filter(g => g.cats.length);
 const grpCats = g => (GROUPS.find(x => x.id === g) || { cats:[] }).cats;
 const byId = id => P.find(x => x.id === id);
@@ -918,7 +940,7 @@ function listHTML(){
   if (!items.length) return `<div class="empty">Ничего не найдено. Попробуйте другое слово или категорию.</div>`;
   return `<div class="grid">` + items.map(p => `
     <article class="card" data-pid="${p.id}">
-      <div class="pic" style="--c:${catColor(p.cat)}" aria-hidden="true">${p.e}</div>
+      <div class="pic" style="--c:${catColor(p.cat)}" aria-hidden="true">${icn(CAT_IC[p.cat], 44)}</div>
       <div class="body">
         <h3>${p.n}</h3><p class="spec">${p.s}</p>
         ${p.nop ? `<div class="price nopr">Цена уточняется <small>/ ${p.u}</small></div>`
@@ -932,11 +954,11 @@ function catBody(){
   if (!q && S.grp === "all" && GROUPS.length){
     return `<div class="gtiles">${GROUPS.map((g, i) => {
       const n = P.filter(p => g.cats.includes(p.cat)).length;
-      return `<button class="gtile" data-grp="${g.id}"><span class="ge">${g.e}</span><b>${i + 1}. ${g.n}</b><small>${n} товаров</small></button>`;
+      return `<button class="gtile" data-grp="${g.id}"><span class="ge">${icn(GRP_IC[g.id], 24)}</span><b>${i + 1}. ${g.n}</b><small>${n} товаров</small></button>`;
     }).join("")}</div>`;
   }
   const g = GROUPS.find(x => x.id === S.grp);
-  const head = q ? "" : `<div class="ghead"><button class="back" data-grp="all">← Все разделы</button><h3>${g ? g.e + " " + g.n : ""}</h3></div>
+  const head = q ? "" : `<div class="ghead"><button class="back" data-grp="all">← Все разделы</button><h3>${g ? `<span class="gi">${icn(GRP_IC[g.id], 20)}</span>` + g.n : ""}</h3></div>
     <div class="chips" role="group" aria-label="Категории">${[{ id:"all", name:"Всё" }, ...CATS.filter(c => grpCats(S.grp).includes(c.id))]
       .map(c => `<button class="chip" data-cat="${c.id}" aria-pressed="${S.cat === c.id}">${c.name}</button>`).join("")}</div>`;
   return head + `<div id="list">${listHTML()}</div>`;
@@ -1104,7 +1126,7 @@ function renderHome(){
   S.view = "home";
   const tk = id => TASKS.find(x => x.id === id);
   const m = curMk();
-  const ap = (id) => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${t.e}</span>${t.name}</button>`; };
+  const ap = (id) => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${icn(TASK_IC[t.id], 26)}</span>${t.name}</button>`; };
   const active = (S.orders || []).filter(o => o.stage < stagesFor(o).length - 1).length;
   document.getElementById("view").innerHTML = `<div class="app wide">
     <div class="heroband"><form class="csearch" id="homesearch" style="margin:0"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="homeq" type="search" placeholder="Найти: цемент, плитка, краска…" aria-label="Поиск по каталогу" autocomplete="off"></form></div>
@@ -1133,17 +1155,17 @@ function cheapCard(){
 }
 function renderHome_old(){
   S.view = "home";
-  const room = (id, bg) => { const t = TASKS.find(x => x.id === id); return `<button class="tile" data-task="${t.id}" style="background:${bg}">${t.name}<small>${t.sub}</small><span class="emo">${t.e}</span></button>`; };
+  const room = (id, bg) => { const t = TASKS.find(x => x.id === id); return `<button class="tile" data-task="${t.id}" style="background:${bg}">${t.name}<small>${t.sub}</small><span class="emo">${icn(TASK_IC[t.id], 40)}</span></button>`; };
   document.getElementById("view").innerHTML = `<div class="wide">
     <section class="hero">
-      <div class="hero-img"><span class="bigtxt">м²</span><span class="badge3">🛠️</span></div>
+      <div class="hero-img"><span class="bigtxt">м²</span><span class="badge3">${icn("tool", 40)}</span></div>
       <div class="hero-text"><div><h2>Ремонт без хлопот</h2><p>Выберите комнату — мы посчитаем материалы, этапы работы и цену. Заказ — в несколько нажатий.</p></div>
       <button class="btn fit" data-scroll="rooms">Посчитать ремонт</button></div>
     </section>
     <h2 class="sechead" id="rooms">Какую комнату ремонтируете?</h2>
     <div class="promo">${room("bath", "#B5DAF7")}${room("kitchen", "#FFE3C2")}${room("room", "#C9F2B4")}${room("balcony", "#FFD6D9")}</div>
     <h2 class="sechead">Другие работы</h2>
-    <div class="promo">${room("brick", "#C3C3F5")}${room("gkl", "#BFE0CB")}<button class="tile" data-tab="catalog" style="background:#E6E6E6">Каталог товаров<small>Выбрать материалы самому</small><span class="emo">📦</span></button></div>
+    <div class="promo">${room("brick", "#C3C3F5")}${room("gkl", "#BFE0CB")}<button class="tile" data-tab="catalog" style="background:#E6E6E6">Каталог товаров<small>Выбрать материалы самому</small><span class="emo">${icn("box", 40)}</span></button></div>
     <h2 class="sechead">Как это работает</h2>
     <div class="steps3">
       <div class="st3"><span class="n">1</span><div><b>Выберите комнату</b><br><span class="hint">и размер: маленькая, средняя или большая</span></div></div>
@@ -1261,7 +1283,7 @@ function nextAfterSize(){ logEvent("calc", { t:S.task }); if (curTask().jobs) re
 function renderCalc(){
   S.view = "home"; S.task = null;
   const tk = id => TASKS.find(x => x.id === id);
-  const tile = id => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${t.e}</span>${t.name}</button>`; };
+  const tile = id => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${icn(TASK_IC[t.id], 26)}</span>${t.name}</button>`; };
   const m = curMk();
   document.getElementById("view").innerHTML = `<div class="app wide">
     ${m && !S.mkOpen ? `<div class="th"><h2 class="t">Считаем по ценам рынка</h2><button class="lnk" data-mkopen>Другой рынок ›</button></div>
@@ -1854,7 +1876,7 @@ function deliveryCard(o){
   if (o.stage < 3) return `<div class="dcard">${head}<p class="dnote">🚚 Водитель загружает ваш заказ: проверяет каждую позицию по списку.</p>${pa}</div>`;
   if (o.stage === 3){
     const eta = o.dlat ? (o.eta ? `<div class="eta">≈ ${o.eta} мин<small>до вас · обновлено ${ago(o.dat)}</small></div>` : `<div class="eta sm">В пути<small>обновлено ${ago(o.dat)}</small></div>`)
-      : `<p class="dnote">Все товары загружены ✅. Водитель выехал, его машина скоро появится на карте.</p>`;
+      : `<p class="dnote">Все товары загружены. Водитель выехал, его машина скоро появится на карте.</p>`;
     return `<div class="dcard">${head}${eta}${o.dlat ? `<div class="mapbox" data-map="${o.no}"></div>` : ""}${pa}</div>`;
   }
   if (!o.received) return `<div class="dcard">${head}<p class="dnote"><b>Заказ доставлен.</b> Проверьте, всё ли на месте:</p>
@@ -1891,7 +1913,7 @@ async function pickMap(){
   ov.innerHTML = `<div class="pick-top"><b>Куда привезти?</b><button class="x" type="button" data-pickx aria-label="Закрыть">✕</button></div>
     <div class="pick-mw"><div class="pick-map" id="pickMap"></div><div class="pin">${IC.pin()}</div></div>
     <div class="pick-bot"><button class="btn alt" type="button" data-pickme>${IC.i("locate",18)} Моё местоположение</button><button class="btn" type="button" data-pickok>Готово — привезти сюда</button>
-    <small>Передвиньте карту так, чтобы 📍 стояла у вашего дома или подъезда.</small></div>`;
+    <small>Передвиньте карту так, чтобы булавка стояла у вашего дома или подъезда.</small></div>`;
   document.body.appendChild(ov);
   try { await loadLeaflet(); } catch(e){ ov.querySelector("#pickMap").textContent = "Карта не загрузилась. Проверьте интернет."; return; }
   const f = S.form, map = L.map("pickMap", { zoomControl:false }); tiles(map);
@@ -1974,7 +1996,7 @@ function homeResHTML(){
   const items = homeFind(q);
   if (!items.length) return `<div class="hsempty">Ничего не найдено. Попробуйте другое слово.</div>`;
   return items.slice(0, 8).map(p => `<div class="hsrow">
-    <span class="hse" style="--c:${catColor(p.cat)}">${p.e}</span>
+    <span class="hse" style="--c:${catColor(p.cat)}">${icn(CAT_IC[p.cat], 22)}</span>
     <div class="hsm"><b>${p.n}</b><small>${p.s}${p.nop ? "" : " · " + fmt(p.p) + " " + CURRENCY + " / " + p.u}</small></div>
     ${qty(p.id) ? stepper(p.id) : `<button class="btn hsadd" data-add="${p.id}">+ В корзину</button>`}
   </div>`).join("") + (items.length > 8 ? `<button class="lnk hsall" data-hsall>Все результаты (${items.length}) ›</button>` : "");
