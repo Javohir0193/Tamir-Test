@@ -304,7 +304,7 @@ async function act(fn, okMsg){ try { await fn(); await load(); RAW = JSON.string
 document.addEventListener("click", async e => {
   const b = e.target.closest("button,[data-openo]"); if (!b) return;
   const ds = b.dataset;
-  if (ds.tab) { S.tab = ds.tab; S.form = null; S.open = null; render(); window.scrollTo(0, 0); }
+  if (ds.tab) { S.tab = ds.tab; S.form = null; S.open = null; render(); window.scrollTo(0, 0); if (ds.tab === "earn") act(async () => {}); }
   else if (ds.openo) { S.open = +ds.openo; S.sel = {}; S.qty = {}; S.price = {}; render(); window.scrollTo(0, 0); refreshData(); }
   else if ("back" in ds) { S.open = null; render(); refreshData(); }
   else if ("cancel" in ds) { S.form = null; render(); }
