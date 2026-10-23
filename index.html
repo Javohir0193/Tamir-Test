@@ -850,8 +850,9 @@ const CARS = [
   { id:"xxl", e:"🚚", n:"XXL", cap:"до 4000 кг", capKg:4000, hint:"большой объём",                     near:115000, mid:160000, far:215000, p:115000 },
   { id:"3xl", e:"🚛", n:"3XL", cap:"до 8000 кг", capKg:8000, hint:"самая большая загрузка",            near:133000, mid:185000, far:245000, p:133000 }
 ];
-// Иконка кузова: дизайндаги битта чизиқли юк машинаси (сиғими ёнидаги ёзувда)
-const carSvg = () => icn("truck", 26);
+// Иконка кузова сиғими бўйича, 3 хил: ≤1500 кг кичик, ≤3000 кг ўрта, ундан оғир — катта юк машинаси
+const carIc = kg => kg <= 1500 ? "truckS" : kg <= 3000 ? "truckM" : "truckL";
+const carSvg = id => { const c = CARS.find(x => x.id === id); return icn(carIc(c ? c.capKg : 0), 28); };
 const ZONES = [["near", "Рядом", "≈ 10 мин"], ["mid", "Средне", "≈ 20 мин"], ["far", "Далеко", "≈ 30 мин"]];
 const SIZE_TXT = { large:"Большой рынок", medium:"Средний рынок", small:"Небольшой рынок" };
 const S = { car:"l", carMk:0, carFrom:"", tab:"home", mk:+loadJSON("market", 0) || 0, mkOpen:false, markets:MARKETS0, cat:"all", grp:"all", q:"", task:null, size:{}, sm:{}, jobs:{}, view:"home", plan:loadJSON("plan", {}), pending:{}, chk:{},
