@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F97316">
+<meta name="theme-color" content="#0A0E17">
 <link rel="manifest" href="manifest-driver.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>Ta'mir · Ҳайдовчи</title>
+<title>Ta'mirDrive · Ҳайдовчи</title>
 <style>
 :root{--bg:#F0F2F5;--c:#fff;--ink:#1B1F24;--mu:#6B7280;--ln:#E5E7EB;--y:#F97316;--g:#1F9D55;--gb:#E6F6ED;--r:#D93025;--b:#2563EB}
 @media(prefers-color-scheme:dark){:root{--bg:#14171A;--c:#1D2125;--ink:#ECEFF2;--mu:#9AA3AD;--ln:#2B3138;--gb:#173326}}
@@ -33,6 +33,9 @@ main{padding:12px 16px;max-width:560px;margin:0 auto}
 .kv{display:grid;grid-template-columns:1fr auto;gap:8px 12px}.kv b{text-align:right}
 .center{text-align:center;padding:40px 16px}.center h1{font-size:24px}.toast{position:fixed;left:16px;right:16px;bottom:calc(20px + env(safe-area-inset-bottom));background:#1B1F24;color:#fff;border-radius:12px;padding:12px 14px;opacity:0;pointer-events:none;transition:.2s;z-index:9}.toast.show{opacity:1}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="xtheme.css">
 </head>
 <body>
 <div id="app"></div><div class="toast" id="toast"></div>
@@ -59,7 +62,7 @@ async function rpc(fn, args){
 }
 // ---------- кириш ----------
 function loginView(msg){
-  $("app").innerHTML = `<div class="center"><h1>🚚 Ta'mir · Ҳайдовчи</h1><p class="mu">Telegram ботдаги ҳайдовчи аккаунтингиз орқали киринг.</p>
+  $("app").innerHTML = `<div class="center"><h1>🚚 Ta'mirDrive · Ҳайдовчи</h1><p class="mu">Telegram ботдаги ҳайдовчи аккаунтингиз орқали киринг.</p>
   <button class="btn" id="lg" style="max-width:320px">Telegram орқали кириш</button><p class="mu" id="lm">${esc(msg || "")}</p></div>`;
   $("lg").onclick = startLogin;
 }
@@ -81,7 +84,7 @@ async function startLogin(){
 // ---------- иловa ----------
 function beep(){ if (window.SND) SND.play(); }
 function alertNew(n){ beep();
-  try { if ("Notification" in window && Notification.permission === "granted") new Notification("Ta'mir", { body:"Янги буюртма №" + n.no + " · ҳақ " + fmt(n.fee) + " сўм" }); } catch (e) {} }
+  try { if ("Notification" in window && Notification.permission === "granted") new Notification("Ta'mirDrive", { body:"Янги буюртма №" + n.no + " · ҳақ " + fmt(n.fee) + " сўм" }); } catch (e) {} }
 async function load(){
   try { const nd = await rpc("drv_orders", { p_session:SES }), raw = JSON.stringify(nd), same = raw === S.raw && S.d; S.raw = raw; S.d = nd;
     const open = S.d.open || [];
@@ -126,7 +129,7 @@ function draw(){
   else { const e = d.earn || {}; body = `<div class="card"><h2>Ҳисоб</h2><div class="kv"><span>Тўланиши керак</span><b>${fmt(e.due)} сўм</b><span>Кутилмоқда (24 соат / мижоз тасдиғи)</span><b>${fmt((e.waiting || 0) + (e.held || 0))} сўм</b><span>Тўланган</span><b>${fmt(e.paid)} сўм</b></div>
     <p class="mu">Ҳақ буюртма етказилгач, мижоз «Олдим» деганда ёки 24 соатдан кейин «Тўланиши керак»га ўтади.</p></div>
     <div class="card"><div class="row" style="margin:0"><button class="btn alt" id="notif">🔔 Огоҳлантиришга рухсат</button><button class="btn alt" id="out">Чиқиш</button></div></div>`; }
-  $("app").innerHTML = `<header><h1>${IC.i("truck",22)} ${esc(d.me.name || "Ҳайдовчи")}</h1><small>${esc(d.me.car || "")}${d.me.fleet ? " · " + esc(d.me.fleet) : " · паркка бириктирилмаган"}</small></header>
+  $("app").innerHTML = `<header><h1 class="qx"><span class="qx-i" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span class="qx-t">Ta'mir<em>Drive</em></span></h1><small>${esc(d.me.name || "Ҳайдовчи")} · ${esc(d.me.car || "")}${d.me.fleet ? " · " + esc(d.me.fleet) : " · паркка бириктирилмаган"}</small></header>
   <div class="tabs"><button data-t="open" class="${S.tab === "open" ? "on" : ""}">${IC.i("list",18)} Очиқ${open.length ? `<i>${open.length}</i>` : ""}</button><button data-t="mine" class="${S.tab === "mine" ? "on" : ""}">${IC.i("box",18)} Менинг${act.length ? `<i>${act.length}</i>` : ""}</button><button data-t="map" class="${S.tab === "map" ? "on" : ""}">${IC.i("map",18)} Харита</button><button data-t="earn" class="${S.tab === "earn" ? "on" : ""}">${IC.i("wallet",18)} Ҳисоб</button></div><main>${body}</main>`;
   if (S.tab === "map") mountMap();
   window.scrollTo(0, sy);
