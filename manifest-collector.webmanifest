@@ -1,5 +1,5 @@
 {
-  "name": "Ta'mir — Йиғувчи",
+  "name": "Ta'mir assembler",
   "short_name": "Йиғувчи",
   "description": "Ta'mir йиғувчилари учун илова",
   "lang": "uz",
@@ -7,8 +7,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F0F2F5",
-  "theme_color": "#F97316",
+  "background_color": "#0A0E17",
+  "theme_color": "#0A0E17",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
