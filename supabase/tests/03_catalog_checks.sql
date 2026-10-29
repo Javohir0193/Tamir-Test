@@ -12,8 +12,9 @@ begin
 
   -- қидирув: кирилл, лотин ва хато ёзилган сўз
   select count(*) into n from public.search_products('цемент'); if n = 0 then raise exception 'қидирув: цемент йўқ'; end if;
+  select count(*) into n from public.search_products('cement'); if n = 0 then raise exception 'қидирув: cement йўқ'; end if;
   select count(*) into n from public.search_products('sement'); if n = 0 then raise exception 'қидирув: sement йўқ'; end if;
-  select count(*) into n from public.search_products('cemnt'); if n = 0 then raise exception 'қидирув: хато ёзилган сўз топилмади'; end if;
+  select count(*) into n from public.search_products('sment'); if n = 0 then raise exception 'қидирув: хато ёзилган сўз топилмади'; end if;
   select count(*) into n from public.search_products('x'); if n <> 0 then raise exception 'қисқа сўров бўш бўлиши керак'; end if;
 
   -- id кетма-кетлиги энг катта id дан юқори
