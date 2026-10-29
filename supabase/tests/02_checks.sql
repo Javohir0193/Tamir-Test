@@ -32,4 +32,7 @@ begin
     raise exception 'orders.cancelled_at/cancel_reason йўқ';
   end if;
   if has_function_privilege('anon', 'public.admin_order_cancel(text,bigint,text)', 'execute') then raise exception 'admin_order_cancel anon''га очиқ'; end if;
+
+  -- тўлов мослиги қоидаси огоҳлантириш сканерида бор
+  if position('paycheck:' in pg_get_functiondef('public.admin_alert_scan()'::regprocedure)) = 0 then raise exception 'admin_alert_scan да paycheck қоидаси йўқ'; end if;
 end $$;
