@@ -2308,6 +2308,8 @@ async function loadCatalog(){
     // новые товары, которые йиғувчи добавили и админ одобрил — добавляем в каталог приложения
     if (!r.error && r.data) r.data.forEach(x => { if (!byId(x.id) && CATS.some(c => c.id === x.cat))
       P.push({ id:x.id, cat:x.cat, e:x.emoji || "📦", n:x.name, s:x.spec || "", p:0, nop:true, u:x.unit, base:Number(x.base_price) || 0, shop:"" }); });
+    try { const cq = await sb.rpc("catalog_categories");   // ўзбекча категория номлари базадан (i18n лексикасига қўшилади)
+      if (!cq.error && Array.isArray(cq.data) && window.addUz) window.addUz(Object.fromEntries(cq.data.filter(c => c.name_ru && c.name_uz).map(c => [c.name_ru, c.name_uz]))); } catch(e){}
     let rows = r.data || [];
     if (S.mk){
       const q = await sb.from("catalog_market").select("id, best_price, best_shop, offers").eq("market_id", S.mk);
@@ -2486,7 +2488,7 @@ const EVQ = [];
 function logEvent(kind, props = {}){ if (!dbReady) { if (EVQ.length < 30) EVQ.push([kind, props]); return; }
   sb.rpc("log_event", { p_anon:ANON, p_kind:kind, p_props:props }).then(() => {}, () => {}); }
 function flushEvents(){ EVQ.splice(0).forEach(([k, p]) => logEvent(k, p)); }
-function logSearch(){ const q = S.q.trim().toLowerCase(); if (!q) return;
+function logSearch(){ fzSearch(); const q = S.q.trim().toLowerCase(); if (!q) return;
   const n = P.filter(p => p.cat !== "work" && (p.n + " " + p.s).toLowerCase().includes(q)).length; logEvent("search", { q:q.slice(0, 60), n }); }
 logEvent("visit", { dev:matchMedia("(pointer:coarse)").matches ? "mobile" : "desktop", ref:(document.referrer && new URL(document.referrer).host) || "", lang:(()=>{ try { return localStorage.getItem("lang") || ""; } catch(e){ return ""; } })() });
 
@@ -2773,7 +2775,23 @@ const sNorm = s => String(s || "").toLowerCase().replace(/ё/g, "е").replace(/[
 function sHit(p, q){
   const w = sNorm(q).split(/\s+/).filter(Boolean); if (!w.length) return true;
   let h = p.n + " " + p.s; if (window.tUz) { try { h += " " + window.tUz(p.n) + " " + window.tUz(p.s); } catch(e){} }
-  h = sNorm(h); return w.every(x => h.includes(x));
+  h = sNorm(h); if (w.every(x => h.includes(x))) return true;
+  return !!(S.fz && S.fz.q === q.trim() && S.fz.ids.has(p.id));   // база топган (хато ёзилган / лотинча) сўзлар
+}
+// Қидирув базада (search_products): кирилл/лотин ва хато ёзилган сўзни ҳам топади. Тармоқ бўлмаса — оддий қидирув ишлайверади.
+function fzSearch(){
+  clearTimeout(S.fzT);
+  const q = (S.q || "").trim();
+  if (q.length < 2 || !sb || !dbReady || (S.fz && S.fz.q === q)) return;
+  S.fzT = setTimeout(async () => {
+    try {
+      const r = await sb.rpc("search_products", { p_q:q, p_limit:60 });
+      if (r.error || !Array.isArray(r.data) || (S.q || "").trim() !== q) return;
+      S.fz = { q, ids:new Set(r.data.map(x => x.id)) };
+      if (S.tab === "catalog" && !S.pid){ if (DK()) renderCatalog(); else { const b = document.getElementById("catbody"); if (b) b.innerHTML = catBody(); } }
+      else homeRes();
+    } catch(e){}
+  }, 350);
 }
 function homeFind(q){ return q.trim() ? P.filter(p => p.cat !== "work" && sHit(p, q)) : []; }
 function homeResHTML(){
@@ -2908,10 +2926,10 @@ document.addEventListener("submit", e => { if (e.target.id === "homesearch") { e
 document.addEventListener("submit", e => { if (e.target.id === "hsearch") { e.preventDefault(); S.q = document.getElementById("hq").value; S.cat = "all"; document.getElementById("hq").blur(); logSearch(); const b = document.getElementById("catbody"); if (b) b.innerHTML = catBody(); } });
 document.addEventListener("input", e => {
   const t = e.target;
-  if (t.id === "homeq") { S.q = t.value; homeRes(); return; }
-  if (t.id === "hdq") { S.q = t.value; S.page = 1; if (S.tab === "catalog") { S.pid = null; S.cat = "all"; S.grp = "all"; renderCatalog(); } clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); return; }
+  if (t.id === "homeq") { S.q = t.value; homeRes(); fzSearch(); return; }
+  if (t.id === "hdq") { S.q = t.value; S.page = 1; if (S.tab === "catalog") { S.pid = null; S.cat = "all"; S.grp = "all"; renderCatalog(); } clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); fzSearch(); return; }
   if (t.hasAttribute("data-pqin")) { S.pq = Math.max(1, Math.min(99999, parseInt(String(t.value).replace(/\D/g, "")) || 1)); updPq(false); return; }
-  if (t.id === "hq") { clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); S.q = t.value; const b = document.getElementById("catbody"); if (S.tab === "catalog" && b) b.innerHTML = catBody(); return; }
+  if (t.id === "hq") { clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); S.q = t.value; fzSearch(); const b = document.getElementById("catbody"); if (S.tab === "catalog" && b) b.innerHTML = catBody(); return; }
   if (t.dataset.sz) { S.size[t.dataset.sz] = t.value; return; }
   if (t.dataset.form) S.form[t.dataset.form] = (t.dataset.form === "day" || t.dataset.form === "slot") ? +t.value : t.value;
   if (t.hasAttribute("data-carfrom")) S.carFrom = t.value;
