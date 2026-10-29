@@ -1,68 +1,79 @@
 /* Ta'mirExpress дизайни: ҳайдовчи ва йиғувчи иловалари учун (мижоз сайти билан бир хил тўқ мавзу).
    Фақат кўриниш: мантиқ ва тузилма ўзгармайди. Саҳифанинг ўз <style>'идан кейин уланади. */
 :root{
-  --bg:#0A0E17;--surface:#121621;--glass:rgba(255,255,255,.04);--glass-line:rgba(255,255,255,.08);
-  --grad:linear-gradient(135deg,#F97316,#EA580C);--grad-text:linear-gradient(135deg,#F97316,#FBBF24);
+  --bg:#F6F3EE;--surface:#FFFFFF;--glass:#FFFFFF;--glass-line:rgba(31,36,48,.11);
+  --grad:linear-gradient(135deg,#F97316,#EA580C);--grad-text:linear-gradient(135deg,#F97316,#F59E0B);
   /* ҳайдовчи.html ўзгарувчилари */
-  --c:#121621;--ink:#fff;--mu:rgba(255,255,255,.55);--ln:rgba(255,255,255,.09);--y:#F97316;--g:#10B981;--gb:rgba(16,185,129,.14);--r:#FB7185;--b:#60A5FA;
+  --c:#FFFFFF;--ink:#1F2430;--mu:rgba(31,36,48,.67);--ln:rgba(31,36,48,.12);--y:#F97316;--g:#10B981;--gb:rgba(16,185,129,.14);--r:#FB7185;--b:#60A5FA;
   /* йиғувчи.html ўзгарувчилари */
-  --card:#121621;--muted:rgba(255,255,255,.55);--line:rgba(255,255,255,.09);--accent:#F97316;--ok:#10B981;--warn:#FBBF24;--bad:#FB7185;
-  color-scheme:dark;
+  --card:#FFFFFF;--muted:rgba(31,36,48,.67);--line:rgba(31,36,48,.12);--accent:#F97316;--ok:#10B981;--warn:#FBBF24;--bad:#FB7185;
+  color-scheme:light;
 }
-html{background:#0A0E17!important}
-body{background:radial-gradient(900px 520px at 85% -10%,rgba(249,115,22,.10),transparent 60%),radial-gradient(800px 500px at -10% 30%,rgba(59,130,246,.07),transparent 60%),#0A0E17!important;min-height:100vh;color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;-webkit-font-smoothing:antialiased}
+html{background:#F6F3EE!important}
+body{background:radial-gradient(900px 520px at 85% -10%,rgba(249,115,22,.10),transparent 60%),radial-gradient(800px 500px at -10% 30%,rgba(59,130,246,.07),transparent 60%),#F6F3EE!important;min-height:100vh;color:#1F2430;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;-webkit-font-smoothing:antialiased}
 
 /* юқори панел — шиша */
-header{background:rgba(10,14,23,.78)!important;color:#fff!important;border-bottom:1px solid rgba(255,255,255,.07);box-shadow:none!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-header span:not(.qx-i):not(.qx-t),header small{color:rgba(255,255,255,.6)!important;opacity:1!important}
-header .qx-t{color:#fff!important}
+header{background:rgba(255,255,255,.85)!important;color:#1F2430!important;border-bottom:1px solid rgba(31,36,48,.10);box-shadow:none!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+header span:not(.qx-i):not(.qx-t),header small{color:rgba(31,36,48,.72)!important;opacity:1!important}
+header .qx-t{color:#1F2430!important}
 /* йиғувчи: исм логотипнинг ўнгида, қўнғироқ олдида */
 header #hme{left:auto!important;right:96px;transform:none!important;text-align:right!important;max-width:30vw}
-header button{background:rgba(255,255,255,.07)!important;color:#fff!important;border:1px solid rgba(255,255,255,.08)!important}
-header nav button{background:transparent!important;border:0!important;color:rgba(255,255,255,.6)!important}
-header nav button[aria-current="page"]{background:rgba(249,115,22,.14)!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(249,115,22,.3)!important}
+header button{background:#FFFFFF!important;color:#1F2430!important;border:1px solid rgba(31,36,48,.11)!important}
+header nav button{background:transparent!important;border:0!important;color:rgba(31,36,48,.72)!important}
+header nav button[aria-current="page"]{background:rgba(249,115,22,.14)!important;color:#1F2430!important;box-shadow:inset 0 0 0 1px rgba(249,115,22,.3)!important}
 
 /* логотип: градиент квадрат + Ta'mir + Driver/Assembler */
-.qx{display:inline-flex!important;align-items:center;gap:9px;font-weight:800;letter-spacing:-.4px;color:#fff}
+.qx{display:inline-flex!important;align-items:center;gap:9px;font-weight:800;letter-spacing:-.4px;color:#1F2430}
 .qx-i{flex:none;width:32px;height:32px;border-radius:10px;background:var(--grad);display:grid;place-items:center;box-shadow:0 6px 18px rgba(249,115,22,.35)}
 .qx-i svg{width:18px;height:18px}
 .qx-t em{font-style:normal;background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 header h1.qx{margin:0;font-size:18px}
 
 /* карталар, тугмалар, майдонлар */
-.card,.msg{background:var(--glass)!important;border:1px solid var(--glass-line);box-shadow:none!important;color:#fff}
+.card,.msg{background:var(--glass)!important;border:1px solid var(--glass-line);box-shadow:none!important;color:#1F2430}
 .btn{background:var(--grad)!important;color:#fff!important;border:0;font-weight:700;box-shadow:0 6px 20px rgba(249,115,22,.22)}
-.btn.alt,.btn.ghost{background:rgba(255,255,255,.06)!important;color:#fff!important;border:1px solid rgba(255,255,255,.1)!important;box-shadow:none}
-.btn.dark{background:rgba(255,255,255,.12)!important;color:#fff!important;box-shadow:none}
+.btn.alt,.btn.ghost{background:#FFFFFF!important;color:#1F2430!important;border:1px solid rgba(31,36,48,.13)!important;box-shadow:none}
+.btn.dark{background:#F1EDE6!important;color:#1F2430!important;box-shadow:none}
 .btn.g{background:linear-gradient(135deg,#10B981,#059669)!important;box-shadow:0 6px 20px rgba(16,185,129,.22)}
-.pill{background:rgba(255,255,255,.08)!important;color:rgba(255,255,255,.85)!important}
+.pill{background:#FFFFFF!important;color:rgba(31,36,48,.85)!important}
 .pill.y{background:var(--grad)!important;color:#fff!important}
 .pill.g{background:rgba(16,185,129,.16)!important;color:#34D399!important}
 .pill.r{background:rgba(251,113,133,.16)!important;color:#FB7185!important}
-.field input,.field select,.ln .in input,.pitem input,.search{background-color:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.12)!important;color:#fff!important}
+.field input,.field select,.ln .in input,.pitem input,.search{background-color:#FFFFFF!important;border-color:rgba(31,36,48,.14)!important;color:#1F2430!important}
 .field input:focus,.field select:focus{border-color:#F97316!important}
 .pitem input.set{background-color:rgba(16,185,129,.12)!important;border-color:rgba(16,185,129,.4)!important}
-.search input{color:#fff}
-.bar{background:rgba(255,255,255,.1)!important}
-.sw{background:rgba(255,255,255,.08)!important}
-.sw button[aria-pressed="true"].n{background:rgba(255,255,255,.2)!important;color:#fff!important}
-.ln,.pitem,.done-ln{border-color:rgba(255,255,255,.08)!important}
-.ln input{background-color:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.25)!important}
+.search input{color:#1F2430}
+.bar{background:#F1EDE6!important}
+.sw{background:#FFFFFF!important}
+.sw button[aria-pressed="true"].n{background:rgba(31,36,48,.32)!important;color:#1F2430!important}
+.ln,.pitem,.done-ln{border-color:rgba(31,36,48,.11)!important}
+.ln input{background-color:#FFFFFF!important;border-color:rgba(31,36,48,.37)!important}
 .ln input:checked{background-color:var(--y)!important;border-color:var(--y)!important}
 .ln input:checked:disabled{background-color:var(--g)!important;border-color:var(--g)!important}
-.muted,.mu{color:var(--mu,rgba(255,255,255,.55))}
-h1,h2,h3{color:#fff}h2{color:rgba(255,255,255,.55)}.card h2{color:#fff}
+.muted,.mu{color:var(--mu,rgba(31,36,48,.67))}
+h1,h2,h3{color:#1F2430}h2{color:rgba(31,36,48,.67)}.card h2{color:#1F2430}
 .fee{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 
 /* пастки навигация ва бошқа юзалар */
-nav:not(header nav){background:rgba(10,14,23,.9)!important;border-top:1px solid rgba(255,255,255,.07)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-nav:not(header nav) button[aria-current="page"]{color:#fff!important}
-.tabs{background:rgba(10,14,23,.9)!important;border-bottom:1px solid rgba(255,255,255,.07)!important}
-.tabs button{color:rgba(255,255,255,.55)!important}.tabs button.on{color:#fff!important;border-color:var(--y)!important}
-.sticky{background:linear-gradient(transparent,#0A0E17 40%)!important}
-.toast{background:#1c2233!important;border:1px solid rgba(255,255,255,.1);color:#fff!important}
-.pick{background:#0A0E17!important;color:#fff}.pick-top .x{background:rgba(255,255,255,.08)!important;color:#fff}.pick-bot small{color:rgba(255,255,255,.55)!important}
-.dmap{background:#121621!important}
+nav:not(header nav){background:rgba(255,255,255,.90)!important;border-top:1px solid rgba(31,36,48,.10)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+nav:not(header nav) button[aria-current="page"]{color:#1F2430!important}
+.tabs{background:rgba(255,255,255,.90)!important;border-bottom:1px solid rgba(31,36,48,.10)!important}
+.tabs button{color:rgba(31,36,48,.67)!important}.tabs button.on{color:#1F2430!important;border-color:var(--y)!important}
+.sticky{background:linear-gradient(transparent,#F6F3EE 40%)!important}
+.toast{background:#FFFFFF!important;border:1px solid rgba(31,36,48,.13);color:#1F2430!important}
+.pick{background:#F6F3EE!important;color:#1F2430}.pick-top .x{background:#FFFFFF!important;color:#1F2430}.pick-bot small{color:rgba(31,36,48,.67)!important}
+.dmap{background:#FFFFFF!important}
 a{color:#FBBF24}
-#sndBtn{background:rgba(255,255,255,.07)!important;color:#fff!important;border:1px solid rgba(255,255,255,.1)!important;box-shadow:none!important}
+#sndBtn{background:#FFFFFF!important;color:#1F2430!important;border:1px solid rgba(31,36,48,.13)!important;box-shadow:none!important}
 .tabs{top:calc(72px + env(safe-area-inset-top,0px))!important}
+
+/* v98: янги логотип — машина/қути белгиси + болға-Т ёзуви */
+.qx-i.qx-star{background:none!important;box-shadow:none!important;border-radius:0!important;width:auto!important;height:34px!important;filter:drop-shadow(0 4px 10px rgba(249,115,22,.3))}
+.qx-i.qx-star svg{width:auto!important;height:100%!important}
+.qx-star+.qx-t{margin-left:-3px}
+.qx-w{display:inline-flex;align-items:baseline;font-weight:900;letter-spacing:-.02em}
+.qx-w .qx-ht{height:.88em;width:auto;margin-right:-.07em;position:relative;top:.05em;flex:none}
+.qx-w .qx-ap{width:.24em;height:.24em;align-self:flex-start;margin:.1em -.03em 0 -.01em;flex:none}
+header .qx .qx-t .qx-w{color:#1F2430!important}
+header .qx .qx-t,header .qx .qx-t .qx-w{font-size:inherit!important}
+header b.qx{font-size:18px!important}

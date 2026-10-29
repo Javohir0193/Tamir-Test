@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#F97316">
+<meta name="theme-color" content="#F6F3EE">
 <title>Ta'mir · Админ</title>
 <style>
 :root{--bg:#F3F4F6;--c:#fff;--ink:#1B1F24;--mu:#6B7280;--ln:#E5E7EB;--ac:#F97316;--g:#1F9D55;--gb:#E6F6ED;--r:#D93025;--rb:#FDECEA;--y:#B7791F;--yb:#FFF6DB;--bl:#2563EB}
@@ -82,6 +82,23 @@ nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#1B1F24;color:#fff;padding:10px 16px;border-radius:10px;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%}
 .toast.show{opacity:1}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="xtheme.css">
+<style>
+/* Админ: мижоз, ҳайдовчи ва йиғувчи иловалари билан бир хил тўқ мавзу */
+:root{--bg:#F6F3EE;--yb:rgba(251,191,36,.12);--rb:rgba(251,113,133,.12);--bl:#60A5FA;--ac:#F97316}
+header .mu{color:rgba(31,36,48,.72)!important}
+header nav button{color:rgba(31,36,48,.72)!important}
+header nav button.on{background:rgba(249,115,22,.14)!important;color:#1F2430!important;box-shadow:inset 0 0 0 1px rgba(249,115,22,.3)!important}
+.btn.red{background:linear-gradient(135deg,#F43F5E,#E11D48)!important;box-shadow:0 6px 20px rgba(244,63,94,.22)}
+.card{border-radius:18px}
+input,select,textarea{background:#FFFFFF;border-color:rgba(31,36,48,.14);color:#1F2430}
+input:focus,select:focus,textarea:focus{border-color:#F97316;outline:none}
+th{color:rgba(31,36,48,.67)}
+.hd h1.qx{white-space:nowrap;flex:1 1 auto;min-width:0}.hd h1.qx .qx-t{white-space:nowrap}
+@media(max-width:520px){.hd>.mu{display:none}}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -96,7 +113,7 @@ nav{scrollbar-width:none}nav::-webkit-scrollbar{display:none}
 <script>
 "use strict";
 const CFG = window.TAMIR_CONFIG || {};
-const LBAR = `<header><div class="hd"><h1>Ta'mir · Админ</h1></div></header>`;
+const LBAR = `<header><div class="hd"><h1 class="qx" aria-label="Ta'mir Admin"><span class="qx-i qx-star" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="qag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset=".35" stop-color="#F97316"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs><path d="M135.97,13.16 L150.87,49.13 L186.84,64.03 L171.94,100.00 L186.84,135.97 L150.87,150.87 L135.97,186.84 L100.00,171.94 L64.03,186.84 L49.13,150.87 L13.16,135.97 L28.06,100.00 L13.16,64.03 L49.13,49.13 L64.03,13.16 L100.00,28.06Z" fill="url(#qag)"/><path d="M128.32,31.63 L140.05,59.95 L168.37,71.68 L156.64,100.00 L168.37,128.32 L140.05,140.05 L128.32,168.37 L100.00,156.64 L71.68,168.37 L59.95,140.05 L31.63,128.32 L43.36,100.00 L31.63,71.68 L59.95,59.95 L71.68,31.63 L100.00,43.36Z" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/><g transform="translate(22 14) scale(0.78)" fill="#fff"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg></span><span class="qx-t"><span class="qx-w" aria-hidden="true"><svg class="qx-ht" viewBox="48 56 114 112"><g transform="translate(0 0) scale(1)" fill="#F97316"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg>a<svg class="qx-ap" viewBox="0 0 40 40"><path d="M27.27,2.45 L30.28,9.72 L37.55,12.73 L34.54,20.00 L37.55,27.27 L30.28,30.28 L27.27,37.55 L20.00,34.54 L12.73,37.55 L9.72,30.28 L2.45,27.27 L5.46,20.00 L2.45,12.73 L9.72,9.72 L12.73,2.45 L20.00,5.46Z" fill="#F97316"/></svg>mir</span><em>Admin</em></span></h1></div></header>`;
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const fmt = n => Math.round(Number(n) || 0).toLocaleString("ru-RU").replace(/,/g, " ");
@@ -208,7 +225,7 @@ const can = p => { const r = (S.me && S.me.roles) || []; if (r.includes("owner")
 const TAB_IC = { home:"home", orders:"box", cust:"user", tix:"chat", pay:"card", money:"wallet", people:"user", set:"tool", an:"list", prices:"tag", audit:"list", admins:"user" };
 const TABS = () => [["home", "Бош", 1], ["orders", "Буюртмалар", 1], ["cust", "Мижозлар", 1], ["tix", "Мурожаатлар", can("tickets")], ["pay", "Тўловлар", can("payout")], ["money", "Пул", can("money")], ["people", "Одамлар", 1], ["set", "Созламалар", 1], ["an", "Аналитика", 1], ["prices", "Нархлар", can("catalog")], ["audit", "Журнал", can("audit")], ["admins", "Админлар", can("admins")]].filter(t => t[2]);
 function shell(){
-  $("app").innerHTML = `<header><div class="hd"><h1>Ta'mir · Админ ${CFG.env === "test" ? '<span class="pill y">СИНОВ</span>' : ""}</h1><button class="btn alt sm" id="rf">Янгилаш</button><span class="mu" style="font-size:13px">${esc(S.me ? S.me.name : "")} · ${esc(((S.me && S.me.roles) || []).map(r => ROLE_N[r] || r).join(", "))}</span><button class="btn alt sm" id="lo">Чиқиш</button></div><nav id="nav"></nav></header><main id="main"></main>`;
+  $("app").innerHTML = `<header><div class="hd"><h1 class="qx" aria-label="Ta'mir Admin"><span class="qx-i qx-star" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="qag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset=".35" stop-color="#F97316"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs><path d="M135.97,13.16 L150.87,49.13 L186.84,64.03 L171.94,100.00 L186.84,135.97 L150.87,150.87 L135.97,186.84 L100.00,171.94 L64.03,186.84 L49.13,150.87 L13.16,135.97 L28.06,100.00 L13.16,64.03 L49.13,49.13 L64.03,13.16 L100.00,28.06Z" fill="url(#qag)"/><path d="M128.32,31.63 L140.05,59.95 L168.37,71.68 L156.64,100.00 L168.37,128.32 L140.05,140.05 L128.32,168.37 L100.00,156.64 L71.68,168.37 L59.95,140.05 L31.63,128.32 L43.36,100.00 L31.63,71.68 L59.95,59.95 L71.68,31.63 L100.00,43.36Z" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/><g transform="translate(22 14) scale(0.78)" fill="#fff"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg></span><span class="qx-t"><span class="qx-w" aria-hidden="true"><svg class="qx-ht" viewBox="48 56 114 112"><g transform="translate(0 0) scale(1)" fill="#F97316"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg>a<svg class="qx-ap" viewBox="0 0 40 40"><path d="M27.27,2.45 L30.28,9.72 L37.55,12.73 L34.54,20.00 L37.55,27.27 L30.28,30.28 L27.27,37.55 L20.00,34.54 L12.73,37.55 L9.72,30.28 L2.45,27.27 L5.46,20.00 L2.45,12.73 L9.72,9.72 L12.73,2.45 L20.00,5.46Z" fill="#F97316"/></svg>mir</span><em>Admin</em></span> ${CFG.env === "test" ? '<span class="pill y">СИНОВ</span>' : ""}</h1><button class="btn alt sm" id="rf">Янгилаш</button><span class="mu" style="font-size:13px">${esc(S.me ? S.me.name : "")} · ${esc(((S.me && S.me.roles) || []).map(r => ROLE_N[r] || r).join(", "))}</span><button class="btn alt sm" id="lo">Чиқиш</button></div><nav id="nav"></nav></header><main id="main"></main>`;
   $("rf").onclick = reload;
   $("lo").onclick = async () => { try { await rpc("admin_logout"); } catch(e){} dropSession(); gate(); };
   draw();
