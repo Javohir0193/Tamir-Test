@@ -22,14 +22,15 @@ CREATE OR REPLACE FUNCTION public.admin_order_cancel(p_code text, p_no bigint, p
  SET search_path TO 'public'
 AS $function$
 declare o public.orders; why text := btrim(coalesce(p_reason, '')); done_sum bigint := 0; amt bigint := 0; rid bigint;
-        me bigint := nullif(current_setting('app.admin_id', true), '')::bigint; dms jsonb := '[]'::jsonb; cust record;
+        me bigint := nullif(current_setting('app.admin_id', true), '')::bigint; dms jsonb := '[]'::jsonb; cust record; last_stage int;
 begin
   perform public.admin_check(p_code); perform public.admin_need('orders_edit');
   if length(why) < 3 then raise exception 'reason_required'; end if;
   select * into o from public.orders where no = p_no for update;
   if not found then raise exception 'unknown_key'; end if;
   if o.cancelled_at is not null then raise exception 'already_cancelled'; end if;
-  if o.stage >= case o.mode when 'pickup' then 3 else 4 end then raise exception 'already_done'; end if;
+  last_stage := case when o.mode = 'pickup' then 3 else 4 end;       -- plpgsql IF ичидаги CASE ... THEN'ни тўғри ўқимайди
+  if o.stage >= last_stage then raise exception 'already_done'; end if;
 
   if o.pay_status = 'paid' then
     select coalesce(sum(amount), 0) into done_sum from public.refunds where order_no = p_no;
