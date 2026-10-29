@@ -20,4 +20,9 @@ begin
 
   -- бот сирини топа оладиган жой бор (app_settings)
   if not exists (select 1 from public.app_settings where key = 'bot_secret') then raise exception 'bot_secret йўқ'; end if;
+
+  -- ходим тили: sellers.lang бор ва фақат uz/ru
+  if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='sellers' and column_name='lang') then
+    raise exception 'sellers.lang йўқ';
+  end if;
 end $$;
