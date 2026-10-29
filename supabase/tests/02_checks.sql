@@ -25,4 +25,11 @@ begin
   if not exists (select 1 from information_schema.columns where table_schema='public' and table_name='sellers' and column_name='lang') then
     raise exception 'sellers.lang йўқ';
   end if;
+
+  -- буюртмани бекор қилиш: функция ва устунлар бор, анонимга ёпиқ
+  if not exists (select 1 from pg_proc where proname = 'admin_order_cancel') then raise exception 'admin_order_cancel йўқ'; end if;
+  if (select count(*) from information_schema.columns where table_schema='public' and table_name='orders' and column_name in ('cancelled_at','cancel_reason')) <> 2 then
+    raise exception 'orders.cancelled_at/cancel_reason йўқ';
+  end if;
+  if has_function_privilege('anon', 'public.admin_order_cancel(text,bigint,text)', 'execute') then raise exception 'admin_order_cancel anon''га очиқ'; end if;
 end $$;
