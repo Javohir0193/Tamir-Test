@@ -254,7 +254,22 @@ insert into public.products (id, cat, emoji, name, spec, base_price, unit, name_
   (466, 'fast', '🔗', 'Стяжки кабельные 200 мм', 'упаковка 100 шт', 15000, 'упак.', 'Кабель стяжкалари 200 мм', 'қадоқ 100 дона')
 on conflict (id) do update set name_uz = excluded.name_uz, spec_uz = excluded.spec_uz;
 
-select setval(pg_get_serial_sequence('public.products', 'id'), greatest((select max(id) from public.products), 1));
+-- id автоматик берилишини таъминлайди: identity/sequence бор бўлса — энг катта id дан юқорига суради; йўқ бўлса — яратиб улайди.
+do $$
+declare seq text;
+begin
+  seq := pg_get_serial_sequence('public.products', 'id');
+  if seq is null then
+    if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'products' and column_name = 'id' and column_default is not null) then
+      raise notice 'products.id да default бор, лекин sequence унга тегишли эмас — қўлда текширинг';
+      return;
+    end if;
+    create sequence if not exists public.products_id_seq owned by public.products.id;
+    alter table public.products alter column id set default nextval('public.products_id_seq');
+    seq := 'public.products_id_seq';
+  end if;
+  perform setval(seq::regclass, greatest((select max(id) from public.products), 1));
+end $$;
 
 commit;
 
