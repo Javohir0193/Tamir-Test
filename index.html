@@ -1228,6 +1228,12 @@ footer .f-bottom{display:flex;justify-content:space-between;align-items:center;g
   .ck-l .panel .line{background:#FFFFFF}
   .sb-safe{justify-content:center}
 }
+.cmp .cmprow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #EEF0F3}
+.cmp .cmprow:last-child{border-bottom:0}
+.cmp .cs small{display:block;color:var(--muted);font-size:12px}
+.cmp .cp{font-weight:700;white-space:nowrap}
+.cmp .cmprow.full .cp{color:#1E9E5A}
+.cmp .mix{background:#FFF4EA;border-radius:10px;padding:9px 10px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -2235,7 +2241,7 @@ function renderCart(){
   if (!dk){
     v.innerHTML = `
     ${t.n > 0 ? mkBar() : ""}
-    <section class="panel"><h2>1. Ваш заказ</h2>${linesH}${sumH}${totH}<div id="carBox"></div><div id="zoneBox"></div>${noteH}</section>
+    <section class="panel"><h2>1. Ваш заказ</h2>${linesH}<div id="cmpBox"></div>${sumH}${totH}<div id="carBox"></div><div id="zoneBox"></div>${noteH}</section>
     <section class="panel"><h2>2. ${whenLabel}</h2>${whenH}</section>
     <section class="panel"><h2>3. Ваши данные</h2>${dataH}
       <p class="msg" id="msg"></p>
@@ -2248,6 +2254,7 @@ function renderCart(){
           <h1 class="big">Корзина <span class="mut">(${ids.length})</span></h1>
           ${t.n > 0 ? mkBar() : ""}
           <section class="panel"><h2><span class="sn">1</span><span>Товары</span></h2><div class="ck-lines">${linesH}</div></section>
+          <div id="cmpBox"></div>
           <section class="panel"><h2><span class="sn">2</span><span>${whenLabel}</span></h2>${whenH}<div id="carBox"></div><div id="zoneBox"></div></section>
           <section class="panel"><h2><span class="sn">3</span><span>Ваши данные и адрес</span></h2>${dataH}</section>
         </div>
@@ -2343,7 +2350,32 @@ function quotePayload(){
   return { mode:f.mode, market_id:S.mk || null, zone:f.zone || "mid", body:del ? (f.body || "") : "", lat:del && f.lat ? f.lat : null, lng:del && f.lng ? f.lng : null,
     items:Object.entries(S.cart).map(([id, q]) => ({ id:+id, q })) };
 }
+// Савatни дўконлар бўйича таққослаш (cart_compare): ҳар дўкон учун умумий нарх. Ҳозирча фақат кўрсатади; заказ эски қоида бўйича (ҳар товар энг арзон дўкондан) йиғилади.
+let cmpSeq = 0, cmpTimer = 0;
+function cmpHTML(d){
+  const sh = (d && d.shops) || []; if (sh.length < 2) return "";
+  const miss = ids => ids.map(i => { const p = byId(i); return p ? p.n : "#" + i; }).slice(0, 4).join(", ") + (ids.length > 4 ? "…" : "");
+  const rows = sh.map(x => `<div class="cmprow ${x.have === x.need ? "full" : ""}"><span class="cs"><b>${esc(x.shop)}</b><small>${x.have === x.need ? "Все товары есть" : `${x.have} из ${x.need} товаров · Не хватает: ${esc(miss(x.missing))}`}</small></span><span class="cp">${fmt(x.total)} ${CURRENCY}</span></div>`).join("");
+  const mix = d.mix || {};
+  return `<section class="panel cmp"><h2>Сравнение по магазинам</h2>${rows}
+    <div class="cmprow mix"><span class="cs"><b>Каждый товар — в самом дешёвом магазине</b><small>Так заказ собирается сейчас</small></span><span class="cp">${fmt(mix.total || 0)} ${CURRENCY}</span></div></section>`;
+}
+function loadCompare(){
+  clearTimeout(cmpTimer);
+  const box = document.getElementById("cmpBox"); if (!box || !dbReady || !S.mk) return;
+  const items = Object.entries(S.cart).filter(([id]) => { const p = byId(+id); return p && p.cat !== "work"; }).map(([id, q]) => ({ id:+id, q }));
+  if (!items.length) { box.innerHTML = ""; return; }
+  cmpTimer = setTimeout(async () => {
+    const seq = ++cmpSeq;
+    try {
+      const r = await sb.rpc("cart_compare", { p:{ market_id:S.mk, items } });
+      const b = document.getElementById("cmpBox"); if (seq !== cmpSeq || !b) return;
+      b.innerHTML = r.error ? "" : cmpHTML(r.data);
+    } catch(e){}
+  }, 300);
+}
 function refreshQuote(){
+  loadCompare();
   if (!dbReady) return;
   clearTimeout(quoteTimer);
   const pl = quotePayload();
