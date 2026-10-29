@@ -1,5 +1,5 @@
 // Простой service worker: сначала сеть, при отсутствии интернета — последняя сохранённая версия страницы.
-const CACHE = "tamir-v84";
+const CACHE = "tamir-v85";
 self.addEventListener("install", e => { self.skipWaiting(); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
