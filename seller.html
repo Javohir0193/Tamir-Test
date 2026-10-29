@@ -140,6 +140,7 @@ function render(keepFocus){
   $("app").innerHTML = `
     <header><div><h1>🏷 Нархларим</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small></div>
       <div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div></header>
+    <button class="chip" data-ord style="margin:0 0 8px;background:var(--accent);color:var(--ink);font-weight:700">📋 Буюртмаларим</button>
     <button class="chip" data-imp style="margin:0 0 8px;background:var(--ink);color:#fff">📄 Excel / CSV файлдан нарх юклаш</button>
     <button class="chip" data-newp style="margin:0 0 8px;background:var(--card)">➕ Каталогда йўқ товарни таклиф қилиш</button>
     <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9099" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -184,6 +185,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.cat) { S.cat = b.dataset.cat; S.shown = PAGE; render(); }
   else if (b.dataset.stf) { S.st = b.dataset.stf; S.shown = PAGE; render(); }
+  else if ("ord" in b.dataset) openOrd();
   else if ("imp" in b.dataset) openImp();
   else if ("newp" in b.dataset) openNewP();
   else if (b.dataset.pct) { S.pct = +b.dataset.pct; render(); }
@@ -346,6 +348,37 @@ document.addEventListener("click", async e => {
     t.disabled = true;
     try { await call(body); w.remove(); toast("✓ Админга юборилди. Тасдиқлангач каталогда чиқади."); }
     catch (err) { t.disabled = false; toast(err.message); }
+  }
+});
+
+// ===== Дўкон буюртмалари: Тайёр ва «Машинага юкладим» (ботдаги тугмалар билан бир хил) =====
+const ST = { offered:"Тасдиқ кутилмоқда", confirmed:"Тасдиқланган", ready:"Тайёр" };
+async function ordLoad(){
+  const w = $("ordwrap"); if (!w) return;
+  try {
+    const d = await call({ action:"s_orders" }), list = d.orders || [];
+    w.innerHTML = `<div class="imp" data-ordbg><div>
+      <h2>📋 Буюртмаларим</h2><div class="acts"><button data-ordreload>Янгилаш</button><button data-ordclose>Ёпиш</button></div>
+      ${list.length ? list.map(o => {
+        const done = o.lines.filter(l => l.loaded).length, all = o.lines.filter(l => l.says_yes !== false).length;
+        const state = !o.confirmed ? "Тасдиқ кутилмоқда (ботдаги хабарда ✅/❌ ва «Тасдиқлаш»)" : !o.ready ? "Йиғинг, кейин «Тайёр»" : done === all && all ? "Ҳаммаси машинага юкланди ✅" : "Тайёр. Ҳайдовчи келганда машинага юкланг";
+        return `<div class="list" style="margin-bottom:10px"><div class="irow" style="grid-template-columns:1fr auto"><span><b>№${o.no}</b> · ${esc(o.slot || "")}<small>${esc(state)}</small></span><b class="${o.ready ? "ok" : "warn"}">${o.ready ? "тайёр" : "кутилмоқда"}</b></div>
+          ${o.lines.map(l => `<div class="irow" style="grid-template-columns:1fr auto"><span>${l.says_yes === false || l.status === "pending" ? "❌" : l.loaded ? "✅" : "⬜"} ${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="hint">${esc(ST[l.status] || "")}${l.loaded ? " · юкланди" : ""}</span></div>`).join("")}
+          ${o.driver ? `<div class="irow" style="grid-template-columns:1fr"><span>🚚 Ҳайдовчи: ${esc(o.driver.name)}${o.driver.car ? " · " + esc(o.driver.car) : ""}${o.driver.phone ? " · " + esc(o.driver.phone) : ""}</span></div>` : ""}
+          <div class="acts" style="padding:8px 10px;margin:0">${o.confirmed && !o.ready ? `<button class="main" data-ordready="${o.msg_id}">📦 Тайёр</button>` : ""}${o.ready && !(done === all && all) ? `<button class="main" data-ordload="${o.msg_id}">🚚 Машинага юкладим</button>` : ""}</div></div>`; }).join("") : `<div class="msg">Ҳозир фаол буюртма йўқ.</div>`}
+    </div></div>`;
+  } catch (err) { w.innerHTML = ""; toast(err.message); }
+}
+function openOrd(){ if ($("ordwrap")) return; const el = document.createElement("div"); el.id = "ordwrap"; document.body.appendChild(el); ordLoad(); clearInterval(openOrd.t); openOrd.t = setInterval(() => { if ($("ordwrap")) ordLoad(); else clearInterval(openOrd.t); }, 15000); }
+document.addEventListener("click", async e => {
+  const t = e.target, w = $("ordwrap"); if (!w) return;
+  if (t.hasAttribute("data-ordclose") || t.hasAttribute("data-ordbg")) { w.remove(); clearInterval(openOrd.t); }
+  else if (t.hasAttribute("data-ordreload")) ordLoad();
+  else if (t.dataset.ordready || t.dataset.ordload){
+    t.disabled = true;
+    try { await call({ action: t.dataset.ordready ? "s_ready" : "s_loaded", msg_id:+(t.dataset.ordready || t.dataset.ordload) }); toast("✓ Белгиланди"); }
+    catch (err) { toast(err.message); }
+    ordLoad();
   }
 });
 
