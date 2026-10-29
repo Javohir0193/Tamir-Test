@@ -1228,7 +1228,8 @@ footer .f-bottom{display:flex;justify-content:space-between;align-items:center;g
   .ck-l .panel .line{background:#FFFFFF}
   .sb-safe{justify-content:center}
 }
-.cmp .cmprow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #EEF0F3}
+.cmp .cmprow{display:flex;width:100%;text-align:left;background:none;border:0;justify-content:space-between;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid #EEF0F3;cursor:pointer;border-radius:10px}
+.cmp .cmprow.on{outline:2px solid #F97316;background:#FFF4EA}
 .cmp .cmprow:last-child{border-bottom:0}
 .cmp .cs small{display:block;color:var(--muted);font-size:12px}
 .cmp .cp{font-weight:700;white-space:nowrap}
@@ -2347,18 +2348,18 @@ function quotePayload(){
   const f = S.form;
   if (onCarPage()) return { mode:"car", car:S.car, market_id:S.carMk || null, zone:f.zone || "mid", lat:f.lat || null, lng:f.lng || null };
   const del = f.mode === "delivery";
-  return { mode:f.mode, market_id:S.mk || null, zone:f.zone || "mid", body:del ? (f.body || "") : "", lat:del && f.lat ? f.lat : null, lng:del && f.lng ? f.lng : null,
+  return { mode:f.mode, market_id:S.mk || null, shop_id:S.shopSel || null, zone:f.zone || "mid", body:del ? (f.body || "") : "", lat:del && f.lat ? f.lat : null, lng:del && f.lng ? f.lng : null,
     items:Object.entries(S.cart).map(([id, q]) => ({ id:+id, q })) };
 }
-// Савatни дўконлар бўйича таққослаш (cart_compare): ҳар дўкон учун умумий нарх. Ҳозирча фақат кўрсатади; заказ эски қоида бўйича (ҳар товар энг арзон дўкондан) йиғилади.
+// Савatни дўконлар бўйича таққослаш (cart_compare) ва дўкон танлаш: S.shopSel = дўкон id, 0/бўш = ҳар товар энг арзон дўкондан.
 let cmpSeq = 0, cmpTimer = 0;
 function cmpHTML(d){
   const sh = (d && d.shops) || []; if (sh.length < 2) return "";
   const miss = ids => ids.map(i => { const p = byId(i); return p ? p.n : "#" + i; }).slice(0, 4).join(", ") + (ids.length > 4 ? "…" : "");
-  const rows = sh.map(x => `<div class="cmprow ${x.have === x.need ? "full" : ""}"><span class="cs"><b>${esc(x.shop)}</b><small>${x.have === x.need ? "Все товары есть" : `${x.have} из ${x.need} товаров · Не хватает: ${esc(miss(x.missing))}`}</small></span><span class="cp">${fmt(x.total)} ${CURRENCY}</span></div>`).join("");
+  const rows = sh.map(x => `<button type="button" class="cmprow ${x.have === x.need ? "full" : ""} ${S.shopSel === x.id ? "on" : ""}" data-shop="${x.id}" aria-pressed="${S.shopSel === x.id}"><span class="cs"><b>${esc(x.shop)}</b><small>${x.have === x.need ? "Все товары есть" : `${x.have} из ${x.need} товаров · Не хватает: ${esc(miss(x.missing))}`}</small></span><span class="cp">${fmt(x.total)} ${CURRENCY}</span></button>`).join("");
   const mix = d.mix || {};
-  return `<section class="panel cmp"><h2>Сравнение по магазинам</h2>${rows}
-    <div class="cmprow mix"><span class="cs"><b>Каждый товар — в самом дешёвом магазине</b><small>Так заказ собирается сейчас</small></span><span class="cp">${fmt(mix.total || 0)} ${CURRENCY}</span></div></section>`;
+  return `<section class="panel cmp"><h2>Выберите магазин</h2>${rows}
+    <button type="button" class="cmprow mix ${!S.shopSel ? "on" : ""}" data-shop="0" aria-pressed="${!S.shopSel}"><span class="cs"><b>Каждый товар — в самом дешёвом магазине</b><small>Несколько магазинов, цена ниже или такая же</small></span><span class="cp">${fmt(mix.total || 0)} ${CURRENCY}</span></button></section>`;
 }
 function loadCompare(){
   clearTimeout(cmpTimer);
@@ -2370,12 +2371,17 @@ function loadCompare(){
     try {
       const r = await sb.rpc("cart_compare", { p:{ market_id:S.mk, items } });
       const b = document.getElementById("cmpBox"); if (seq !== cmpSeq || !b) return;
-      b.innerHTML = r.error ? "" : cmpHTML(r.data);
+      if (r.error || !r.data) { b.innerHTML = ""; return; }
+      const sh = r.data.shops || [], before = S.shopSel || 0;
+      // танланган дўкон рўйхатдан чиқиб кетса ёки ҳали танланмаган бўлса — биринчи ТЎЛИҚ дўкон (мумкин қадар битта дўкондан), бўлмаса аралаш
+      if (!sh.some(x => x.id === S.shopSel)) { const full = sh.find(x => x.have === x.need); S.shopSel = S.shopTouched ? 0 : (full ? full.id : 0); }
+      S.cmpData = r.data; b.innerHTML = cmpHTML(r.data);
+      if ((S.shopSel || 0) !== before) refreshQuote(true);
     } catch(e){}
   }, 300);
 }
-function refreshQuote(){
-  loadCompare();
+function refreshQuote(skipCmp){
+  if (!skipCmp) loadCompare();
   if (!dbReady) return;
   clearTimeout(quoteTimer);
   const pl = quotePayload();
@@ -2556,13 +2562,13 @@ async function placeOrder(payload){
 }
 function createOrder(){
   const t = totals(), f = S.form, addr = needsAddr(t);
-  return placeOrder({ mode:f.mode, market_id:S.mk || null, name:f.name.trim(), phone:f.phone.trim(), address:addr ? f.addr.trim() : null,
+  return placeOrder({ mode:f.mode, market_id:S.mk || null, shop_id:S.shopSel || null, name:f.name.trim(), phone:f.phone.trim(), address:addr ? f.addr.trim() : null,
     note:f.note.trim() || null, slot:slotText(), lat:addr && f.lat ? f.lat : null, lng:addr && f.lng ? f.lng : null, zone:f.zone || "mid", body:f.mode === "delivery" ? (f.body || "") : "",
     items:Object.entries(S.cart).map(([id, q]) => ({ id:+id, q })) });
 }
 function afterOrder(no){
   Object.keys(S.pending).forEach(k => { S.plan[k] = no; }); S.pending = {}; saveJSON("plan", S.plan);
-  S.cart = {}; saveCart();
+  S.cart = {}; saveCart(); S.shopSel = 0; S.shopTouched = false; S.cmpData = null;
 }
 // ===== Заказы и статусы =====
 const STAGES = {
@@ -2770,7 +2776,7 @@ document.addEventListener("click", async e => {
     return;
   }
   if (t.dataset.mk) {
-    const id = +t.dataset.mk, was = S.mk; S.mk = id; S.mkOpen = false; saveJSON("market", id);
+    const id = +t.dataset.mk, was = S.mk; S.mk = id; S.shopSel = 0; S.shopTouched = false; S.mkOpen = false; saveJSON("market", id);
     const mm = curMk(); toast("🏬 " + (mm ? mkName(mm) : ""));
     if (dbReady && was !== id) loadCatalog();
     if (S.tab === "calc") { if (S.task) rerender(); else { renderCalc(); window.scrollTo(0, 0); } return; }   // в «Расчёте» остаёмся
@@ -2878,6 +2884,7 @@ document.addEventListener("click", e => {
   if (t.hasAttribute("data-closelogin")) { closeLogin(); return; }
   if (t.hasAttribute("data-logout")) { doLogout(); return; }
   if (t.hasAttribute("data-soon")) { toast("Скоро будет доступно"); return; }
+  { const sb2 = t.closest && t.closest("[data-shop]"); if (sb2) { S.shopSel = +sb2.dataset.shop || 0; S.shopTouched = true; const b = document.getElementById("cmpBox"); if (b && S.cmpData) b.innerHTML = cmpHTML(S.cmpData); refreshQuote(true); return; } }
   if (t.dataset.gocat) { S.cat = t.dataset.gocat; S.grp = grpOf(S.cat); S.q = ""; S.pid = null; S.page = 1; const h = document.getElementById("hdq"); if (h) h.value = ""; show("catalog"); return; }
   if (t.dataset.open) { openProduct(+t.dataset.open); return; }
   if (t.dataset.page) { S.page = +t.dataset.page; const y = window.scrollY; renderCatalog(); window.scrollTo(0, y); return; }

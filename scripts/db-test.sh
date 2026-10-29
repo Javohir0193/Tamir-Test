@@ -17,6 +17,7 @@ run supabase/tests/02_checks.sql
 run supabase/ops/seed_catalog_from_js.sql
 run supabase/tests/03_catalog_checks.sql
 run supabase/tests/04_cart_compare_checks.sql
+run supabase/tests/05_pref_shop_checks.sql
 run supabase/ops/seed_catalog_from_js.sql      # қайта юклаш хавфсиз (идемпотент)
 run supabase/ops/test_reset_data.sql
 echo "OK: ${#UP[@]} та миграция олдинга, орқага ва яна олдинга ўтди"
