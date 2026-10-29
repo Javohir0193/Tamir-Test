@@ -1623,7 +1623,7 @@ function renderProduct(){
 function renderHomeDk(){
   S.view = "home";
   const m = curMk(), goods = P.filter(p => p.cat !== "work");
-  const active = (S.orders || []).filter(o => o.stage < stagesFor(o).length - 1).length;
+  const active = (S.orders || []).filter(o => !o.cancelled && o.stage < stagesFor(o).length - 1).length;
   const pref = ["mix", "brick", "metal", "wood", "roof", "elcable", "pipe", "gkl"];
   const cats = pref.map(id => CATS.find(c => c.id === id)).filter(Boolean);
   CATS.forEach(c => { if (cats.length < 8 && c.id !== "all" && !cats.includes(c)) cats.push(c); });
@@ -1665,10 +1665,10 @@ function orderSide(o){
     <div class="o-tot"><span>Итого:</span><b>${fmt(o.total)} ${CURRENCY}</b></div></aside>`;
 }
 function orderHTML(o, closable){
-  const st = stagesFor(o), last = o.stage >= st.length - 1, unp = o.payStatus === "unpaid", exp = o.payStatus === "expired";
+  const st = stagesFor(o), last = o.stage >= st.length - 1, unp = o.payStatus === "unpaid", exp = o.payStatus === "expired" || !!o.cancelled;
   return `<section class="order">
     <div class="o-main">
-      <div class="top"><h2>Заказ №${o.no}</h2><span class="pill ${last ? "done" : exp ? "can" : ""}">${unp ? "Ожидает оплаты" : exp ? "Не оплачен" : st[o.stage][0]}</span>${closable ? `<button class="o-x" data-oopen="0" aria-label="Свернуть">${ic("x")}</button>` : ""}</div>
+      <div class="top"><h2>Заказ №${o.no}</h2><span class="pill ${last ? "done" : exp ? "can" : ""}">${unp ? "Ожидает оплаты" : exp ? (o.cancelled ? "Отменён" : "Не оплачен") : st[o.stage][0]}</span>${closable ? `<button class="o-x" data-oopen="0" aria-label="Свернуть">${ic("x")}</button>` : ""}</div>
       ${payHtml(o)}
       <p class="meta">${dt(o.ts)} · ${fmt(o.total)} ${CURRENCY}${o.slot ? `<br>Время: ${o.slot}` : ""}${S.seller && o.name ? `<br><b>${esc(o.name)}</b> · ${esc(o.phone || "")}${o.addr ? "<br>" + esc(o.addr) : ""}${o.note ? "<br>Комментарий: " + esc(o.note) : ""}` : ""}</p>
       ${deliveryCard(o)}
@@ -1687,7 +1687,7 @@ function orderHTML(o, closable){
 function renderOrdersDk(){
   const v = document.getElementById("view"), keep = new Map();
   document.querySelectorAll(".mapbox[data-map]").forEach(el => keep.set(el.dataset.map, el));
-  const isDone = o => o.stage >= stagesFor(o).length - 1, isCan = o => o.payStatus === "expired";
+  const isDone = o => o.stage >= stagesFor(o).length - 1, isCan = o => o.payStatus === "expired" || !!o.cancelled;
   const ft = S.otab || "all";
   const list = S.orders.filter(o => ft === "all" || (ft === "act" ? !isDone(o) && !isCan(o) : ft === "done" ? isDone(o) && !isCan(o) : isCan(o)));
   if (S.oOpen === undefined) { const a = S.orders.find(o => !isDone(o) && !isCan(o)); S.oOpen = a ? a.no : 0; }
@@ -1695,7 +1695,7 @@ function renderOrdersDk(){
   const ini = nm.split(/\s+/).filter(Boolean).map(w => w[0]).join("").slice(0, 2).toUpperCase() || "Г";
   const rowH = o => { const st = stagesFor(o), d = isDone(o), c = isCan(o), unp = o.payStatus === "unpaid";
     return `<button class="orow" data-oopen="${o.no}"><span class="ori ${d ? "done" : c ? "can" : ""}">${ic("box")}</span>
-      <span class="orm"><span class="ort"><b>Заказ №${o.no}</b><span class="pill ${d ? "done" : c ? "can" : ""}">${unp ? "Ожидает оплаты" : c ? "Не оплачен" : st[o.stage][0]}</span></span>
+      <span class="orm"><span class="ort"><b>Заказ №${o.no}</b><span class="pill ${d ? "done" : c ? "can" : ""}">${unp ? "Ожидает оплаты" : c ? (o.cancelled ? "Отменён" : "Не оплачен") : st[o.stage][0]}</span></span>
       <small><span>${(o.items || []).length}</span> <span>товаров</span> · ${dt(o.ts)}</small></span>
       <span class="ors"><b>${fmt(o.total)}</b><small>${CURRENCY}</small></span>${ic("chev")}</button>`; };
   const tabs = [["all", "Все"], ["act", "Активные"], ["done", "Завершённые"]];
@@ -1885,13 +1885,13 @@ function myRepairCard(active){
   const os = S.orders || [];
   if (!os.length) return `<section class="myr"><div class="myr-h"><b>Мой ремонт</b></div>
     <p class="myr-empty">Здесь будет видно, сколько вы потратили на ремонт и где сейчас ваш заказ.</p></section>`;
-  const tot = os.reduce((a, o) => a + o.total, 0);
-  const o = os.slice().sort((a, b) => b.ts - a.ts)[0], st = stagesFor(o), last = o.stage >= st.length - 1;
+  const tot = os.reduce((a, o) => a + (o.cancelled ? 0 : o.total), 0);
+  const o = os.slice().sort((a, b) => (a.cancelled ? 1 : 0) - (b.cancelled ? 1 : 0) || b.ts - a.ts)[0], st = stagesFor(o), last = o.stage >= st.length - 1;
   const pct = Math.round((o.stage + 1) / st.length * 100);
   return `<section class="myr"><div class="myr-h"><b>Мой ремонт</b><button data-tab="spend">Все расходы ›</button></div>
     <div class="myr-g">
       <button class="myr-sum" data-tab="spend"><small>Потрачено</small><span>${fmt(tot)}</span><small>${CURRENCY} · заказов: ${os.length}</small></button>
-      <button class="myr-ord" data-tab="orders"><small>Заказ №${o.no}${active > 1 ? ` · активных: ${active}` : ""}</small><span class="pill ${last ? "done" : ""}">${st[o.stage][0]}</span>
+      <button class="myr-ord" data-tab="orders"><small>Заказ №${o.no}${active > 1 ? ` · активных: ${active}` : ""}</small><span class="pill ${last ? "done" : ""}">${o.cancelled ? "Отменён" : st[o.stage][0]}</span>
         <i class="bar"><i style="width:${pct}%"></i></i><small>${o.stage === 3 && o.driver ? (o.eta ? `🚚 ${esc(o.driver.car || "")} · ≈ ${o.eta} мин` : `🚚 ${esc(o.driver.car || "")} в пути`) : (!o.driver && o.picker && o.stage < 3 ? `🧺 ${esc(o.picker.name || "")} · ${o.picked}/${o.pickTotal}` : (st[o.stage][1] || ""))}</small></button>
     </div></section>`;
 }
@@ -1902,7 +1902,7 @@ function renderHome(){
   const tk = id => TASKS.find(x => x.id === id);
   const m = curMk();
   const ap = (id) => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${t.e}</span>${t.name}</button>`; };
-  const active = (S.orders || []).filter(o => o.stage < stagesFor(o).length - 1).length;
+  const active = (S.orders || []).filter(o => !o.cancelled && o.stage < stagesFor(o).length - 1).length;
   document.getElementById("view").innerHTML = `<div class="app wide">
     <section class="qx-hero">
       <span class="qx-tag"><i></i>Доставка от ${LEAD_HOURS} часов</span>
@@ -2281,7 +2281,7 @@ const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mod
   lat:r.delivery_lat, lng:r.delivery_lng, driver:r.driver_info || null, dlat:r.driver_lat, dlng:r.driver_lng, dat:r.driver_at ? Date.parse(r.driver_at) : 0,
   pickLat:r.pickup_lat, pickLng:r.pickup_lng, pickNote:r.pickup_note, eta:r.eta_min, received:r.received_at ? Date.parse(r.received_at) : 0, receivedOk:r.received_ok,
   picker:r.picker_info || null, picked:r.picked || 0, pickTotal:r.pick_total || 0,
-  payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null,
+  cancelled:!!r.cancelled_at, cancelReason:r.cancel_reason || "", payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null,
   paidAt:r.paid_at ? Date.parse(r.paid_at) : 0, goodsSum:r.goods_sum == null ? null : Number(r.goods_sum), deliverySum:Number(r.delivery_sum) || 0, serviceFee:Number(r.service_fee) || 0 });
 async function loadOrders(quiet){
   if (!dbReady) return;
@@ -2578,6 +2578,7 @@ function openReceipt(no){
 function payOptSig(){ return JSON.stringify(S.payOpts || {}); }
 function payOpt(o, code){ return ((S.payOpts || {})[o.no] || []).find(x => x.code === code); }
 function payHtml(o){
+  if (o.cancelled) return `<div class="paybox exp"><b>Заказ отменён</b><p class="note">${o.cancelReason ? esc(o.cancelReason) + ". " : ""}${o.payStatus === "refunded" ? "Деньги будут возвращены." : ""}</p></div>`;
   if (o.payStatus === "expired") return `<div class="paybox exp"><b>Время оплаты истекло</b><p class="note">Заказ отменён автоматически. Оформите его заново.</p></div>`;
   if (o.payStatus !== "unpaid") return "";
   const pv = (S.providers && S.providers.length ? S.providers : [{ code:"click", n:"Click" }, { code:"payme", n:"Payme" }]);
