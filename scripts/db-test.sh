@@ -14,5 +14,8 @@ run supabase/tests/02_checks.sql
 for ((i=${#UP[@]}-1; i>=0; i--)); do d="${UP[$i]%.sql}.down.sql"; [ -f "$d" ] && run "$d"; done
 for f in "${UP[@]}"; do run "$f"; done
 run supabase/tests/02_checks.sql
+run supabase/ops/seed_catalog_from_js.sql
+run supabase/tests/03_catalog_checks.sql
+run supabase/ops/seed_catalog_from_js.sql      # қайта юклаш хавфсиз (идемпотент)
 run supabase/ops/test_reset_data.sql
 echo "OK: ${#UP[@]} та миграция олдинга, орқага ва яна олдинга ўтди"
