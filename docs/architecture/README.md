@@ -18,6 +18,9 @@ avval TEST'da, tasdiqingizdan keyin.
 - Eng katta 3 bo'shliq: (1) holatlar jurnali «kim o'tkazdi» bilan yo'q, (2) mijozning «Eng arzon / Kamroq do'kon»
   tanlovi yo'q, (3) Click/Payme va yopilgandan keyingi hisob-kitob avtomatik emas.
 - Hujjat bilan kod orasida 4 ta nomuvofiqlik bor (3-bo'lim), ularni hal qilish kerak.
+- **Qabul qilingan qarorlar (2026-10-30):** narxni do'konchi kiritadi; do'kon tovarni tayyorlaydi, yig'uvchi
+  tayyor tovarni do'konlardan olib ketadi; do'kon javob bermasa zayavka avtomatik keyingi do'konga o'tadi
+  (8-bo'lim, ADR-010).
 
 ---
 
@@ -74,7 +77,8 @@ TEST bazadagi haqiqiy buyurtmalar bilan tekshiraman.
    qo'lda qo'yilgan, lekin repoga tushmagan. **Xavf:** PROD'ni migratsiyalardan qurganda ular yo'qoladi.
 2. **Yig'uvchi bormi?** PDF 5 rolni (yig'uvchi bilan) asosiy model deydi. `plans/shop-fulfillment-plan.md`
    esa «yig'uvchini olib tashlash, do'kon o'zi yig'adi» degan. Ikkalasi kodda `app_settings.mode`
-   (`pickers` / `sellers`) bilan yashaydi. Bitta asosiy rejim tanlash kerak (8-bo'lim, 2-savol).
+   (`pickers` / `sellers`) bilan yashaydi. **Hal qilindi:** ikkalasining qo'shilmasi — do'kon tayyorlaydi,
+   yig'uvchi olib ketadi (ADR-010).
 3. **Avtomatik qayta taqsimlash** PDF'da «yo'q» deyilgan, lekin `sellers` rejimida bor (yuqorida).
 4. **Narx zaxirasi.** PDF 5% deydi, kodda `PRICE_TOL = 3%` (taqsimlash uchun) va `orders.reserve_sum`
    (to'lov zaxirasi) alohida. Ikkalasini `app_settings` ga chiqarish va hujjatda bitta raqam qilish kerak.
@@ -118,7 +122,8 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
   price, in_stock, updated_at` aynan shu. `price_history` ham bor.
 - **Qaror:** yangi jadval yo'q. Qo'shiladi: `offers_market` view (offer + do'kon bozori + `stale = updated_at <
   now() - 3 kun`), sayt «taxminiy» belgisini shundan oladi. Muddat `app_settings.price_stale_days`.
-- **Narxni kim kiritadi** — 8-bo'lim, 1-savol.
+- **Narxni do'konchi kiritadi** (qaror, 8-bo'lim): `seller.html` (qo'lda va Excel/CSV). Admin faqat
+  boshlang'ich to'ldirish va tekshirish uchun. Bot har 3 kunda yangilanmagan narxlar haqida do'konga eslatadi.
 
 ### ADR-004. «Eng arzon» va «Kamroq do'kon» bitta SQL funksiyada
 
@@ -142,8 +147,9 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
   edi; `order_msgs (order_no, seller_id, confirmed_at, ready_at, expired_at)` aynan shu vazifani bajaradi.
 - **Qaror:** yangi jadval yo'q, `order_msgs` shu rolni oladi. Maxfiylik: do'kon xabarida faqat tovar, miqdor,
   narx, vaqt (hozirgi `offerText` mijoz ismi/telefonini yubormaydi — saqlanadi, testga qo'shiladi).
-- **Javob bermasa:** `sellers` rejimidagi avtomatik o'tish saqlanadi; `app_settings.shop_timeout_action`
-  (`reassign` | `alert`) bilan boshqariladi (8-bo'lim, 3-savol).
+- **Javob bermasa (qaror):** 5 daqiqada javob bo'lmasa yoki «Yo'q» desa, qator avtomatik keyingi arzon
+  do'konga o'tadi (`tried[]`, hozirgi `sellers` mantiqi) va adminga xabar boradi. Narx farqi zaxiradan
+  oshsa — mijozdan so'raladi. Muddat `app_settings.answer_minutes`.
 
 ### ADR-006. Taymerlar: bitta `watchdog()` + pg_cron
 
@@ -178,6 +184,28 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
 - **Qaror:** sxema saqlanadi. Tavsiya: 365 kun → 30 kun «sirpanuvchi» (har kirishda uzayadi), bloklanganda
   sessiyalar darhol o'chadi. Bu xavfsizlik o'zgarishi, alohida tasdiq bilan.
 
+### ADR-010. Bajarish modeli: do'kon tayyorlaydi, yig'uvchi olib ketadi
+
+- **Kontekst:** hozir ikki rejim bor. `pickers`: yig'uvchi buyurtmani oladi va do'konlardan o'zi **sotib oladi**
+  (`purchases`). `sellers`: do'konlar ✅/❌ va «Tayyor» qiladi, **haydovchi** do'konlardan yig'adi.
+  Qaror: do'kon tayyorlaydi (sellers'dagi kabi), lekin do'kondan **yig'uvchi** olib ketadi.
+- **Variantlar:**
+  - A) Yangi `mode = 'shop_collect'` qiymati: `sellers` taqsimoti + yig'uvchi bosqichi. Eski ikki rejim
+    o'zgarmaydi, TEST'da sozlama bilan yoqiladi/qaytariladi.
+  - B) `sellers` rejimini o'zgartirish (haydovchi o'rniga yig'uvchi). Kamroq kod, lekin ishlayotgan
+    rejim buziladi va qaytarish qiyin.
+- **Qaror:** A.
+- **Oqim (`shop_collect`):**
+  1. To'lovdan keyin `route()` qatorlarni do'konlarga bo'ladi (`order_msgs`), do'kon ✅/❌ → «Tayyor».
+  2. Hamma qatorlar taqsimlangach (`stage 1`), buyurtma bozordagi yig'uvchilarga chiqadi (`offerToPickers`),
+     birinchi bosgan oladi (`claimOrder`).
+  3. `collector.html`: ro'yxat do'kon bo'yicha, har do'kon yonida «Tayyor / tayyorlanmoqda». Yig'uvchi
+     faqat «Tayyor» do'konga boradi, qatorni «olindi / yetmadi» qiladi. Yig'uvchi **sotib olmaydi**, pul
+     bermaydi (`purchases` yozilmaydi).
+  4. Hamma qator belgilansa — «Parkka berildi» (`stage 2`), joy/qator sanog'i bilan.
+- **Do'konga pul:** yopilgandan keyin `settle_order()` orqali (ADR-008), komissiya chegirilib.
+  Bu do'kon uchun yangi shart (hozir `sellers` rejimida haydovchi to'lov so'raydi) — 8-bo'lim, 4-savol.
+
 ---
 
 ## 5. Modullar (monolit ichida)
@@ -188,7 +216,7 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
 | Savat va taklif | — (`cart_plan`, `quote_order`, `cart_compare`) | — | index |
 | Buyurtma | `orders`, `order_lines`, `order_events`*, `order_msgs` | RPC, bot | hammasi |
 | Do'kon zayavkasi | `order_msgs`, `order_lines.status` | bot (`route`), do'kon | bot, seller |
-| Yig'ish | `orders.picker_*`, `purchases`, `collector_*` | yig'uvchi | collector |
+| Yig'ish (olib ketish) | `orders.picker_*`, `order_lines.status`, `collector_*` | yig'uvchi | collector |
 | Yetkazish | `orders.driver_*`, `fleets`, `delivery_tariffs`, `driver_*` | haydovchi | driver |
 | To'lov | `payments`, `payment_providers`, `refunds` | `pay` Edge Function* | index |
 | Hisob-kitob | `ledger`, `staff_payouts`, `fee_settings` | `settle_order`* | admin |
@@ -279,12 +307,14 @@ Har qadam = 1 PR (sayt va/yoki bot), avval TEST, keyin keyingisi.
 ### 0-bosqich. Tozalash (1–2 kun)
 - Supabase TEST'dagi qo'lda qo'yilgan o'zgarishlarni (SQL 30/31, bot v72/v73, `shop.html`) repoga tushirish.
   `supabase/audit/02_export_schema.sql` natijasini migratsiyalar bilan solishtirish.
+- Kerakli materiallar: (a) TEST SQL Editor'da `02_export_schema.sql` natijasi (JSON/jadval), (b) Supabase →
+  Edge Functions → `tg-bot` → Code dagi joriy kod (v73), (c) `shop.html` fayli (agar saytda bo'lsa).
 - **DoD:** TEST bazasi = baseline + migratsiyalar; `tg-bot` repodagi kod = deploy qilingan kod.
 
 ### 1-bosqich. Bozor, narx qatlami, do'konga zayavka (≈1 hafta)
 - Migratsiya 16 (`order_events`) va 17 (`watchdog`).
 - `offers_market` + «taxminiy narx» belgisi saytda.
-- Do'kon zayavkasi: rejim (`sellers`/`pickers`) qaroriga qarab tozalash; `shop_timeout_action`.
+- `shop_collect` rejimi (ADR-010): bot + `collector.html` (do'kon bo'yicha ro'yxat, «Tayyor» belgisi).
 - **DoD:** har bir holat o'tishi `order_events` da kim bilan; 5/10/30 daqiqa va 24 soat taymerlari TEST'da
   sun'iy vaqt bilan tekshirilgan; do'kon xabarida mijoz ma'lumoti yo'qligi testda.
 
@@ -310,18 +340,19 @@ Har qadam = 1 PR (sayt va/yoki bot), avval TEST, keyin keyingisi.
 
 ---
 
-## 8. Ochiq savollar (PDF'dagi 3 ta) va tavsiyam
+## 8. Qarorlar va qolgan savol
 
-1. **Real narxlarni kim kiritadi?**
-   Tavsiya: do'konchilar o'zi (`seller.html`, Excel yuklash bor), admin faqat boshlang'ich to'ldiradi va
-   tekshiradi. Sabab: 3 kunlik «taxminiy» qoidasi faqat do'kon o'zi yangilasa ishlaydi.
-2. **Yig'ish: maxsus yig'uvchilarmi yoki do'kon o'zi?**
-   Tavsiya: boshlanishga **do'kon o'zi tayyorlaydi + haydovchi do'konlardan oladi** (`sellers` rejimi, kod
-   asosan tayyor), yig'uvchi ixtiyoriy rejim bo'lib qoladi. Sabab: bitta odam kam, kod tayyor, xodim xarajati yo'q.
-   Kamchiligi: haydovchi bozor ichida ko'proq yuradi.
-3. **Do'kon javob bermasa — avtomatikmi yoki admin?**
-   Tavsiya: avtomatik keyingi arzon do'konga (hozir `sellers` rejimida shunday) + adminga xabar.
-   Narx farqi zaxiradan oshsa — mijozdan so'rash.
+| # | Savol | Qaror (2026-10-30) |
+|---|---|---|
+| 1 | Real narxlarni kim kiritadi? | Do'konchi (ADR-003) |
+| 2 | Yig'ish kim tomonidan? | Do'kon tayyorlaydi, yig'uvchi olib ketadi (ADR-010) |
+| 3 | Do'kon javob bermasa? | Avtomatik keyingi do'konga + adminga xabar (ADR-005) |
+
+**4. Ochiq: do'konga pul qachon va kim to'laydi?**
+- A) Yopilgandan keyin platforma to'laydi (komissiya chegirilib). Yig'uvchi naqd pul tashimaydi, nazorat oson.
+  Kamchiligi: do'kon 1–2 kun kutadi, ishonch kerak. **Tavsiya.**
+- B) Yig'uvchi olib ketayotganda to'laydi (hozirgi `pickers` kabi). Do'kon uchun qulay, lekin yig'uvchida
+  katta naqd/karta oqimi va xatolik xavfi.
 
 ---
 
