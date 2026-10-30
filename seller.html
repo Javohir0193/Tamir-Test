@@ -74,6 +74,17 @@ header small{display:block;color:var(--muted);font-size:13px}
 .irow small{display:block;color:var(--muted);font-size:12px}
 .irow.no{opacity:.55}
 .irow b.ok{color:var(--ok)} .irow b.warn{color:var(--warn)} .irow b.no{color:var(--muted)}
+.tabs{display:flex;gap:6px;margin:0 0 10px}
+.tabs button{flex:1;border:0;border-radius:12px;background:var(--card);padding:10px 6px;font-weight:600;font-size:14px}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 6px}
+.kpi div{background:var(--card);border-radius:12px;padding:10px 6px;text-align:center;font-size:12px;color:var(--muted)}
+.kpi b{display:block;font-size:22px;color:var(--ink)}
+.sec{font-size:15px;margin:14px 2px 6px}
+#today .acts{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
+#today .acts button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;background:var(--card)}
+#today .acts .main{background:var(--accent)}
+#today .list .acts{padding:8px 10px;margin:0}
 .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
 </style>
@@ -93,7 +104,7 @@ const UZ = new Map();
 (TC.items || []).forEach(x => UZ.set(x[0], { base:x[5], n:x[7] || x[3], s:x[8] || x[4] }));
 const UNIT = Object.assign({ "мешок":"қоп", "шт":"дона", "упак.":"қадоқ", "ведро":"челак", "набор":"тўплам", "пачка":"пачка" }, TC.units || {});
 const PAGE = 60;
-const S = { data:null, cat:"all", st:"all", q:"", pct:0, edits:{}, shown:PAGE };
+const S = { tab:"today", data:null, cat:"all", st:"all", q:"", pct:0, edits:{}, shown:PAGE };
 const fmt = n => Math.round(n).toLocaleString("ru-RU").replace(/ /g, " ");
 const num = s => +String(s).replace(/[^\d]/g, "") || 0;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
@@ -133,14 +144,23 @@ function itemHTML(p){
       ${o ? `<span class="sw"><button class="y" data-st="${p.id}:1" aria-pressed="${on}">Бор</button><button class="n" data-st="${p.id}:0" aria-pressed="${!on}">Йўқ</button></span>` : ""}</div>
   </div>`;
 }
+const TABS = [["today", "📋 Бугун"], ["prices", "🏷 Нархлар"]];
+const tabsHTML = () => `<nav class="tabs">${TABS.map(([id, n]) => `<button data-tab="${id}" aria-pressed="${S.tab === id}">${n}</button>`).join("")}</nav>`;
 function render(keepFocus){
+  if (S.tab === "today") {
+    const d = S.data;
+    $("app").innerHTML = `<header><div><h1>🏪 ${esc(d.seller.shop)}</h1><small>${esc(d.seller.name)}</small></div></header>${tabsHTML()}<div id="today"><div class="msg">Юкланмоқда…</div></div>`;
+    updateBar(); return;
+  }
+  renderPrices(keepFocus);
+}
+function renderPrices(keepFocus){
   const d = S.data, list = filtered(), priced = d.products.filter(p => cur(p)).length;
   const empty = list.filter(p => !cur(p)).length;
   const cats = [{ id:"all", name:"Ҳаммаси" }, ...d.cats.filter(c => d.products.some(p => p.cat === c.id))];
   $("app").innerHTML = `
     <header><div><h1>🏷 Нархларим</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small></div>
-      <div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div></header>
-    <button class="chip" data-ord style="margin:0 0 8px;background:var(--accent);color:var(--ink);font-weight:700">📋 Буюртмаларим</button>
+      <div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div></header>${tabsHTML()}
     <button class="chip" data-imp style="margin:0 0 8px;background:var(--ink);color:#fff">📄 Excel / CSV файлдан нарх юклаш</button>
     <button class="chip" data-newp style="margin:0 0 8px;background:var(--card)">➕ Каталогда йўқ товарни таклиф қилиш</button>
     <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9099" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -171,7 +191,7 @@ function refresh(id){
 }
 function updateBar(){
   const n = Object.keys(S.edits).length;
-  $("bar").hidden = false; $("save").disabled = !n;
+  $("bar").hidden = S.tab !== "prices"; $("save").disabled = !n;
   $("save").textContent = n ? `Сақлаш (${n} та ўзгариш)` : "Ўзгаришлар йўқ";
 }
 function setEdit(id, patch){
@@ -185,7 +205,6 @@ document.addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if (b.dataset.cat) { S.cat = b.dataset.cat; S.shown = PAGE; render(); }
   else if (b.dataset.stf) { S.st = b.dataset.stf; S.shown = PAGE; render(); }
-  else if ("ord" in b.dataset) openOrd();
   else if ("imp" in b.dataset) openImp();
   else if ("newp" in b.dataset) openNewP();
   else if (b.dataset.pct) { S.pct = +b.dataset.pct; render(); }
@@ -351,41 +370,51 @@ document.addEventListener("click", async e => {
   }
 });
 
-// ===== Дўкон буюртмалари: Тайёр ва «Машинага юкладим» (ботдаги тугмалар билан бир хил) =====
+// ===== Бугун: дўконнинг буюртмалари — нима қилиш керак (Тасдиқлаш → Тайёр → Машинага юкладим) =====
 const ST = { offered:"Тасдиқ кутилмоқда", confirmed:"Тасдиқланган", ready:"Тайёр" };
-async function ordLoad(){
-  const w = $("ordwrap"); if (!w) return;
-  try {
-    const d = await call({ action:"s_orders" }), list = d.orders || [];
-    w.innerHTML = `<div class="imp" data-ordbg><div>
-      <h2>📋 Буюртмаларим</h2><div class="acts"><button data-ordreload>Янгилаш</button><button data-ordclose>Ёпиш</button></div>
-      ${list.length ? list.map(o => {
-        const done = o.lines.filter(l => l.loaded).length, all = o.lines.filter(l => l.says_yes !== false).length;
-        const state = !o.confirmed ? "Тасдиқ кутилмоқда (ботдаги хабарда ✅/❌ ва «Тасдиқлаш»)" : !o.ready ? "Йиғинг, кейин «Тайёр»" : done === all && all ? "Ҳаммаси машинага юкланди ✅" : "Тайёр. Ҳайдовчи келганда машинага юкланг";
-        return `<div class="list" style="margin-bottom:10px"><div class="irow" style="grid-template-columns:1fr auto"><span><b>№${o.no}</b> · ${esc(o.slot || "")}<small>${esc(state)}</small></span><b class="${o.ready ? "ok" : "warn"}">${o.ready ? "тайёр" : "кутилмоқда"}</b></div>
-          ${o.lines.map(l => `<div class="irow" style="grid-template-columns:1fr auto"><span>${l.says_yes === false || l.status === "pending" ? "❌" : l.loaded ? "✅" : "⬜"} ${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="hint">${esc(ST[l.status] || "")}${l.loaded ? " · юкланди" : ""}</span></div>`).join("")}
-          ${o.driver ? `<div class="irow" style="grid-template-columns:1fr"><span>🚚 Ҳайдовчи: ${esc(o.driver.name)}${o.driver.car ? " · " + esc(o.driver.car) : ""}${o.driver.phone ? " · " + esc(o.driver.phone) : ""}</span></div>` : ""}
-          <div class="acts" style="padding:8px 10px;margin:0">${o.confirmed && !o.ready ? `<button class="main" data-ordready="${o.msg_id}">📦 Тайёр</button>` : ""}${o.ready && !(done === all && all) ? `<button class="main" data-ordload="${o.msg_id}">🚚 Машинага юкладим</button>` : ""}</div></div>`; }).join("") : `<div class="msg">Ҳозир фаол буюртма йўқ.</div>`}
-    </div></div>`;
-  } catch (err) { w.innerHTML = ""; toast(err.message); }
+function ordCard(o){
+  const done = o.lines.filter(l => l.loaded).length, all = o.lines.filter(l => l.says_yes !== false).length;
+  const loadedAll = done === all && all > 0;
+  const state = !o.confirmed ? "Тасдиқ кутилмоқда (ботдаги хабарда ✅/❌ ва «Тасдиқлаш»)" : !o.ready ? "Йиғинг, кейин «Тайёр»" : loadedAll ? "Ҳаммаси машинага юкланди ✅" : "Тайёр. Ҳайдовчи келганда машинага юкланг";
+  const sum = o.lines.reduce((a, l) => a + (l.says_yes === false || l.status === "pending" ? 0 : (l.price || 0) * l.qty), 0);
+  return `<div class="list" style="margin-bottom:10px"><div class="irow" style="grid-template-columns:1fr auto"><span><b>№${o.no}</b> · ${esc(o.slot || "")}<small>${esc(state)}</small></span><b class="${o.ready ? "ok" : "warn"}">${o.ready ? "тайёр" : "кутилмоқда"}</b></div>
+    ${o.lines.map(l => `<div class="irow" style="grid-template-columns:1fr auto"><span>${l.says_yes === false || l.status === "pending" ? "❌" : l.loaded ? "✅" : "⬜"} ${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="hint">${esc(ST[l.status] || "")}${l.loaded ? " · юкланди" : ""}</span></div>`).join("")}
+    ${sum ? `<div class="irow" style="grid-template-columns:1fr auto"><span>Жами</span><b>${fmt(sum)} сўм</b></div>` : ""}
+    ${o.driver ? `<div class="irow" style="grid-template-columns:1fr"><span>🚚 Ҳайдовчи: ${esc(o.driver.name)}${o.driver.car ? " · " + esc(o.driver.car) : ""}${o.driver.phone ? " · " + esc(o.driver.phone) : ""}</span></div>` : ""}
+    <div class="acts">${o.confirmed && !o.ready ? `<button class="main" data-ordready="${o.msg_id}">📦 Тайёр</button>` : ""}${o.ready && !loadedAll ? `<button class="main" data-ordload="${o.msg_id}">🚚 Машинага юкладим</button>` : ""}</div></div>`;
 }
-function openOrd(){ if ($("ordwrap")) return; const el = document.createElement("div"); el.id = "ordwrap"; document.body.appendChild(el); ordLoad(); clearInterval(openOrd.t); openOrd.t = setInterval(() => { if ($("ordwrap")) ordLoad(); else clearInterval(openOrd.t); }, 15000); }
+async function todayLoad(){
+  const w = $("today"); if (!w || S.tab !== "today") return;
+  try {
+    const list = (await call({ action:"s_orders" })).orders || [];
+    const isLoaded = o => { const a = o.lines.filter(l => l.says_yes !== false).length; return a > 0 && o.lines.filter(l => l.loaded).length === a; };
+    const g = [
+      ["🆕 Тасдиқ кутилмоқда", list.filter(o => !o.confirmed)],
+      ["📦 Йиғиш керак", list.filter(o => o.confirmed && !o.ready)],
+      ["🚚 Машинага юклаш", list.filter(o => o.ready && !isLoaded(o))],
+      ["✅ Юкланган", list.filter(o => o.ready && isLoaded(o))]];
+    w.innerHTML = `<div class="kpi">${g.slice(0, 3).map(([n, a]) => `<div><b>${a.length}</b>${n.replace(/^\S+\s/, "")}</div>`).join("")}</div>
+      <div class="acts"><button data-ordreload>🔄 Янгилаш</button></div>
+      ${list.length ? g.map(([n, a]) => a.length ? `<h3 class="sec">${n} · ${a.length}</h3>${a.map(ordCard).join("")}` : "").join("") : `<div class="msg">Ҳозирча фаол буюртма йўқ. Янги буюртма келса, ботда хабар чиқади ва бу ерда кўринади.</div>`}`;
+  } catch (err) { w.innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+}
+function setTab(t){ S.tab = t; clearInterval(setTab.t); render(); if (t === "today") { todayLoad(); setTab.t = setInterval(todayLoad, 15000); } window.scrollTo(0, 0); }
 document.addEventListener("click", async e => {
-  const t = e.target, w = $("ordwrap"); if (!w) return;
-  if (t.hasAttribute("data-ordclose") || t.hasAttribute("data-ordbg")) { w.remove(); clearInterval(openOrd.t); }
-  else if (t.hasAttribute("data-ordreload")) ordLoad();
+  const t = e.target.closest("button"); if (!t) return;
+  if (t.dataset.tab) setTab(t.dataset.tab);
+  else if (t.hasAttribute("data-ordreload")) todayLoad();
   else if (t.dataset.ordready || t.dataset.ordload){
     t.disabled = true;
     try { await call({ action: t.dataset.ordready ? "s_ready" : "s_loaded", msg_id:+(t.dataset.ordready || t.dataset.ordload) }); toast("✓ Белгиланди"); }
     catch (err) { toast(err.message); }
-    ordLoad();
+    todayLoad();
   }
 });
 
 (async () => {
   if (!TG || !TG.initData) { $("app").innerHTML = `<div class="msg">Бу саҳифа Telegram'даги <b>@tamir_sotuvchi_bot</b> ботида «🏷 Нархларим» тугмаси орқали очилади.</div>`; return; }
   TG.ready(); TG.expand();
-  try { S.data = await call({ action:"load" }); render(); }
+  try { S.data = await call({ action:"load" }); setTab("today"); }
   catch (err) { $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 })();
 </script>
