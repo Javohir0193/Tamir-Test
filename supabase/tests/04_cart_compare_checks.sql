@@ -4,7 +4,7 @@ declare mk int; s1 bigint; s2 bigint; s3 bigint; pa int; pb int; r jsonb; sh jso
 begin
   insert into public.markets (name) values ('CI market') returning id into mk;
   insert into public.sellers (name, role, status, shop, market_id) values ('N1', 'seller', 'active', 'N1', mk) returning id into s1;
-  insert into public.sellers (name, role, status, shop, market_id, row_no) values ('N2', 'seller', 'active', 'N2', mk, '7-қатор') returning id into s2;
+  insert into public.sellers (name, role, status, shop, market_id, row_no, phone) values ('N2', 'seller', 'active', 'N2', mk, '7-қатор', '998901112233') returning id into s2;
   insert into public.sellers (name, role, status, shop, market_id) values ('N3', 'seller', 'active', 'N3', mk) returning id into s3;
   select min(id) into pa from public.products where active; select max(id) into pb from public.products where active;
   -- N1: иккаласи 100/200; N2: иккаласи, арзонроқ; N3: фақат биринчиси жуда арзон
@@ -13,6 +13,7 @@ begin
   sh := r->'shops';
   if jsonb_array_length(sh) <> 3 then raise exception 'дўконлар сони: %', r; end if;
   if sh->0->>'row' <> '7-қатор' or sh->0->>'market' <> 'CI market' then raise exception 'қатор/бозор нотўғри: %', sh->0; end if;
+  if sh->0->>'phone' <> '998901112233' then raise exception 'телефон нотўғри: %', sh->0; end if;
   if sh->1->>'row' is not null then raise exception 'N1 да қатор бўлмаслиги керак: %', sh->1; end if;
   -- тўлиқлар аввал, нарх бўйича: N2 (380) < N1 (400); кейин N3 (қисман: 100)
   if sh->0->>'shop' <> 'N2' or (sh->0->>'total')::int <> 380 or (sh->0->>'have')::int <> 2 then raise exception 'N2 нотўғри: %', sh->0; end if;

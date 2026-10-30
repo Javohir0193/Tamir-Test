@@ -1228,6 +1228,7 @@ footer .f-bottom{display:flex;justify-content:space-between;align-items:center;g
   .ck-l .panel .line{background:#FFFFFF}
   .sb-safe{justify-content:center}
 }
+.cmp .cmpw{border-bottom:1px solid #EEF0F3}.cmp .cmpw .cmprow{border-bottom:0}.cmp .tel{display:inline-block;margin:-4px 8px 8px;font-size:13px;color:var(--ink,#222);text-decoration:none;font-weight:500}
 .cmp .cmprow{display:flex;width:100%;text-align:left;background:none;border:0;justify-content:space-between;align-items:center;gap:10px;padding:10px 8px;border-bottom:1px solid #EEF0F3;cursor:pointer;border-radius:10px}
 .cmp .cmprow.on{outline:2px solid #F97316;background:#FFF4EA}
 .cmp .cmprow:last-child{border-bottom:0}
@@ -2353,11 +2354,12 @@ function quotePayload(){
 }
 // Савatни дўконлар бўйича таққослаш (cart_compare) ва дўкон танлаш: S.shopSel = дўкон id, 0/бўш = ҳар товар энг арзон дўкондан.
 let cmpSeq = 0, cmpTimer = 0;
+const telLink = ph => { const d = String(ph || "").replace(/\D/g, ""); return d.length >= 9 ? `<a class="tel" href="tel:+${d.length === 9 ? "998" + d : d}">📞 +${d.length === 9 ? "998" + d : d}</a>` : ""; };
 const place = x => [x.market, x.row && x.row !== x.shop ? x.row : ""].filter(Boolean).join(" · ");
 function cmpHTML(d){
   const sh = (d && d.shops) || []; if (sh.length < 2) return "";
   const miss = ids => ids.map(i => { const p = byId(i); return p ? p.n : "#" + i; }).slice(0, 4).join(", ") + (ids.length > 4 ? "…" : "");
-  const rows = sh.map(x => `<button type="button" class="cmprow ${x.have === x.need ? "full" : ""} ${S.shopSel === x.id ? "on" : ""}" data-shop="${x.id}" aria-pressed="${S.shopSel === x.id}"><span class="cs"><b>${esc(x.shop)}</b>${place(x) ? `<small>📍 ${esc(place(x))}</small>` : ""}<small>${x.have === x.need ? "Все товары есть" : `${x.have} из ${x.need} товаров · Не хватает: ${esc(miss(x.missing))}`}</small></span><span class="cp">${fmt(x.total)} ${CURRENCY}</span></button>`).join("");
+  const rows = sh.map(x => `<div class="cmpw"><button type="button" class="cmprow ${x.have === x.need ? "full" : ""} ${S.shopSel === x.id ? "on" : ""}" data-shop="${x.id}" aria-pressed="${S.shopSel === x.id}"><span class="cs"><b>${esc(x.shop)}</b>${place(x) ? `<small>📍 ${esc(place(x))}</small>` : ""}<small>${x.have === x.need ? "Все товары есть" : `${x.have} из ${x.need} товаров · Не хватает: ${esc(miss(x.missing))}`}</small></span><span class="cp">${fmt(x.total)} ${CURRENCY}</span></button>${telLink(x.phone)}</div>`).join("");
   const mix = d.mix || {};
   return `<section class="panel cmp"><h2>Выберите магазин</h2>${rows}
     <button type="button" class="cmprow mix ${!S.shopSel ? "on" : ""}" data-shop="0" aria-pressed="${!S.shopSel}"><span class="cs"><b>Каждый товар — в самом дешёвом магазине</b><small>Несколько магазинов, цена ниже или такая же</small></span><span class="cp">${fmt(mix.total || 0)} ${CURRENCY}</span></button></section>`;
