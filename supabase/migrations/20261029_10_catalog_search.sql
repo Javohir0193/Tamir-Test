@@ -74,7 +74,6 @@ create or replace function public.search_products(p_q text, p_limit integer defa
  stable
  security definer
  set search_path to 'public', 'extensions'
- set pg_trgm.word_similarity_threshold to '0.45'
 as $function$
 declare k text := public.search_key_norm(left(coalesce(p_q, ''), 80)); lim int := least(greatest(coalesce(p_limit, 30), 1), 100);
 begin
@@ -83,7 +82,7 @@ begin
     select c.id, c.cat, c.name, c.spec, c.unit, c.emoji, c.base_price, c.best_price, c.best_shop, c.offers,
            greatest(similarity(p.search_key, k), word_similarity(k, p.search_key))::real
       from public.products p join public.catalog_public c on c.id = p.id
-     where p.search_key like '%' || k || '%' or k <% p.search_key
+     where p.search_key like '%' || k || '%' or word_similarity(k, p.search_key) >= 0.45
      order by (p.search_key like '%' || k || '%') desc, 11 desc, c.name
      limit lim;
 end $function$;
