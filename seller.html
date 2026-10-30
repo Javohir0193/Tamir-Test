@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
+<script src="tglogin.js"></script>
 <script src="icons.js"></script>
 
 <script src="catalog.js"></script>
@@ -99,6 +100,9 @@ header small{display:block;color:var(--muted);font-size:13px}
 #today .list .acts{padding:8px 10px;margin:0}
 .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:500;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
+.lgn{text-align:center;padding:40px 12px}.lgn h1{font-size:22px;margin:0 0 8px}.lgn .muted{color:var(--muted)}
+.lgn .btn{border:0;border-radius:14px;height:52px;background:var(--accent);font-weight:700;font-size:16px}.lgn .btn[disabled]{opacity:.5}
+.tabs .out{flex:0 0 auto;padding:10px 12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -106,9 +110,12 @@ header small{display:block;color:var(--muted);font-size:13px}
 <div class="bar" id="bar" hidden><button id="save" disabled>Сақлаш</button></div>
 <div class="toast" id="toast"></div>
 <script>
-// Кабинет дўкона: быстрый ввод цен. Открывается кнопкой «🏷 Нархларим» в боте @tamir_sotuvchi_bot.
+// Кабинет дўкона: быстрый ввод цен. Открывается кнопкой «🏷 Нархларим» в боте @tamir_sotuvchi_bot
+// или в браузере: «Telegram орқали кириш» (как у ҳайдовчи / йиғувчи).
 const API = (window.TAMIR_CONFIG || {}).botApi || "https://agajmytkjpkihvaurqij.supabase.co/functions/v1/tg-bot";
 const TG = window.Telegram && window.Telegram.WebApp;
+const IN_TG = !!(TG && TG.initData);
+let SES = ""; try { SES = localStorage.getItem("sel_ses") || ""; } catch (e) {}
 const TC = window.TAMIR_CATALOG || { core:[], items:[], units:{} };
 // узбекские названия и примерная цена из каталога
 const UZ = new Map();
@@ -124,8 +131,9 @@ const $ = id => document.getElementById(id);
 function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 2200); }
 
 async function call(body){
-  const r = await fetch(API, { method:"POST", headers:{ "content-type":"application/json", "x-init-data":TG.initData }, body:JSON.stringify(body) });
+  const r = await fetch(API, { method:"POST", headers:Object.assign({ "content-type":"application/json" }, IN_TG ? { "x-init-data":TG.initData } : { "x-sel-session":SES }), body:JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && !IN_TG) { dropSes(); loginView("Сессия тугади, қайта киринг."); throw new Error("auth"); }
   if (!r.ok) throw new Error(j.error || "Хато. Қайта уриниб кўринг.");
   return j;
 }
@@ -158,7 +166,7 @@ function itemHTML(p){
 }
 const placeLine = x => { const t = [x.market, x.row && x.row !== x.shop ? x.row : ""].filter(Boolean).join(" · "); return `<small>📍 ${t ? esc(t) : "бозор кўрсатилмаган"}</small>`; };
 const TABS = [["today", "📋 Бугун"], ["prices", "🏷 Нархлар"], ["acct", "💰 Ҳисоб"]];
-const tabsHTML = () => `<nav class="tabs">${TABS.map(([id, n]) => `<button data-tab="${id}" aria-pressed="${S.tab === id}">${n}</button>`).join("")}</nav>`;
+const tabsHTML = () => `<nav class="tabs">${TABS.map(([id, n]) => `<button data-tab="${id}" aria-pressed="${S.tab === id}">${n}</button>`).join("")}${IN_TG ? "" : `<button class="out" data-out aria-label="Чиқиш" title="Чиқиш">⎋</button>`}</nav>`;
 function render(keepFocus){
   if (S.tab === "today") {
     const d = S.data;
@@ -225,6 +233,7 @@ document.addEventListener("click", e => {
   else if (b.dataset.stf) { S.st = b.dataset.stf; S.shown = PAGE; render(); }
   else if ("imp" in b.dataset) openImp();
   else if ("newp" in b.dataset) openNewP();
+  else if ("out" in b.dataset) { dropSes(); loginView(); }
   else if (b.dataset.pct) { S.pct = +b.dataset.pct; render(); }
   else if ("more" in b.dataset) { S.shown += PAGE; render(); }
   else if (b.dataset.sug) { const p = S.data.products.find(x => x.id === +b.dataset.sug); setEdit(p.id, { price:suggest(p), in_stock:true }); refresh(p.id); }
@@ -457,12 +466,17 @@ document.addEventListener("click", async e => {
   }
 });
 
-(async () => {
-  if (!TG || !TG.initData) { $("app").innerHTML = `<div class="msg">Бу саҳифа Telegram'даги <b>@tamir_sotuvchi_bot</b> ботида «🏷 Нархларим» тугмаси орқали очилади.</div>`; return; }
-  TG.ready(); TG.expand();
+function dropSes(){ SES = ""; S.data = null; clearInterval(setTab.t); try { localStorage.removeItem("sel_ses"); } catch (e) {} $("bar").hidden = true; }
+function loginView(msg){
+  TGLOGIN.view({ el:"app", wrap:"lgn", mu:"muted", title:"🏪 Дўкон кабинети", text:"Telegram ботдаги дўкон аккаунтингиз орқали киринг.", prefix:"slogin_", newFn:"col_login_new", checkFn:"col_login_check", msg,
+    onOk: ses => { SES = ses; try { localStorage.setItem("sel_ses", SES); } catch (e) {} boot(); } });
+}
+async function boot(){
+  if (!IN_TG && !SES) return loginView();
   try { S.data = await call({ action:"load" }); setTab("today"); }
-  catch (err) { $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
-})();
+  catch (err) { if (err.message !== "auth") $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+}
+boot();
 </script>
 </body>
 </html>

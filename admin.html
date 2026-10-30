@@ -161,7 +161,7 @@ async function gate(){
 function dropSession(){ CODE = ""; S.me = null; try { sessionStorage.removeItem("acode"); } catch(_){} }
 function loginView(){
   $("app").innerHTML = LBAR + `<div class="login card"><h2>Админ кириши</h2><p class="mu">Аввал Telegram орқали кирасиз, кейин шахсий PIN киритасиз.</p>
-    <p><a class="btn" id="tg" target="_blank" rel="noopener" href="#" style="display:inline-block;text-decoration:none">Telegram'ни очиш</a></p><p class="msg" id="lm">Тайёрланмоқда…</p></div>`;
+    <p><a class="btn" id="tg" target="_blank" rel="noopener" href="#" style="display:inline-block;text-decoration:none">Telegram орқали кириш</a></p><p class="msg" id="lm">Тайёрланмоқда…</p></div>`;
   sb.rpc("login_start", { p_consent:true }).then(r => {
     if (r.error || !r.data) { $("lm").textContent = "Киришни бошлаб бўлмади. Бироздан кейин қайта уриниб кўринг."; return; }
     $("tg").href = `https://t.me/${r.data.bot}?start=login_${r.data.token}`; $("lm").textContent = "Telegram'да «Рақамни юбориш» ни босинг, кейин шу саҳифага қайтинг.";
