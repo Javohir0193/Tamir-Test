@@ -77,7 +77,8 @@ TEST bazadagi haqiqiy buyurtmalar bilan tekshiraman.
    **Tekshirildi (2026-10-30):** TEST bazaning sxema eksporti (3200 obyekt) repodagi baseline + 01–15 bilan
    solishtirildi: TEST'da ortiqcha jadval/funksiya **yo'q**, `shop_sessions`/`slogin` ham yo'q. Demak
    «SQL 30/31» va do'kon sessiyalari hali qilinmagan reja. Yagona farq: TEST'ga migratsiya 15
-   (`cart_compare` do'kon telefoni) hali qo'llanmagan. Bot kodi alohida solishtiriladi.
+   (`cart_compare` do'kon telefoni) hali qo'llanmagan. Deploy qilingan `tg-bot` = `Tamir-Bot` main, faqat
+   PR #11 (do'kon kabinetida bozor va qator) hali deploy qilinmagan (1 qator farq).
 2. **Yig'uvchi bormi?** PDF 5 rolni (yig'uvchi bilan) asosiy model deydi. `plans/shop-fulfillment-plan.md`
    esa «yig'uvchini olib tashlash, do'kon o'zi yig'adi» degan. Ikkalasi kodda `app_settings.mode`
    (`pickers` / `sellers`) bilan yashaydi. **Hal qilindi:** ikkalasining qo'shilmasi — do'kon tayyorlaydi,
