@@ -1,8 +1,9 @@
 {
-  "name": "Ta'mir — ремонт без хлопот",
-  "short_name": "Ta'mir",
-  "description": "Материалы, мастер и доставка в одном заказе",
-  "lang": "ru",
+  "id": "./",
+  "name": "TamirMarket",
+  "short_name": "TamirMarket",
+  "description": "Қурилиш бозоридан материаллар, уста ва етказиб бериш битта буюртмада",
+  "lang": "uz",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
