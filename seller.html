@@ -148,17 +148,18 @@ function itemHTML(p){
       ${o ? `<span class="sw"><button class="y" data-st="${p.id}:1" aria-pressed="${on}">Бор</button><button class="n" data-st="${p.id}:0" aria-pressed="${!on}">Йўқ</button></span>` : ""}</div>
   </div>`;
 }
+const placeLine = x => { const t = [x.market, x.row && x.row !== x.shop ? x.row : ""].filter(Boolean).join(" · "); return `<small>📍 ${t ? esc(t) : "бозор кўрсатилмаган"}</small>`; };
 const TABS = [["today", "📋 Бугун"], ["prices", "🏷 Нархлар"], ["acct", "💰 Ҳисоб"]];
 const tabsHTML = () => `<nav class="tabs">${TABS.map(([id, n]) => `<button data-tab="${id}" aria-pressed="${S.tab === id}">${n}</button>`).join("")}</nav>`;
 function render(keepFocus){
   if (S.tab === "today") {
     const d = S.data;
-    $("app").innerHTML = `<header><div><h1>🏪 ${esc(d.seller.shop)}</h1><small>${esc(d.seller.name)}</small></div></header>${tabsHTML()}<div id="today"><div class="msg">Юкланмоқда…</div></div>`;
+    $("app").innerHTML = `<header><div><h1>🏪 ${esc(d.seller.shop)}</h1><small>${esc(d.seller.name)}</small>${placeLine(d.seller)}</div></header>${tabsHTML()}<div id="today"><div class="msg">Юкланмоқда…</div></div>`;
     updateBar(); return;
   }
   if (S.tab === "acct") {
     const d = S.data;
-    $("app").innerHTML = `<header><div><h1>💰 Ҳисоб</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small></div></header>${tabsHTML()}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
+    $("app").innerHTML = `<header><div><h1>💰 Ҳисоб</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small>${placeLine(d.seller)}</div></header>${tabsHTML()}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
     updateBar(); acctLoad(); return;
   }
   renderPrices(keepFocus);
@@ -168,7 +169,7 @@ function renderPrices(keepFocus){
   const empty = list.filter(p => !cur(p)).length;
   const cats = [{ id:"all", name:"Ҳаммаси" }, ...d.cats.filter(c => d.products.some(p => p.cat === c.id))];
   $("app").innerHTML = `
-    <header><div><h1>🏷 Нархларим</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small></div>
+    <header><div><h1>🏷 Нархларим</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small>${placeLine(d.seller)}</div>
       <div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div></header>${tabsHTML()}
     <button class="chip" data-imp style="margin:0 0 8px;background:var(--ink);color:#fff">📄 Excel / CSV файлдан нарх юклаш</button>
     <button class="chip" data-newp style="margin:0 0 8px;background:var(--card)">➕ Каталогда йўқ товарни таклиф қилиш</button>
