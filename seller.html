@@ -80,6 +80,10 @@ header small{display:block;color:var(--muted);font-size:13px}
 .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 6px}
 .kpi div{background:var(--card);border-radius:12px;padding:10px 6px;text-align:center;font-size:12px;color:var(--muted)}
 .kpi b{display:block;font-size:22px;color:var(--ink)}
+.kpi2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 6px}
+.kpi2 div{background:var(--card);border-radius:12px;padding:12px 10px;font-size:12.5px;color:var(--muted)}
+.kpi2 b{display:block;font-size:20px;color:var(--ink)}
+.kpi2 small{display:block;font-size:11.5px;margin-top:2px}
 .sec{font-size:15px;margin:14px 2px 6px}
 #today .acts{display:flex;gap:8px;margin:8px 0;flex-wrap:wrap}
 #today .acts button{border:0;border-radius:10px;padding:10px 14px;font-weight:600;background:var(--card)}
@@ -144,13 +148,18 @@ function itemHTML(p){
       ${o ? `<span class="sw"><button class="y" data-st="${p.id}:1" aria-pressed="${on}">Бор</button><button class="n" data-st="${p.id}:0" aria-pressed="${!on}">Йўқ</button></span>` : ""}</div>
   </div>`;
 }
-const TABS = [["today", "📋 Бугун"], ["prices", "🏷 Нархлар"]];
+const TABS = [["today", "📋 Бугун"], ["prices", "🏷 Нархлар"], ["acct", "💰 Ҳисоб"]];
 const tabsHTML = () => `<nav class="tabs">${TABS.map(([id, n]) => `<button data-tab="${id}" aria-pressed="${S.tab === id}">${n}</button>`).join("")}</nav>`;
 function render(keepFocus){
   if (S.tab === "today") {
     const d = S.data;
     $("app").innerHTML = `<header><div><h1>🏪 ${esc(d.seller.shop)}</h1><small>${esc(d.seller.name)}</small></div></header>${tabsHTML()}<div id="today"><div class="msg">Юкланмоқда…</div></div>`;
     updateBar(); return;
+  }
+  if (S.tab === "acct") {
+    const d = S.data;
+    $("app").innerHTML = `<header><div><h1>💰 Ҳисоб</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small></div></header>${tabsHTML()}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
+    updateBar(); acctLoad(); return;
   }
   renderPrices(keepFocus);
 }
@@ -396,6 +405,17 @@ async function todayLoad(){
     w.innerHTML = `<div class="kpi">${g.slice(0, 3).map(([n, a]) => `<div><b>${a.length}</b>${n.replace(/^\S+\s/, "")}</div>`).join("")}</div>
       <div class="acts"><button data-ordreload>🔄 Янгилаш</button></div>
       ${list.length ? g.map(([n, a]) => a.length ? `<h3 class="sec">${n} · ${a.length}</h3>${a.map(ordCard).join("")}` : "").join("") : `<div class="msg">Ҳозирча фаол буюртма йўқ. Янги буюртма келса, ботда хабар чиқади ва бу ерда кўринади.</div>`}`;
+  } catch (err) { w.innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+}
+const PST = { paid:"Тўланди ✅", pending:"Тўлов кутилмоқда", rejected:"Рад этилган" };
+async function acctLoad(){
+  const w = $("acct"); if (!w) return;
+  try {
+    const a = await call({ action:"s_account" }), box = (t, x) => `<div><b>${fmt(x.net)}</b>${t}<small>${x.count} та буюртма · жами ${fmt(x.total)} · комиссия ${fmt(x.commission)}</small></div>`;
+    w.innerHTML = `<div class="kpi2">${box("Шу ой олдингиз (сўм)", a.month)}${box("Бутун давр (сўм)", a.all)}</div>
+      ${a.pending.count ? `<div class="fast"><b>⏳ Тўлов кутилмоқда: ${a.pending.count} та</b><p>Админ тасдиқлагач ${fmt(a.pending.net)} сўм карталингизга тушади.</p></div>` : ""}
+      <h3 class="sec">Тўловлар тарихи</h3>
+      <div class="list">${a.history.length ? a.history.map(r => `<div class="irow" style="grid-template-columns:1fr auto"><span><b>№${r.no}</b> · ${esc(PST[r.status] || r.status)}<small>${new Date(r.at).toLocaleDateString("ru-RU")} · ${fmt(r.total)}${r.commission ? ` − комиссия ${r.pct}% (${fmt(r.commission)})` : ""}</small></span><b class="${r.status === "paid" ? "ok" : "warn"}">${fmt(r.net)}</b></div>`).join("") : `<div class="msg">Ҳали тўловлар йўқ.</div>`}</div>`;
   } catch (err) { w.innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 }
 function setTab(t){ S.tab = t; clearInterval(setTab.t); render(); if (t === "today") { todayLoad(); setTab.t = setInterval(todayLoad, 15000); } window.scrollTo(0, 0); }
