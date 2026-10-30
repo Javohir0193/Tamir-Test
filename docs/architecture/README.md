@@ -204,7 +204,8 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
      bermaydi (`purchases` yozilmaydi).
   4. Hamma qator belgilansa — «Parkka berildi» (`stage 2`), joy/qator sanog'i bilan.
 - **Do'konga pul:** yopilgandan keyin `settle_order()` orqali (ADR-008), komissiya chegirilib.
-  Bu do'kon uchun yangi shart (hozir `sellers` rejimida haydovchi to'lov so'raydi) — 8-bo'lim, 4-savol.
+  Qaror (8-bo'lim, 4): yig'uvchi ham, haydovchi ham do'konga pul bermaydi; `shop_collect` rejimida
+  «to'lov so'rash» tugmasi ko'rsatilmaydi.
 
 ---
 
@@ -340,7 +341,7 @@ Har qadam = 1 PR (sayt va/yoki bot), avval TEST, keyin keyingisi.
 
 ---
 
-## 8. Qarorlar va qolgan savol
+## 8. Qarorlar
 
 | # | Savol | Qaror (2026-10-30) |
 |---|---|---|
@@ -348,11 +349,7 @@ Har qadam = 1 PR (sayt va/yoki bot), avval TEST, keyin keyingisi.
 | 2 | Yig'ish kim tomonidan? | Do'kon tayyorlaydi, yig'uvchi olib ketadi (ADR-010) |
 | 3 | Do'kon javob bermasa? | Avtomatik keyingi do'konga + adminga xabar (ADR-005) |
 
-**4. Ochiq: do'konga pul qachon va kim to'laydi?**
-- A) Yopilgandan keyin platforma to'laydi (komissiya chegirilib). Yig'uvchi naqd pul tashimaydi, nazorat oson.
-  Kamchiligi: do'kon 1–2 kun kutadi, ishonch kerak. **Tavsiya.**
-- B) Yig'uvchi olib ketayotganda to'laydi (hozirgi `pickers` kabi). Do'kon uchun qulay, lekin yig'uvchida
-  katta naqd/karta oqimi va xatolik xavfi.
+| 4 | Do'konga pul qachon va kim to'laydi? | Buyurtma yopilgach platforma to'laydi, komissiya chegirilib (`settle_order`, ADR-008). Yig'uvchi pul tashimaydi |
 
 ---
 
