@@ -73,8 +73,11 @@ TEST bazadagi haqiqiy buyurtmalar bilan tekshiraman.
 ## 3. Nomuvofiqliklar (hal qilish kerak)
 
 1. **`shop.html` vs `seller.html`.** PDF `shop.html`, `slogin`, `x-shop-session`, «SQL 30/31, bot v72/v73» deydi.
-   Repoda bular yo'q: migratsiyalar 15 da tugaydi, bot `main` PR #11. Ehtimol bu o'zgarishlar Supabase'ga
-   qo'lda qo'yilgan, lekin repoga tushmagan. **Xavf:** PROD'ni migratsiyalardan qurganda ular yo'qoladi.
+   Repoda bular yo'q: migratsiyalar 15 da tugaydi, bot `main` PR #11.
+   **Tekshirildi (2026-10-30):** TEST bazaning sxema eksporti (3200 obyekt) repodagi baseline + 01–15 bilan
+   solishtirildi: TEST'da ortiqcha jadval/funksiya **yo'q**, `shop_sessions`/`slogin` ham yo'q. Demak
+   «SQL 30/31» va do'kon sessiyalari hali qilinmagan reja. Yagona farq: TEST'ga migratsiya 15
+   (`cart_compare` do'kon telefoni) hali qo'llanmagan. Bot kodi alohida solishtiriladi.
 2. **Yig'uvchi bormi?** PDF 5 rolni (yig'uvchi bilan) asosiy model deydi. `plans/shop-fulfillment-plan.md`
    esa «yig'uvchini olib tashlash, do'kon o'zi yig'adi» degan. Ikkalasi kodda `app_settings.mode`
    (`pickers` / `sellers`) bilan yashaydi. **Hal qilindi:** ikkalasining qo'shilmasi — do'kon tayyorlaydi,
