@@ -95,6 +95,12 @@ async function load(){
 const nav = (lat, lng) => lat ? `https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto` : "";
 function openCard(o){
   const pa = o.pickup_lat ? `<a class="btn alt" href="https://yandex.uz/maps/?pt=${o.pickup_lng},${o.pickup_lat}&z=17&l=map" target="_blank" rel="noopener">📍 Б нуқта</a>` : "";
+  if (o.mode === "car") return `<div class="card"><div class="row" style="margin:0;justify-content:space-between"><h2>🚚 Машина №${o.no}</h2><span class="fee">${fmt(o.fee)} сўм</span></div>
+  <div class="mu">Керак: <b>${esc(o.what || "машина")}</b></div>
+  <div class="pt"><b>B</b><div>Қаердан: ${esc(o.market || "—")}</div></div>
+  <div class="pt"><b>${IC.i("home",14)}</b><div>Қаерга: ${esc(o.address || "—")}</div></div>
+  <div class="mu">🕒 ${esc(o.slot || "")}${o.note ? " · 💬 " + esc(o.note) : ""}</div>
+  <div class="row"><button class="btn pulse" data-claim="${o.no}">${IC.i("check",20)} Мен бораман</button></div></div>`;
   return `<div class="card"><div class="row" style="margin:0;justify-content:space-between"><h2>Буюртма №${o.no}</h2><span class="fee">${fmt(o.fee)} сўм</span></div>
   <div class="pt"><b>A</b><div>Сиз турган жой</div></div>
   <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "Бозор")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
@@ -109,9 +115,9 @@ function mineCard(o){
     ls += `<label class="ln"><input type="checkbox" ${l.loaded ? "checked" : ""} ${go ? "" : "disabled"} data-ld="${o.no}:${l.line_no}"><span>${esc(l.name)} — ${esc(l.qty)} ${esc(l.unit)}</span></label>`; }
   const pa = o.pickup_lat ? `<a class="btn alt" data-nav="${o.pickup_lat},${o.pickup_lng}" href="${nav(o.pickup_lat, o.pickup_lng)}" target="_blank" rel="noopener">📍 Б нуқтага йўл (юк ортиш)</a>` : "";
   const pb = o.lat ? `<a class="btn alt" data-nav="${o.lat},${o.lng}" href="${nav(o.lat, o.lng)}" target="_blank" rel="noopener">🏠 Мижозга йўл</a>` : "";
-  return `<div class="card"><div class="row" style="margin:0;justify-content:space-between"><h2>№${o.no} ${done ? '<span class="pill">етказилди</span>' : o.stage === 3 ? '<span class="pill">йўлда</span>' : ""}</h2><span class="fee">${fmt(o.fee)} сўм</span></div>
+  return `<div class="card"><div class="row" style="margin:0;justify-content:space-between"><h2>${o.mode === "car" ? "🚚 " : ""}№${o.no} ${done ? '<span class="pill">етказилди</span>' : o.stage === 3 ? '<span class="pill">йўлда</span>' : ""}</h2><span class="fee">${fmt(o.fee)} сўм</span></div>
   <div class="pt"><b>A</b><div>Сиз турган жой</div></div>
-  <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}</div></div>
+  <div class="pt"><b>B</b><div>Юк ортиш: ${esc(o.market || "")}${o.pickup_note ? " · " + esc(o.pickup_note) : ""}${o.mode === "car" && o.what ? " · " + esc(o.what) : ""}</div></div>
   <div class="pt"><b>${IC.i("home",14)}</b><div>Мижоз: ${esc(o.address || "—")}<br><span class="mu">${esc(o.customer || "")} · <a href="tel:${esc(o.phone)}">${esc(o.phone || "")}</a></span></div></div>
   ${o.note ? `<div class="mu">💬 ${esc(o.note)}</div>` : ""}${ls}
   ${done ? "" : `<div class="row">${go ? `<button class="btn" data-go="${o.no}" ${allL ? "" : "disabled"}>${IC.i("truck",20)} Йўлга чиқдим${allL ? "" : " (" + o.lines.filter(l => l.loaded).length + "/" + o.lines.length + ")"}</button>` : `<button class="btn g" data-dn="${o.no}">${IC.i("check",20)} Топширдим</button>`}</div>`}</div>`;
