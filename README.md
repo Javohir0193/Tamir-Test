@@ -10,7 +10,7 @@
 | `admin.html` | Админ панел (Telegram орқали кириш + шахсий PIN) |
 | `collector.html` | Бозордаги йиғувчи (Telegram WebApp) |
 | `driver.html` | Ҳайдовчи |
-| `seller.html` | Дўкон: нарх ва қолдиқ (@tamir_sotuvchi_bot ичида очилади) |
+| `seller.html` | Дўкон: нарх ва қолдиқ (@tamir_sotuvchi_bot ичида ёки браузерда «Telegram орқали кириш») |
 
 Стек: статик HTML/JS (йиғиш шарт эмас), Supabase (Postgres, RPC, Auth, Edge Function `tg-bot`), Telegram, Netlify.
 

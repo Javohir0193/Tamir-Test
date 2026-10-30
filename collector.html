@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
+<script src="tglogin.js"></script>
 <script src="icons.js"></script>
 <script src="lang.js"></script>
 <script src="sound.js"></script>
@@ -136,7 +137,6 @@ const API = (window.TAMIR_CONFIG || {}).botApi || "https://agajmytkjpkihvaurqij.
 const TG = window.Telegram && window.Telegram.WebApp;
 const IN_TG = !!(TG && TG.initData);
 let SES = ""; try { SES = localStorage.getItem("col_ses") || ""; } catch (e) {}
-const CFGC = window.TAMIR_CONFIG || {}, BOTU = CFGC.env === "test" ? "tamir_test1_bot" : "tamir_sotuvchi_bot";
 const TC = window.TAMIR_CATALOG || { core:[], items:[], units:{} };
 const UZ = new Map();
 (TC.core || []).forEach(([id, base, n, s]) => UZ.set(id, { n, s }));
@@ -393,28 +393,10 @@ async function pingTick(force){
   } catch (e) {} finally { PB = false; }
 }
 function dropSes(){ SES = ""; try { localStorage.removeItem("col_ses"); } catch (e) {} clearInterval(boot.iv); $("nav").hidden = true; $("sticky").hidden = true; }
-async function sbRpc(fn, args){
-  const r = await fetch(CFGC.supabaseUrl + "/rest/v1/rpc/" + fn, { method:"POST", headers:{ apikey:CFGC.supabaseKey, Authorization:"Bearer " + CFGC.supabaseKey, "content-type":"application/json" }, body:JSON.stringify(args || {}) });
-  const j = await r.json().catch(() => null); if (!r.ok) throw new Error((j && (j.message || j.hint)) || "Хато"); return j;
-}
 function loginView(msg){
   $("hdr").hidden = false; $("hout").hidden = true; $("hme").textContent = "";
-  $("app").innerHTML = `<div class="lg"><h1>Йиғувчи кабинети</h1><p class="muted">Telegram ботдаги йиғувчи аккаунтингиз орқали киринг.</p><button class="btn" id="lgb" style="width:100%">Telegram орқали кириш</button><p class="muted" id="lgm">${esc(msg || "")}</p></div>`;
-  $("lgb").onclick = async () => {
-    $("lgb").disabled = true;
-    try {
-      const tok = await sbRpc("col_login_new");
-      window.open("https://t.me/" + BOTU + "?start=clogin_" + tok, "_blank");
-      $("lgm").textContent = "Telegram очилди: «Start» ни босиб, шу ерга қайтинг…";
-      for (let i = 0; i < 150; i++) {
-        await new Promise(r => setTimeout(r, 2000));
-        const r = await sbRpc("col_login_check", { p_token:tok });
-        if (r.status === "ok") { SES = r.session; try { localStorage.setItem("col_ses", SES); } catch (e) {} return boot(); }
-        if (r.status === "expired") break;
-      }
-      loginView("Вақт тугади. Қайта уриниб кўринг.");
-    } catch (e) { loginView(e.message); }
-  };
+  TGLOGIN.view({ el:"app", wrap:"lg", mu:"muted", title:"Йиғувчи кабинети", text:"Telegram ботдаги йиғувчи аккаунтингиз орқали киринг.", prefix:"clogin_", newFn:"col_login_new", checkFn:"col_login_check", msg,
+    onOk: ses => { SES = ses; try { localStorage.setItem("col_ses", SES); } catch (e) {} boot(); } });
 }
 async function boot(){
   $("hdr").hidden = false;

@@ -39,7 +39,9 @@ main{padding:12px 16px;max-width:560px;margin:0 auto}
 </head>
 <body>
 <div id="app"></div><div class="toast" id="toast"></div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
+<script src="tglogin.js"></script>
 <script src="icons.js"></script>
 <script src="lang.js"></script>
 <script src="sound.js"></script>
@@ -62,24 +64,8 @@ async function rpc(fn, args){
 }
 // ---------- кириш ----------
 function loginView(msg){
-  $("app").innerHTML = `<div class="center"><h1>🚚 Ta'mirDriver · Ҳайдовчи</h1><p class="mu">Telegram ботдаги ҳайдовчи аккаунтингиз орқали киринг.</p>
-  <button class="btn" id="lg" style="max-width:320px">Telegram орқали кириш</button><p class="mu" id="lm">${esc(msg || "")}</p></div>`;
-  $("lg").onclick = startLogin;
-}
-async function startLogin(){
-  const btn = $("lg"); btn.disabled = true;
-  try {
-    const tok = await rpc("drv_login_new");
-    window.open("https://t.me/" + BOT + "?start=dlogin_" + tok, "_blank");
-    $("lm").textContent = "Telegram очилди: «Start» ни босиб, шу ерга қайтинг…";
-    for (let i = 0; i < 150; i++) {
-      await new Promise(r => setTimeout(r, 2000));
-      const r = await rpc("drv_login_check", { p_token:tok });
-      if (r.status === "ok") { SES = r.session; try { localStorage.setItem("drv_ses", SES); } catch (e) {} return boot(); }
-      if (r.status === "expired") break;
-    }
-    loginView("Вақт тугади. Қайта уриниб кўринг.");
-  } catch (e) { loginView(e.message); }
+  TGLOGIN.view({ el:"app", title:"🚚 Ta'mirDriver · Ҳайдовчи", text:"Telegram ботдаги ҳайдовчи аккаунтингиз орқали киринг.", prefix:"dlogin_", newFn:"drv_login_new", checkFn:"drv_login_check", msg,
+    onOk: ses => { SES = ses; try { localStorage.setItem("drv_ses", SES); } catch (e) {} boot(); } });
 }
 // ---------- иловa ----------
 function beep(){ if (window.SND) SND.play(); }
@@ -198,7 +184,14 @@ function trackLoc(){
   if (on && !WAKE) { try { navigator.wakeLock && navigator.wakeLock.request("screen").then(w => WAKE = w).catch(() => {}); } catch (e) {} }
   else if (!on && WAKE) { try { WAKE.release(); } catch (e) {} WAKE = null; }
 }
-function boot(){ if (!SES) return loginView(); load(); }
+async function boot(){
+  if (!SES) {                                   // Telegram ичида очилса — бот орқали ўзи киради
+    const ms = await TGLOGIN.miniSession("d_session");
+    if (!ms) return loginView();
+    SES = ms; try { localStorage.setItem("drv_ses", SES); } catch (e) {}
+  }
+  load();
+}
 setInterval(() => { if (SES && !document.hidden && !S.busy) load(); }, 3000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && SES) load(); });
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
