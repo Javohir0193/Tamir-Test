@@ -77,6 +77,14 @@ header small{display:block;color:var(--muted);font-size:13px}
 .tabs{display:flex;gap:6px;margin:0 0 10px}
 .tabs button{flex:1;border:0;border-radius:12px;background:var(--card);padding:10px 6px;font-weight:600;font-size:14px}
 .tabs button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.oacts{display:flex;gap:8px;flex-wrap:wrap;padding:10px;background:var(--card)}
+.oacts button{flex:1 1 auto;min-height:46px;border:0;border-radius:12px;padding:10px 14px;font-weight:700;background:#EEF0F3}
+.oacts button.main{background:var(--accent);color:#fff}
+.oacts button:disabled{opacity:.45}
+.tg{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;width:100%;text-align:left;border:0;border-bottom:1px solid #EEF0F3;background:var(--card);padding:10px;font-size:13.5px}
+.tg small{display:block;color:var(--muted);font-size:12px}
+.tg .yn{border-radius:999px;padding:4px 10px;font-size:12.5px;font-weight:700;background:#E3F5EA;color:var(--ok)}
+.tg.no{opacity:.6} .tg.no .yn{background:#EEF0F3;color:var(--muted)}
 .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 6px}
 .kpi div{background:var(--card);border-radius:12px;padding:10px 6px;text-align:center;font-size:12px;color:var(--muted)}
 .kpi b{display:block;font-size:22px;color:var(--ink)}
@@ -380,32 +388,46 @@ document.addEventListener("click", async e => {
   }
 });
 
-// ===== Бугун: дўконнинг буюртмалари — нима қилиш керак (Тасдиқлаш → Тайёр → Машинага юкладим) =====
+// ===== Бугун: дўконнинг буюртмалари — ботдаги хабар билан бир хил тугмалар (Бор/Йўқ → Тасдиқлаш → Тайёр → Йиғувчига бердим / Машинага юкладим) =====
 const ST = { offered:"Тасдиқ кутилмоқда", confirmed:"Тасдиқланган", ready:"Тайёр" };
+const left = t => { const m = Math.max(0, Math.round((t - Date.now()) / 60000)); return m ? `⏳ ${m} дақиқа қолди` : "⏳ вақт тугаяпти"; };
 function ordCard(o){
-  const done = o.lines.filter(l => l.loaded).length, all = o.lines.filter(l => l.says_yes !== false).length;
+  const sc = S.sc, done = o.lines.filter(l => l.loaded).length, all = o.lines.filter(l => l.says_yes !== false).length;
   const loadedAll = done === all && all > 0;
-  const state = !o.confirmed ? "Тасдиқ кутилмоқда (ботдаги хабарда ✅/❌ ва «Тасдиқлаш»)" : !o.ready ? "Йиғинг, кейин «Тайёр»" : loadedAll ? "Ҳаммаси машинага юкланди ✅" : "Тайёр. Ҳайдовчи келганда машинага юкланг";
+  const give = sc ? "🤝 Йиғувчига бердим" : "🚚 Машинага юкладим";
+  const state = !o.confirmed ? "Бор товарни ✅, йўғини ❌ қилинг, кейин «Тасдиқлаш»" : !o.ready ? "Йиғинг, кейин «Тайёр»"
+    : loadedAll ? (sc ? "Йиғувчига берилди ✅" : "Ҳаммаси машинага юкланди ✅") : sc ? "Тайёр. Йиғувчи келганда товарни беринг" : "Тайёр. Ҳайдовчи келганда машинага юкланг";
   const sum = o.lines.reduce((a, l) => a + (l.says_yes === false || l.status === "pending" ? 0 : (l.price || 0) * l.qty), 0);
-  return `<div class="list" style="margin-bottom:10px"><div class="irow" style="grid-template-columns:1fr auto"><span><b>№${o.no}</b> · ${esc(o.slot || "")}<small>${esc(state)}</small></span><b class="${o.ready ? "ok" : "warn"}">${o.ready ? "тайёр" : "кутилмоқда"}</b></div>
-    ${o.lines.map(l => `<div class="irow" style="grid-template-columns:1fr auto"><span>${l.says_yes === false || l.status === "pending" ? "❌" : l.loaded ? "✅" : "⬜"} ${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="hint">${esc(ST[l.status] || "")}${l.loaded ? " · юкланди" : ""}</span></div>`).join("")}
+  const yes = o.lines.filter(l => l.says_yes !== false).length;
+  const rows = !o.confirmed
+    ? o.lines.map((l, i) => `<button class="tg ${l.says_yes === false ? "no" : ""}" data-otg="${o.msg_id}:${l.line_no}" aria-pressed="${l.says_yes !== false}"><span>${i + 1}.</span><span>${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="yn">${l.says_yes === false ? "❌ Йўқ" : "✅ Бор"}</span></button>`).join("")
+    : o.lines.map(l => `<div class="irow" style="grid-template-columns:1fr auto"><span>${l.says_yes === false || l.status === "pending" ? "❌" : l.loaded ? "✅" : "⬜"} ${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="hint">${esc(ST[l.status] || "")}${l.loaded ? (sc ? " · берилди" : " · юкланди") : ""}</span></div>`).join("");
+  const who = sc && o.picker ? `🧺 Йиғувчи: ${esc(o.picker.name)}${o.picker.phone ? ` · <a href="tel:${esc(o.picker.phone)}">${esc(o.picker.phone)}</a>` : ""}`
+    : o.driver ? `🚚 Ҳайдовчи: ${esc(o.driver.name)}${o.driver.car ? " · " + esc(o.driver.car) : ""}${o.driver.phone ? " · " + esc(o.driver.phone) : ""}` : "";
+  const acts = !o.confirmed ? `<button class="main" data-ocf="${o.msg_id}">👍 Тасдиқлаш (${yes}/${o.lines.length} бор)</button>`
+    : !o.ready ? (yes ? `<button class="main" data-ordready="${o.msg_id}">📦 Тайёр</button>` : "")
+    : !loadedAll ? `<button class="main" data-ordload="${o.msg_id}">${give}</button>` : "";
+  return `<div class="list" style="margin-bottom:10px"><div class="irow" style="grid-template-columns:1fr auto"><span><b>№${o.no}</b> · ${esc(o.slot || "")}<small>${esc(state)}</small></span><b class="${o.ready ? "ok" : "warn"}">${!o.confirmed && o.until ? left(o.until) : o.ready ? "тайёр" : "кутилмоқда"}</b></div>
+    ${rows}
     ${sum ? `<div class="irow" style="grid-template-columns:1fr auto"><span>Жами</span><b>${fmt(sum)} сўм</b></div>` : ""}
-    ${o.driver ? `<div class="irow" style="grid-template-columns:1fr"><span>🚚 Ҳайдовчи: ${esc(o.driver.name)}${o.driver.car ? " · " + esc(o.driver.car) : ""}${o.driver.phone ? " · " + esc(o.driver.phone) : ""}</span></div>` : ""}
-    <div class="acts">${o.confirmed && !o.ready ? `<button class="main" data-ordready="${o.msg_id}">📦 Тайёр</button>` : ""}${o.ready && !loadedAll ? `<button class="main" data-ordload="${o.msg_id}">🚚 Машинага юкладим</button>` : ""}</div></div>`;
+    ${who ? `<div class="irow" style="grid-template-columns:1fr"><span>${who}</span></div>` : ""}
+    ${acts ? `<div class="oacts">${acts}</div>` : ""}</div>`;
 }
 async function todayLoad(){
   const w = $("today"); if (!w || S.tab !== "today") return;
   try {
-    const list = (await call({ action:"s_orders" })).orders || [];
+    const r = await call({ action:"s_orders" }), list = r.orders || [];
+    S.sc = !!r.sc;
     const isLoaded = o => { const a = o.lines.filter(l => l.says_yes !== false).length; return a > 0 && o.lines.filter(l => l.loaded).length === a; };
     const g = [
       ["🆕 Тасдиқ кутилмоқда", list.filter(o => !o.confirmed)],
       ["📦 Йиғиш керак", list.filter(o => o.confirmed && !o.ready)],
-      ["🚚 Машинага юклаш", list.filter(o => o.ready && !isLoaded(o))],
-      ["✅ Юкланган", list.filter(o => o.ready && isLoaded(o))]];
+      [S.sc ? "🤝 Йиғувчига бериш" : "🚚 Машинага юклаш", list.filter(o => o.ready && !isLoaded(o))],
+      [S.sc ? "✅ Берилган" : "✅ Юкланган", list.filter(o => o.ready && isLoaded(o))]];
+    if (S.busy) return;
     w.innerHTML = `<div class="kpi">${g.slice(0, 3).map(([n, a]) => `<div><b>${a.length}</b>${n.replace(/^\S+\s/, "")}</div>`).join("")}</div>
       <div class="acts"><button data-ordreload>🔄 Янгилаш</button></div>
-      ${list.length ? g.map(([n, a]) => a.length ? `<h3 class="sec">${n} · ${a.length}</h3>${a.map(ordCard).join("")}` : "").join("") : `<div class="msg">Ҳозирча фаол буюртма йўқ. Янги буюртма келса, ботда хабар чиқади ва бу ерда кўринади.</div>`}`;
+      ${list.length ? g.map(([n, a]) => a.length ? `<h3 class="sec">${n} · ${a.length}</h3>${a.map(ordCard).join("")}` : "").join("") : `<div class="msg">Ҳозирча фаол буюртма йўқ. Янги буюртма келса, шу ерда ва ботда кўринади — қайси биридан жавоб берсангиз ҳам бўлади.</div>`}`;
   } catch (err) { w.innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 }
 const PST = { paid:"Тўланди ✅", pending:"Тўлов кутилмоқда", rejected:"Рад этилган" };
@@ -424,11 +446,14 @@ document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t) return;
   if (t.dataset.tab) setTab(t.dataset.tab);
   else if (t.hasAttribute("data-ordreload")) todayLoad();
-  else if (t.dataset.ordready || t.dataset.ordload){
-    t.disabled = true;
-    try { await call({ action: t.dataset.ordready ? "s_ready" : "s_loaded", msg_id:+(t.dataset.ordready || t.dataset.ordload) }); toast("✓ Белгиланди"); }
+  else if (t.dataset.ordready || t.dataset.ordload || t.dataset.ocf || t.dataset.otg){
+    if (S.busy) return; S.busy = true; t.disabled = true;
+    const [mid, ln] = String(t.dataset.otg || "").split(":");
+    const body = t.dataset.otg ? { action:"s_toggle", msg_id:+mid, line_no:+ln } : t.dataset.ocf ? { action:"s_confirm", msg_id:+t.dataset.ocf }
+      : { action: t.dataset.ordready ? "s_ready" : "s_loaded", msg_id:+(t.dataset.ordready || t.dataset.ordload) };
+    try { const r = await call(body); toast(t.dataset.otg ? (r.on ? "✅ Бор" : "❌ Йўқ") : t.dataset.ocf ? "👍 Тасдиқланди" : "✓ Белгиланди"); if (TG && TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); }
     catch (err) { toast(err.message); }
-    todayLoad();
+    S.busy = false; todayLoad();
   }
 });
 

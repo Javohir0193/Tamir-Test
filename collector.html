@@ -172,12 +172,39 @@ function ordersHTML(){
       <div class="muted">🕒 ${esc(o.slot)}${o.address ? " · 📍 " + esc(o.address) : ""}</div></div>
       <button class="btn" data-claim="${o.no}">🙋 Мен оламан</button></div></div>`).join("") || `<div class="card muted">Ҳозирча янги буюртма йўқ.</div>`}
     <h2>Менинг буюртмаларим (${d.my.length})</h2>
-    ${d.my.map(o => { const act = o.lines.filter(l => l.status !== "missing"), got = act.filter(l => l.status === "ready").length;
+    ${d.my.map(o => { const act = o.lines.filter(l => l.status !== "missing"), got = act.filter(l => d.sc ? l.loaded : l.status === "ready").length;
       return `<div class="card" data-openo="${o.no}" role="button"><div class="row"><div class="sp"><b>№${o.no}</b> · ${esc(o.customer)}
         <div class="muted">🕒 ${esc(o.slot)}</div></div><span class="pill ${o.stage >= 3 ? "g" : "y"}">${o.driver_id ? "Топширилди" : STG[o.stage]}</span></div>
         <div class="bar"><i style="width:${act.length ? Math.round(got / act.length * 100) : 0}%"></i></div><div class="muted" style="margin-top:4px">${got} / ${act.length} та олинди</div></div>`; }).join("") || `<div class="card muted">Сизда фаол буюртма йўқ.</div>`}`;
 }
+// shop_collect: дўконлар тайёрлайди, йиғувчи олиб кетади ва паркка беради — ботдаги «… дан олдим» / «Паркка бериш» билан бир хил
+function pickupHTML(o){
+  const act = o.lines.filter(l => l.status !== "missing" && l.shop_id), miss = o.lines.filter(l => l.status === "missing"), wait = o.lines.filter(l => l.status === "pending" || !l.shop_id && l.status !== "missing");
+  const by = {}; act.forEach(l => (by[l.shop_id] = by[l.shop_id] || []).push(l));
+  const got = act.filter(l => l.loaded).length, all = act.length > 0 && got === act.length && !wait.length;
+  const map = o.lat ? `https://yandex.uz/maps/?pt=${o.lng},${o.lat}&z=17&l=map` : null;
+  const shop = id => (o.shops || {})[id] || shopById(id) || {};
+  return `<button class="btn ghost sm" data-back>← Буюртмалар</button>
+    <h1 style="margin-top:10px">№${o.no} · ${esc(o.customer)}</h1>
+    <div class="card"><div>📱 <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></div>
+      ${o.address ? `<div>📍 ${esc(o.address)}${map ? ` · <a href="${map}" target="_blank">харита</a>` : ""}</div>` : ""}
+      <div>🕒 ${esc(o.slot)}</div>${o.note ? `<div>💬 ${esc(o.note)}</div>` : ""}
+      <div class="bar"><i style="width:${act.length ? Math.round(got / act.length * 100) : 0}%"></i></div>
+      <div class="muted" style="margin-top:4px">${got} / ${act.length} та олинди${miss.length ? ` · ${miss.length} та топилмади` : ""}</div></div>
+    <h2>🧺 Олиш рўйхати</h2>
+    ${Object.entries(by).map(([sid, ls]) => { const s = shop(sid), taken = ls.every(l => l.loaded), ready = ls.every(l => l.status === "ready");
+      return `<div class="card"><div class="row"><div class="sp"><b>🏪 ${esc(s.name || "Дўкон")}</b>${s.row ? ` · ${esc(s.row)}` : ""}${s.phone ? `<div class="muted">📱 <a href="tel:${esc(s.phone)}">${esc(s.phone)}</a></div>` : ""}</div>
+        <span class="pill ${taken ? "g" : ready ? "y" : ""}">${taken ? "✅ Олинди" : ready ? "📦 Тайёр" : "⏳ Тайёрланмоқда"}</span></div>
+        ${ls.map(l => `<div class="done-ln"><span>${esc(pname(l.product_id, l.name))} — ${fmt(l.qty)} ${esc(unit(l.unit))}</span><span>${l.loaded ? "✅" : ""}</span></div>`).join("")}
+        ${ready && !taken && o.stage < 2 ? `<button class="btn" style="width:100%;margin-top:8px" data-pk="${sid}">✅ ${esc(s.name || "Дўкон")} дан олдим</button>` : ""}</div>`; }).join("")}
+    ${wait.length ? `<div class="card muted">⏳ ${wait.length} та товар учун дўкон жавоби кутилмоқда.</div>` : ""}
+    ${miss.length ? `<h2>❌ Топилмади (${miss.length})</h2><div class="card">${miss.map(l => `<div class="done-ln"><span>${esc(pname(l.product_id, l.name))} — ${fmt(l.qty)} ${esc(unit(l.unit))}</span></div>`).join("")}<div class="muted">Админ мижоз билан гаплашади.</div></div>` : ""}
+    ${o.stage >= 2 ? `<div class="card"><span class="pill g">🚕 Паркка берилди</span> ${o.driver ? `<span class="muted">Ҳайдовчи: ${esc(o.driver.name || "")}${o.driver.car ? " · " + esc(o.driver.car) : ""}${o.driver.phone ? ` · <a href="tel:${esc(o.driver.phone)}">${esc(o.driver.phone)}</a>` : ""}</span>` : `<span class="muted">Ҳайдовчи кутилмоқда.</span>`}</div>`
+      : all ? `<div class="card"><p class="muted" style="margin:0 0 8px">Ҳамма товар олинди. Машина турадиган жойга олиб бориб, тугмани босинг.</p>
+      <button class="btn dark" style="width:100%" data-pf="1">🚕 Паркка (ҳайдовчига) бериш</button></div>` : ""}`;
+}
 function orderHTML(o){
+  if (S.d.sc && o.mode !== "car") return pickupHTML(o);
   const pend = o.lines.filter(l => l.status === "pending"), wait = o.purchases.filter(p => p.status === "pending");
   const ready = o.lines.filter(l => l.status === "ready"), miss = o.lines.filter(l => l.status === "missing");
   const act = o.lines.filter(l => l.status !== "missing");
@@ -218,7 +245,7 @@ function orderHTML(o){
 function stickyOrder(o){
   const pend = o ? o.lines.filter(l => l.status === "pending" && S.sel[l.line_no]) : [];
   const el = $("sticky");
-  if (!o || S.tab !== "orders" || !o.lines.some(l => l.status === "pending")) { el.hidden = true; return; }
+  if (!o || S.tab !== "orders" || S.d.sc || !o.lines.some(l => l.status === "pending")) { el.hidden = true; return; }
   const sum = pend.reduce((a, l) => a + num(S.qty[l.line_no] ?? l.qty) * num(S.price[l.line_no] ?? curPrice(l)), 0);
   el.hidden = false;
   el.innerHTML = `<button class="btn dark" data-buy ${!S.shop || S.shop === "new" || !pend.length ? "disabled" : ""}>💳 Тўловга юбориш${pend.length ? ` · ${pend.length} та · ${fmt(sum)} сўм` : ""}</button>`;
@@ -312,6 +339,8 @@ document.addEventListener("click", async e => {
   else if ("back" in ds) { S.open = null; render(); refreshData(); }
   else if ("cancel" in ds) { S.form = null; render(); }
   else if (ds.claim) act(async () => { await call({ action:"c_claim", no:+ds.claim }); S.open = +ds.claim; }, "Буюртма сизники");
+  else if (ds.pk) act(() => call({ action:"c_pickup", no:S.open, shop_id:+ds.pk }), "✅ Белгиланди: дўкон товари сизда");
+  else if ("pf" in ds) { if (!confirm("Ҳамма товар машина турадиган жойдами? Паркка берилсинми?")) return; let sent = 0; act(async () => { sent = (await call({ action:"c_tofleet", no:S.open })).sent; }).then(() => { if (S.d.my.some(x => x.no === S.open && x.stage >= 2)) toast(sent ? `🚕 Паркка юборилди (${sent} ҳайдовчи)` : "⚠️ Паркда фаол ҳайдовчи йўқ — админ тайинлайди"); }); }
   else if (ds.miss) act(() => call({ action:"c_missing", no:S.open, line_no:+ds.miss, on:true }), "Топилмади деб белгиланди");
   else if (ds.unmiss) act(() => call({ action:"c_missing", no:S.open, line_no:+ds.unmiss, on:false }));
   else if ("buy" in ds) {
