@@ -290,10 +290,11 @@ function newShopHTML(){
     <button class="btn dark" style="width:100%" data-nssave>Сақлаш</button></div>`;
 }
 
+const splitHTML = (sp) => !sp ? "" : `<div class="card"><h2>Хизмат ҳақи тақсимоти</h2><div class="kv"><span>Хизмат ҳақи (жами)</span><b>${fmt(sp.gross)} сўм</b><span>Платформа ҳиссаси</span><b>${sp.platform ? "−" : ""}${fmt(sp.platform)} сўм</b><span>Сизга тушади</span><b>${fmt(sp.net)} сўм</b></div><p class="muted">${sp.orders} та якунланган буюртма бўйича. Тўловлар онлайн, мижоздан буюртма вақтида ечилади.</p></div>`;
 function earnHTML(){
   const e = S.d.earn;
   if (!e) return `<h1>💳 Ҳисоб</h1><div class="card muted">Ҳисоб ҳали кўринмайди: бот янгиланмаган.</div>`;
-  return `<h1>💳 Ҳисоб</h1><div class="card"><div class="kv"><span>Тўланиши керак</span><b>${fmt(e.due || 0)} сўм</b><span>Кутилмоқда (24 соат / мижоз тасдиғи)</span><b>${fmt((e.waiting || 0) + (e.held || 0))} сўм</b><span>Тўланган</span><b>${fmt(e.paid || 0)} сўм</b></div>
+  return `<h1>💳 Ҳисоб</h1>${splitHTML(S.d.split)}<div class="card"><div class="kv"><span>Тўланиши керак</span><b>${fmt(e.due || 0)} сўм</b><span>Кутилмоқда (24 соат / мижоз тасдиғи)</span><b>${fmt((e.waiting || 0) + (e.held || 0))} сўм</b><span>Тўланган</span><b>${fmt(e.paid || 0)} сўм</b></div>
     <p class="muted">Ҳақ буюртма етказилгач, мижоз «Олдим» деганда ёки 24 соатдан кейин «Тўланиши керак»га ўтади.</p></div>`;
 }
 function render(){
