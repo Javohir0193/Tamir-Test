@@ -138,6 +138,7 @@ function toast(t){ const el = $("toast"); el.textContent = t; el.classList.add("
 async function call(body){
   const r = await fetch(API, { method:"POST", headers:Object.assign({ "content-type":"application/json" }, IN_TG ? { "x-init-data":TG.initData } : { "x-sel-session":SES }), body:JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
+  if (r.status === 409 && j.error === "reg" && !IN_TG) { location.href = "register.html?role=seller"; throw new Error("reg"); }   // ариза тугалланмаган: ариза шаклига
   if (r.status === 401 && !IN_TG) { dropSes(); loginView("Сессия тугади, қайта киринг."); throw new Error("auth"); }
   if (!r.ok) throw new Error(j.error || "Хато. Қайта уриниб кўринг.");
   return j;
@@ -479,7 +480,7 @@ function loginView(msg){
 async function boot(){
   if (!IN_TG && !SES) return loginView();
   try { S.data = await call({ action:"load" }); setTab("today"); }
-  catch (err) { if (err.message !== "auth") $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+  catch (err) { if (err.message !== "auth" && err.message !== "reg") $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 }
 boot();
 if (!IN_TG && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});

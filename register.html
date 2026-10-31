@@ -52,7 +52,8 @@ h2.sec{font-size:15px;margin:0 0 12px;color:var(--muted);font-weight:600}
 const API = (window.TAMIR_CONFIG || {}).botApi || "https://agajmytkjpkihvaurqij.supabase.co/functions/v1/tg-bot";
 const TG = window.Telegram && window.Telegram.WebApp;
 const ROLE = new URLSearchParams(location.search).get("role") || "";
-const RT = new URLSearchParams(location.search).get("rt") || "";   // браузерда очилганда ботдаги ҳаволадан келган токен
+const RT = new URLSearchParams(location.search).get("rt") || "";
+let SSES = ""; try { SSES = localStorage.getItem("sel_ses") || ""; } catch (e) {}   // сайтга Telegram орқали кирилган бўлса, шу сессия билан ариза очилади   // браузерда очилганда ботдаги ҳаволадан келган токен
 const T = {
   uz: {
     seller:"Дўкон аризаси", collector:"Йиғувчи аризаси", driver:"Ҳайдовчи аризаси", sub:"Маълумотларни тўлдиринг ва юборинг",
@@ -96,7 +97,7 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&l
 const $ = id => document.getElementById(id);
 
 async function call(body){
-  const r = await fetch(API, { method:"POST", headers:Object.assign({ "content-type":"application/json" }, TG && TG.initData ? { "x-init-data":TG.initData } : { "x-reg-token":RT }), body:JSON.stringify(Object.assign({ role:ROLE, lang:S.lang }, body)) });
+  const r = await fetch(API, { method:"POST", headers:Object.assign({ "content-type":"application/json" }, TG && TG.initData ? { "x-init-data":TG.initData } : RT ? { "x-reg-token":RT } : { "x-sel-session":SSES }), body:JSON.stringify(Object.assign({ role:ROLE, lang:S.lang }, body)) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || t("err"));
   return j;
@@ -183,7 +184,7 @@ document.addEventListener("change", async e => {
 
 (async () => {
   const inTg = !!(TG && TG.initData);
-  if (!inTg && !RT) { msg(T.uz.tgOnly, ""); return; }
+  if (!inTg && !RT && !SSES) { msg(T.uz.tgOnly, ""); return; }
   if (inTg) { TG.ready(); TG.expand(); }
   const lc = inTg ? (((TG.initDataUnsafe || {}).user || {}).language_code || "") : (navigator.language || "");
   S.lang = /^(ru|be|kk|ky|tg)/.test(lc) ? "ru" : "uz";
