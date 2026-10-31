@@ -449,9 +449,13 @@ const PST = { paid:"Тўланди ✅", pending:"Тўлов кутилмоқд�
 async function acctLoad(){
   const w = $("acct"); if (!w) return;
   try {
-    const a = await call({ action:"s_account" }), box = (t, x) => `<div><b>${fmt(x.net)}</b>${t}<small>${x.count} та буюртма · жами ${fmt(x.total)} · комиссия ${fmt(x.commission)}</small></div>`;
-    w.innerHTML = `<div class="kpi2">${box("Шу ой олдингиз (сўм)", a.month)}${box("Бутун давр (сўм)", a.all)}</div>
-      ${a.pending.count ? `<div class="fast"><b>⏳ Тўлов кутилмоқда: ${a.pending.count} та</b><p>Админ тасдиқлагач ${fmt(a.pending.net)} сўм карталингизга тушади.</p></div>` : ""}
+    const a = await call({ action:"s_account" });
+    const card = (t, x) => `<div class="fast" style="margin:0 0 10px"><b>${t}</b><small style="display:block;opacity:.7;margin:2px 0 6px">${x.count} та буюртма</small>
+      <div class="irow" style="grid-template-columns:1fr auto"><span>📦 Материаллар суммаси</span><b>${fmt(x.total)}</b></div>
+      <div class="irow" style="grid-template-columns:1fr auto"><span>🏛 Платформага комиссия</span><b class="warn">${x.commission ? "−" : ""}${fmt(x.commission)}</b></div>
+      <div class="irow" style="grid-template-columns:1fr auto"><span>💳 Сизга тушади</span><b class="ok">${fmt(x.net)}</b></div></div>`;
+    w.innerHTML = `${card("Шу ой (сўм)", a.month)}${card("Бутун давр (сўм)", a.all)}
+      ${a.pending.count ? `<div class="fast"><b>⏳ Тўлов кутилмоқда: ${a.pending.count} та</b><p>Материаллар ${fmt(a.pending.total == null ? a.pending.net : a.pending.total)} сўм${a.pending.commission ? `, платформага комиссия ${fmt(a.pending.commission)} сўм` : ""}. Админ тасдиқлагач ${fmt(a.pending.net)} сўм карталингизга тушади.</p></div>` : ""}
       <h3 class="sec">Тўловлар тарихи</h3>
       <div class="list">${a.history.length ? a.history.map(r => `<div class="irow" style="grid-template-columns:1fr auto"><span><b>№${r.no}</b> · ${esc(PST[r.status] || r.status)}<small>${new Date(r.at).toLocaleDateString("ru-RU")} · ${fmt(r.total)}${r.commission ? ` − комиссия ${r.pct}% (${fmt(r.commission)})` : ""}</small></span><b class="${r.status === "paid" ? "ok" : "warn"}">${fmt(r.net)}</b></div>`).join("") : `<div class="msg">Ҳали тўловлар йўқ.</div>`}</div>`;
   } catch (err) { w.innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
