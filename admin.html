@@ -207,7 +207,7 @@ async function tabData(){
   try {
     if (S.tab === "people") { S.people = await rpc("admin_people"); try { S.fleets = await rpc("admin_fleets"); } catch(e){ S.fleets = null; } }
     if (S.tab === "set") { S.settings = await rpc("admin_settings"); try { S.shist = S.settings.can_edit ? await rpc("admin_settings_history") : null; } catch(e){ S.shist = null; } }
-    if (S.tab === "pay") { S.pay = await rpc("admin_payouts"); try { S.staff = await rpc("admin_staff"); } catch(e){ S.staff = null; } try { S.comm = await rpc("admin_commissions"); } catch(e){ S.comm = null; } }
+    if (S.tab === "pay") { S.pay = await rpc("admin_payouts"); try { S.staff = await rpc("admin_staff"); } catch(e){ S.staff = null; } try { S.shops = await rpc("admin_shop_queue"); } catch(e){ S.shops = null; } try { S.comm = await rpc("admin_commissions"); } catch(e){ S.comm = null; } }
     if (S.tab === "audit") S.audit = await rpc("admin_audit", { p_limit:150, p_offset:0, p_q:S.aq || null });
     if (S.tab === "admins") S.admins = await rpc("admin_admins");
     if (S.tab === "prices") { S.prices = await rpc("admin_prices"); try { S.props = await rpc("admin_product_proposals"); } catch(e){ S.props = null; } }
@@ -247,7 +247,7 @@ function draw(keepTop){
   if (sy) window.scrollTo(0, sy);
 }
 const TABKEY = { people:"people", set:"settings", pay:"pay", audit:"audit", admins:"admins", prices:"prices", an:"an", tix:"tks", cust:"custs" };
-const snap = () => { try { return JSON.stringify([S.dash, S.orders, S.refunds, S.tkopen, S.people, S.fleets, S.settings, S.shist, S.pay, S.staff, S.comm, S.audit, S.admins, S.prices, S.props, S.an, S.tks, S.custs]); } catch(_){ return String(Math.random()); } };
+const snap = () => { try { return JSON.stringify([S.dash, S.orders, S.refunds, S.tkopen, S.people, S.fleets, S.settings, S.shist, S.pay, S.staff, S.shops, S.comm, S.audit, S.admins, S.prices, S.props, S.an, S.tks, S.custs]); } catch(_){ return String(Math.random()); } };
 async function refreshTab(){ const t = S.tab, b = snap(); await tabData(); if (S.tab === t && snap() !== b) draw(); }
 let bgBusy = false;
 async function bgRefresh(){
@@ -447,6 +447,7 @@ function payView(){
     <div class="row" style="margin-top:8px"><button class="btn" data-pay="${x.id}" data-ok="1">✅ Тўладим</button><button class="btn alt" data-pay="${x.id}" data-ok="0">❌ Рад этиш</button></div></div>`).join("") || '<div class="al ok">✅ Тўлов кутаётган йўқ</div>'}</div>
   <div class="card tw"><h2>Охирги тўловлар</h2><table><tr><th>№</th><th>Дўкон</th><th>Ҳолат</th><th class="n">Сумма</th><th>Вақт</th></tr>${p.recent.map(x => `<tr><td>${x.order_no}</td><td>${esc(x.shop || "")}</td><td>${x.status === "paid" ? '<span class="pill g">тўланган</span>' : '<span class="pill r">рад</span>'}</td><td class="n">${fmt(x.net != null ? x.net : x.total)}${x.commission > 0 ? `<br><small class="mu">комиссия ${fmt(x.commission)}</small>` : ""}</td><td>${dt(x.at)}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳали йўқ</td></tr>'}</table>
   ${commCard()}
+  ${shopCard()}
   ${staffCard()}
   <p class="mu" style="font-size:13px">«Тўладим» ни фақат пулни дўкон картасига ўтказганингиздан кейин босинг. Қарор журналга ёзилади, йиғувчига хабар кетади.</p></div>`;
 }
@@ -521,6 +522,14 @@ function tplCsv(){
   const rows = [["ID", "Товар", "Бирлик", "Нарх (сўм)"]].concat((S.prices.products || []).filter(p => p.active).map(p => [p.id, p.name + (p.spec ? " " + p.spec : ""), p.unit, ""]));
   const body = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
   const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\uFEFF" + body], { type:"text/csv;charset=utf-8" })); a.download = "narx-shablon.csv"; a.click();
+}
+
+function shopCard(){
+  const q = S.shops; if (!q) return "";
+  return `<div class="card tw"><h2>Дўконларга ўтказиш</h2><table><tr><th>Дўкон</th><th>Карта</th><th class="n">Тасдиқланган</th><th class="n">Ўтказилган</th><th class="n">Ўтказиш керак</th><th class="n">Кутилмоқда</th><th></th></tr>
+  ${q.shops.length ? q.shops.map(x => `<tr><td>${esc(x.name)}<br><small class="mu">${esc(x.phone || "")}</small></td><td>${x.card ? esc(x.card) : '<span class="mu">карта йўқ</span>'}</td><td class="n">${fmt(x.confirmed)}</td><td class="n">${fmt(x.paid)}</td><td class="n"><b>${fmt(x.due)}</b></td><td class="n mu">${fmt((x.waiting || 0) + (x.held || 0))}</td><td>${x.due > 0 ? `<button class="btn sm" data-shpay="${x.id}" data-due="${x.due}">Ўтказдим</button>` : ""}</td></tr>`).join("") : `<tr><td colspan="7" class="mu">Ҳозирча ўтказиладиган сумма йўқ</td></tr>`}</table>
+  <p class="mu" style="font-size:13px">«Тасдиқланган» — мижоз «Олдим» деган (ёки 24 соат ўтган) буюртмалар, комиссия айрилган. Картага ўзингиз ўтказинг, кейин «Ўтказдим» ни босинг: дўконга хабар боради ва унинг «Ўтказилди» суммаси ошади. Қисман ўтказиш мумкин.</p>
+  ${q.recent.length ? `<h2 style="margin-top:12px">Охирги ўтказмалар</h2><table>${q.recent.map(r => `<tr><td>${dt(r.at)}</td><td>${esc(r.name)}</td><td class="n">${fmt(r.amount)}</td><td class="mu">${esc(r.note || "")}</td></tr>`).join("")}</table>` : ""}</div>`;
 }
 
 function staffCard(){
@@ -726,6 +735,9 @@ document.addEventListener("click", async e => {
   if (t.id === "pcancel") { S.prev = null; draw(); return; }
   if (t.id === "papply") { const pv = S.prev; if (!pv) return;
     await act(async () => { const r = await rpc("admin_prices_apply", { p_seller:Number(pv.seller), p_rows:pv.rows, p_note:"Excel/CSV" }); S.prev = null; S.prices = await rpc("admin_prices"); draw(); toast(`Сақланди: ${r.saved} та` + (r.skipped ? `, ўтказиб юборилди: ${r.skipped}` : "")); }); return; }
+  if (t.dataset.shpay) { const due = Number(t.dataset.due), v = prompt("Қанча сўм ўтказдингиз?", String(due)); if (!v) return; const amt = Number(String(v).replace(/\s/g, ""));
+    if (!amt || amt <= 0) { toast("Сумма нотўғри"); return; } if (amt > due) { toast("Қолдиқдан кўп"); return; }
+    await act(async () => { await rpc("admin_shop_pay", { p_seller:Number(t.dataset.shpay), p_amount:amt, p_note:"картага ўтказма" }); S.shops = await rpc("admin_shop_queue"); draw(); }, "Белгиланди"); return; }
   if (t.dataset.spay) { const due = Number(t.dataset.due), v = prompt("Қанча сўм тўладингиз?", String(due)); if (!v) return; const amt = Number(String(v).replace(/\s/g, ""));
     if (!amt || amt <= 0) { toast("Сумма нотўғри"); return; } if (amt > due) { toast("Қолдиқдан кўп"); return; }
     await act(async () => { await rpc("admin_staff_pay", { p_seller:Number(t.dataset.spay), p_amount:amt, p_note:"ҳафталик тўлов" }); S.staff = await rpc("admin_staff"); draw(); }, "Белгиланди"); return; }
