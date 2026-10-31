@@ -455,11 +455,13 @@ async function acctLoad(){
       <div class="irow" style="grid-template-columns:1fr auto"><span>🏛 Платформага комиссия</span><b class="warn">${x.commission ? "−" : ""}${fmt(x.commission)}</b></div>
       <div class="irow" style="grid-template-columns:1fr auto"><span>💳 Сизга тушади</span><b class="ok">${fmt(x.net)}</b></div></div>`;
     const hd = a.handed || { count:0, total:0, commission:0, net:0, list:[] }, acc = (a.all.net || 0) + hd.net, pd = a.all.net || 0;
-    const hcard = `<div class="fast" style="margin:0 0 10px"><b>💰 Ҳисоб-китоб</b><small style="display:block;opacity:.7;margin:2px 0 6px">Товар йиғувчига топширилгач пул дарҳол ҳисобланади, админ тасдиғи керак эмас</small>
+    const hcard = `<div class="fast" style="margin:0 0 10px"><b>💰 Ҳисоб-китоб</b><small style="display:block;opacity:.7;margin:2px 0 6px">Товар йиғувчига топширилгач пул дарҳол ҳисобланади. Мижоз «Олдим» ни босгач тасдиқланади ва ўтказилади</small>
       <div class="irow" style="grid-template-columns:1fr auto"><span>🧾 Ҳисобланди</span><b>${fmt(acc)}</b></div>
-      <div class="irow" style="grid-template-columns:1fr auto"><span>✅ Ўтказилди</span><b class="ok">${fmt(pd)}</b></div>
-      <div class="irow" style="grid-template-columns:1fr auto"><span>⏳ Қолдиқ (ўтказилади)</span><b class="warn">${fmt(hd.net)}</b></div></div>
-      ${hd.list.length ? `<h3 class="sec">Топширилган товарлар</h3><div class="list">${hd.list.map(r => `<div class="irow" style="grid-template-columns:1fr auto"><span><b>№${r.no}</b><small>${fmt(r.total)}${r.commission ? ` − комиссия ${r.pct}% (${fmt(r.commission)})` : ""}</small></span><b class="warn">${fmt(r.net)}</b></div>`).join("")}</div>` : ""}`;
+      <div class="irow" style="grid-template-columns:1fr auto"><span>⏳ Мижоз «Олдим» ни кутяпти</span><b class="warn">${fmt(hd.waiting || 0)}</b></div>
+      ${hd.held ? `<div class="irow" style="grid-template-columns:1fr auto"><span>⚠️ Мижоз эътироз билдирган</span><b class="warn">${fmt(hd.held)}</b></div>` : ""}
+      <div class="irow" style="grid-template-columns:1fr auto"><span>✔️ Тасдиқланди (ўтказилади)</span><b>${fmt(hd.confirmed || 0)}</b></div>
+      <div class="irow" style="grid-template-columns:1fr auto"><span>✅ Ўтказилди</span><b class="ok">${fmt(pd)}</b></div></div>
+      ${hd.list.length ? `<h3 class="sec">Топширилган товарлар</h3><div class="list">${hd.list.map(r => `<div class="irow" style="grid-template-columns:1fr auto"><span><b>№${r.no}</b><small>${r.st === "free" ? "✔️ тасдиқланди" : r.st === "hold" ? "⚠️ эътироз" : "⏳ мижоз кутилмоқда"} · ${fmt(r.total)}${r.commission ? ` − комиссия ${r.pct}% (${fmt(r.commission)})` : ""}</small></span><b class="${r.st === "free" ? "ok" : "warn"}">${fmt(r.net)}</b></div>`).join("")}</div>` : ""}`;
     w.innerHTML = `${hcard}${card("Шу ой (сўм)", a.month)}${card("Бутун давр (сўм)", a.all)}
       ${a.pending.count ? `<div class="fast"><b>⏳ Тўлов кутилмоқда: ${a.pending.count} та</b><p>Материаллар ${fmt(a.pending.total == null ? a.pending.net : a.pending.total)} сўм${a.pending.commission ? `, платформага комиссия ${fmt(a.pending.commission)} сўм` : ""}. Админ тасдиқлагач ${fmt(a.pending.net)} сўм карталингизга тушади.</p></div>` : ""}
       <h3 class="sec">Тўловлар тарихи</h3>
