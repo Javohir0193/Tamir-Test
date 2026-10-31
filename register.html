@@ -68,6 +68,7 @@ const T = {
     car:"Машина русуми ва рақами", carEx:"Масалан: Damas, 01 A 123 BC", lic:"Ҳайдовчилик гувоҳномаси рақами", licEx:"Масалан: AB 1234567",
     photo:"Гувоҳнома қўлингизда бўлган селфи", photoSub:"Юзингиз ва гувоҳнома рақами аниқ кўринсин.", photoBtn:"📷 Расм юклаш", photoAgain:"📷 Бошқа расм",
     send:"Аризани юбориш", sending:"Юборилмоқда…", doneT:"Аризангиз юборилди", doneS:"Тасдиқлангач, ботга хабар келади. Бу ойнани ёпишингиз мумкин.",
+    doneWait:"Тасдиқлангач, бу саҳифа ўзи кабинетга ўтади. Саҳифани ёпманг.", approvedT:"Аризангиз тасдиқланди", approvedS:"Кабинетга ўтилмоқда…",
     phoneFirst:"Аввал ботда телефон рақамингизни юборинг: «📱 Рақамни юбориш» тугмаси.", already:"Аризангиз аллақачон юборилган.",
     active:"Сиз аллақачон тасдиқлангансиз.", tgOnly:"Бу саҳифа Telegram ботдаги «📝 Аризани тўлдириш» тугмаси орқали очилади.",
     badRole:"Нотўғри ҳавола.", photoErr:"Расмни ўқиб бўлмади. Бошқа расм танланг.", err:"Хато. Қайта уриниб кўринг."
@@ -85,12 +86,24 @@ const T = {
     car:"Марка и номер машины", carEx:"Например: Damas, 01 A 123 BC", lic:"Номер водительских прав", licEx:"Например: AB 1234567",
     photo:"Селфи с правами в руке", photoSub:"Лицо и номер прав должны быть хорошо видны.", photoBtn:"📷 Загрузить фото", photoAgain:"📷 Другое фото",
     send:"Отправить заявку", sending:"Отправка…", doneT:"Заявка отправлена", doneS:"После подтверждения придёт сообщение в бот. Окно можно закрыть.",
+    doneWait:"После подтверждения страница сама перейдёт в кабинет. Не закрывайте её.", approvedT:"Заявка подтверждена", approvedS:"Переходим в кабинет…",
     phoneFirst:"Сначала отправьте номер телефона в боте: кнопка «📱 Отправить номер».", already:"Ваша заявка уже отправлена.",
     active:"Вы уже подтверждены.", tgOnly:"Эта страница открывается кнопкой «📝 Заполнить заявку» в Telegram-боте.",
     badRole:"Неверная ссылка.", photoErr:"Не удалось прочитать фото. Выберите другое.", err:"Ошибка. Попробуйте ещё раз."
   }
 };
 const GROUP_RU = { g1:"🧱 Фундамент и стены", g2:"🏠 Кровля", g3:"⚡ Электрика", g4:"🚿 Сантехника и отопление", g5:"📐 Выравнивание и изоляция", g6:"🎨 Отделка", g7:"🔨 Инструмент и крепёж" };
+const IN_TG = !!(TG && TG.initData);
+const hap = k => { try { if (TG && TG.HapticFeedback) TG.HapticFeedback.notificationOccurred(k); } catch (e) {} };
+const HOME = { seller:"seller.html", collector:"collector.html", driver:"driver.html" };
+// браузерда: ариза юборилгач, админ тасдиқлашини кутамиз ва тасдиқланса кабинетга ўтамиз
+function waitApproval(){
+  const tick = async () => {
+    try { const d = await call({ action:"r_load" }); if (d.status === "active") { msg(t("approvedT"), t("approvedS")); setTimeout(() => { location.href = HOME[ROLE] || "seller.html"; }, 1500); return; } } catch (e) {}
+    setTimeout(tick, 4000);
+  };
+  setTimeout(tick, 4000);
+}
 const S = { lang:"uz", d:null, f:{}, photo:"", busy:false };
 const t = k => T[S.lang][k] || T.uz[k] || k;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
@@ -166,8 +179,10 @@ document.addEventListener("click", async e => {
     if (ROLE === "seller") Object.assign(body, { block:f.block, row_line:f.line, shop_no:f.sno, card:String(f.card || "").replace(/\D/g, ""), card_holder:f.holder, shop:f.shop, inn:f.inn, groups:[...f.groups] });
     if (ROLE === "driver") Object.assign(body, { car:f.car, license_no:f.lic, photo:S.photo });
     S.busy = true; draw();
-    try { await call(body); msg(t("doneT"), t("doneS")); if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); setTimeout(() => TG.close(), 2500); }
-    catch (err) { S.busy = false; draw(); $("err").textContent = err.message; if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("error"); }
+    try { await call(body); } catch (err) { S.busy = false; draw(); $("err").textContent = err.message; hap("error"); return; }
+    hap("success");
+    if (IN_TG) { msg(t("doneT"), t("doneS")); setTimeout(() => { try { TG.close(); } catch (e) {} }, 2500); }
+    else { msg(t("doneT"), t("doneWait")); waitApproval(); }
   }
 });
 document.addEventListener("input", e => {          // карта рақамини 4 тадан гуруҳлаш
@@ -183,7 +198,7 @@ document.addEventListener("change", async e => {
 });
 
 (async () => {
-  const inTg = !!(TG && TG.initData);
+  const inTg = IN_TG;
   if (!inTg && !RT && !SSES) { msg(T.uz.tgOnly, ""); return; }
   if (inTg) { TG.ready(); TG.expand(); }
   const lc = inTg ? (((TG.initDataUnsafe || {}).user || {}).language_code || "") : (navigator.language || "");
