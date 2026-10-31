@@ -42,6 +42,7 @@ input[type=text]:focus,select:focus{border-color:var(--accent)}
 .submit button:disabled{opacity:.6}
 .msg{background:var(--card);border-radius:14px;padding:22px 16px;text-align:center;margin-top:30px}
 .msg b{display:block;font-size:18px;margin-bottom:6px}
+h2.sec{font-size:15px;margin:0 0 12px;color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
@@ -57,7 +58,11 @@ const T = {
     phone:"Телефон", name:"Фамилия, исм, отасининг исми", nameEx:"Масалан: Каримов Азиз Рустамович",
     shop:"Дўкон номи", shopEx:"Масалан: Азиз Строй", market:"Бозор", marketPick:"Бозорни танланг", marketNone:"❓ Бозорим рўйхатда йўқ",
     workMarket:"Қайси бозорда ишлайсиз?", row:"Бозордаги жойингиз", rowEx:"Масалан: 7-қатор, 15-дўкон",
-    groups:"Нималар сотасиз?", groupsSub:"Бўлимларни белгиланг. «Нархларим» да фақат шу бўлимлар товарлари кўринади.",
+    block:"Бозор ичидаги блок ёки бино", blockPick:"Блокни танланг", blockEx:"Масалан: А блок", line:"Нечанчи қатор", lineEx:"Масалан: 7", shopNo:"Нечанчи дўкон", shopNoEx:"Масалан: 15",
+    card:"Карта рақами", cardSub:"Платформа материал пулини шу картага ўтказади. Карта сизнинг номингизда бўлиши керак.", cardEx:"8600 0000 0000 0000",
+    holder:"Карта эгасининг исм-фамилияси", holderEx:"Картада ёзилганидек: AZIZ KARIMOV",
+    extra:"Қўшимча (ихтиёрий)", shopOpt:"Дўкон номи", innL:"СТИР (ИНН) ёки ЖШШИР", innEx:"9 ёки 14 та рақам",
+    groups:"Нималар сотасиз?", groupsSub:"Ихтиёрий. Белгиласангиз, «Нархларим» да фақат шу бўлимлар товарлари кўринади. Белгиламасангиз, ҳаммаси кўринади.",
     car:"Машина русуми ва рақами", carEx:"Масалан: Damas, 01 A 123 BC", lic:"Ҳайдовчилик гувоҳномаси рақами", licEx:"Масалан: AB 1234567",
     photo:"Гувоҳнома қўлингизда бўлган селфи", photoSub:"Юзингиз ва гувоҳнома рақами аниқ кўринсин.", photoBtn:"📷 Расм юклаш", photoAgain:"📷 Бошқа расм",
     send:"Аризани юбориш", sending:"Юборилмоқда…", doneT:"Аризангиз юборилди", doneS:"Тасдиқлангач, ботга хабар келади. Бу ойнани ёпишингиз мумкин.",
@@ -70,7 +75,11 @@ const T = {
     phone:"Телефон", name:"Фамилия, имя, отчество", nameEx:"Например: Каримов Азиз Рустамович",
     shop:"Название магазина", shopEx:"Например: Азиз Строй", market:"Рынок", marketPick:"Выберите рынок", marketNone:"❓ Моего рынка нет в списке",
     workMarket:"На каком рынке вы работаете?", row:"Ваше место на рынке", rowEx:"Например: 7-й ряд, магазин 15",
-    groups:"Что вы продаёте?", groupsSub:"Отметьте разделы. В «Мои цены» будут видны только товары этих разделов.",
+    block:"Блок или здание на рынке", blockPick:"Выберите блок", blockEx:"Например: блок А", line:"Номер ряда", lineEx:"Например: 7", shopNo:"Номер магазина", shopNoEx:"Например: 15",
+    card:"Номер карты", cardSub:"На эту карту платформа переводит деньги за материалы. Карта должна быть на ваше имя.", cardEx:"8600 0000 0000 0000",
+    holder:"Имя и фамилия владельца карты", holderEx:"Как на карте: AZIZ KARIMOV",
+    extra:"Дополнительно (необязательно)", shopOpt:"Название магазина", innL:"ИНН или ПИНФЛ", innEx:"9 или 14 цифр",
+    groups:"Что вы продаёте?", groupsSub:"Необязательно. Если отметите, в «Мои цены» будут видны только товары этих разделов. Если нет, видно всё.",
     car:"Марка и номер машины", carEx:"Например: Damas, 01 A 123 BC", lic:"Номер водительских прав", licEx:"Например: AB 1234567",
     photo:"Селфи с правами в руке", photoSub:"Лицо и номер прав должны быть хорошо видны.", photoBtn:"📷 Загрузить фото", photoAgain:"📷 Другое фото",
     send:"Отправить заявку", sending:"Отправка…", doneT:"Заявка отправлена", doneS:"После подтверждения придёт сообщение в бот. Окно можно закрыть.",
@@ -93,8 +102,15 @@ async function call(body){
 }
 function msg(title, sub){ $("app").innerHTML = `<div class="msg"><b>${esc(title)}</b>${sub ? esc(sub) : ""}</div>`; }
 
-function field(id, label, ex, val){
-  return `<div class="field"><label for="${id}">${esc(label)}</label><input type="text" id="${id}" value="${esc(val)}" placeholder="${esc(ex)}" autocomplete="off"></div>`;
+function field(id, label, ex, val, sub, num){
+  return `<div class="field"><label for="${id}">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</label><input type="text" id="${id}" value="${esc(val)}" placeholder="${esc(ex)}" autocomplete="off"${num ? ' inputmode="numeric"' : ""}></div>`;
+}
+const cardFmt = v => String(v || "").replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+// дўкон жойи: бозорда блоклар рўйхати бўлса танланади, бўлмаса қўлда ёзилади
+function blockField(){
+  const m = S.d.markets.find(x => String(x.id) === String(S.f.market)), bl = (m && m.blocks) || [];
+  if (!bl.length) return field("blk", t("block"), t("blockEx"), S.f.block);
+  return `<div class="field"><label for="blk">${esc(t("block"))}</label><select id="blk"><option value="">${esc(t("blockPick"))}</option>${bl.map(b => `<option ${S.f.block === b ? "selected" : ""}>${esc(b)}</option>`).join("")}</select></div>`;
 }
 function draw(){
   const d = S.d, f = S.f;
@@ -102,7 +118,9 @@ function draw(){
     <select id="mk"><option value="">${esc(t("marketPick"))}</option>${d.markets.map(m => `<option value="${m.id}" ${String(f.market) === String(m.id) ? "selected" : ""}>🏬 ${esc(m.name)}</option>`).join("")}
     ${ROLE === "seller" ? `<option value="0" ${f.market === "0" ? "selected" : ""}>${esc(t("marketNone"))}</option>` : ""}</select></div>` : "";
   let body = field("name", t("name"), t("nameEx"), f.name);
-  if (ROLE === "seller") body += field("shop", t("shop"), t("shopEx"), f.shop) + mk + field("row", t("row"), t("rowEx"), f.row) +
+  if (ROLE === "seller") body += mk + blockField() + field("line", t("line"), t("lineEx"), f.line, "", 1) + field("sno", t("shopNo"), t("shopNoEx"), f.sno) +
+    field("card", t("card"), t("cardEx"), cardFmt(f.card), t("cardSub"), 1) + field("holder", t("holder"), t("holderEx"), f.holder) +
+    `</div><div class="card"><h2 class="sec">${esc(t("extra"))}</h2>` + field("shop", t("shopOpt"), t("shopEx"), f.shop) + field("inn", t("innL"), t("innEx"), f.inn, "", 1) +
     `<div class="field"><label>${esc(t("groups"))}<small>${esc(t("groupsSub"))}</small></label><div class="groups">${d.groups.map(g =>
       `<label class="grp ${f.groups.has(g.id) ? "on" : ""}" data-g="${g.id}"><input type="checkbox" ${f.groups.has(g.id) ? "checked" : ""}> ${esc(S.lang === "ru" ? GROUP_RU[g.id] || g.name : g.name)}</label>`).join("")}</div></div>`;
   if (ROLE === "collector") body += mk;
@@ -117,7 +135,8 @@ function draw(){
 }
 function grab(){
   const v = id => ($(id) ? $(id).value : undefined);
-  ["name", "shop", "row", "car", "lic"].forEach(k => { if (v(k) !== undefined) S.f[k] = v(k); });
+  [["name", "name"], ["shop", "shop"], ["row", "row"], ["car", "car"], ["lic", "lic"], ["blk", "block"], ["line", "line"], ["sno", "sno"], ["card", "card"], ["holder", "holder"], ["inn", "inn"]]
+    .forEach(([id, k]) => { if (v(id) !== undefined) S.f[k] = v(id); });
   if ($("mk")) S.f.market = $("mk").value;
 }
 // расмни телефонда кичрайтириш (энг катта томони 1600px, JPEG): тез юкланади
@@ -142,14 +161,19 @@ document.addEventListener("click", async e => {
     grab();
     const f = S.f, body = { action:"r_submit", name:f.name };
     if (ROLE !== "driver" && S.d.markets.length) body.market_id = f.market === "" || f.market === undefined ? null : Number(f.market);
-    if (ROLE === "seller") Object.assign(body, { shop:f.shop, row:f.row, groups:[...f.groups] });
+    if (ROLE === "seller") Object.assign(body, { block:f.block, row_line:f.line, shop_no:f.sno, card:String(f.card || "").replace(/\D/g, ""), card_holder:f.holder, shop:f.shop, inn:f.inn, groups:[...f.groups] });
     if (ROLE === "driver") Object.assign(body, { car:f.car, license_no:f.lic, photo:S.photo });
     S.busy = true; draw();
     try { await call(body); msg(t("doneT"), t("doneS")); if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("success"); setTimeout(() => TG.close(), 2500); }
     catch (err) { S.busy = false; draw(); $("err").textContent = err.message; if (TG.HapticFeedback) TG.HapticFeedback.notificationOccurred("error"); }
   }
 });
+document.addEventListener("input", e => {          // карта рақамини 4 тадан гуруҳлаш
+  if (e.target.id !== "card") return;
+  const el = e.target, f = cardFmt(el.value); if (f !== el.value) el.value = f;
+});
 document.addEventListener("change", async e => {
+  if (e.target.id === "mk" && ROLE === "seller") { grab(); S.f.block = ""; draw(); return; }   // бозор алмашса, блоклар рўйхати янгиланади
   if (e.target.id !== "pfile" || !e.target.files[0]) return;
   grab();
   try { S.photo = await shrink(e.target.files[0]); draw(); }
@@ -168,6 +192,7 @@ document.addEventListener("change", async e => {
     if (d.step !== "r_form") { msg(d.status === "active" ? t("active") : t("already"), ""); return; }
     S.d = d;
     S.f = { name:d.name || "", shop:d.shop || "", row:d.row || "", car:d.car || "", lic:d.license_no || "",
+            block:d.block || "", line:d.row_line || "", sno:d.shop_no || "", card:d.card || "", holder:d.card_holder || "", inn:d.inn || "",
             market:d.market_id == null ? "" : String(d.market_id), groups:new Set(d.groups.filter(g => g.on).map(g => g.id)) };
     draw();
   } catch (err) { msg(err.message, ""); }
