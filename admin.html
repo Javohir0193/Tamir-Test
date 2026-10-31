@@ -399,7 +399,8 @@ const APP_STEP = { r_phone:"телефон", c_phone:"телефон", d_phone:"
 const ago = t => { const m = Math.max(0, Math.round((Date.now() - new Date(t).getTime()) / 60000)); return m < 60 ? m + " дақ." : m < 1440 ? Math.floor(m / 60) + " соат" : Math.floor(m / 1440) + " кун"; };
 function appsCard(p){
   if (!Array.isArray(p.apps)) return "";
-  const det = r => (r.role === "seller" ? [esc(r.shop || r.name), esc(r.row || ""), r.market ? esc(r.market) : '<span class="pill y">бозор йўқ</span>', r.cats ? r.cats + " бўлим" : ""]
+  const det = r => (r.role === "seller" ? [r.market ? esc(r.market) : '<span class="pill y">бозор йўқ</span>', esc(r.row || ""), r.shop && r.shop !== r.row ? esc(r.shop) : "",
+      r.card ? `💳 ${esc(r.card)}${r.card_holder ? " · " + esc(r.card_holder) : ""}` : '<span class="pill y">карта йўқ</span>', r.inn ? "СТИР " + esc(r.inn) : "", r.cats ? r.cats + " бўлим" : ""]
     : r.role === "collector" ? [r.market ? esc(r.market) : '<span class="pill y">бозор йўқ</span>']
     : [esc(r.car || ""), r.license ? "🪪 " + esc(r.license) : "", r.has_photo ? "📷" : ""]).filter(Boolean).join(" · ");
   const btn = r => can("people") ? `<button class="btn sm" data-pset="${r.id}" data-st="active">Тасдиқлаш</button> <button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Рад этиш</button>` : "";
@@ -411,6 +412,12 @@ function appsCard(p){
   <table><tr><th>Тури</th><th>Исм</th><th>Телефон</th><th>Тўхтаган қадам</th><th>Бошлаган</th></tr>
   ${un.map(r => `<tr class="mu"><td>${APP_RL[r.role] || r.role}</td><td>${esc(r.name) || "—"}</td><td>${esc(r.phone || "—")}</td><td><span class="pill m">${APP_STEP[r.step] || esc(r.step)}</span></td><td>${dt(r.created)}</td></tr>`).join("")}</table></details>` : ""}</div>`;
 }
+/* бозор ичидаги блок/бинолар: дўкон аризасида шу рўйхатдан танланади (бўш бўлса, дўкончи ўзи ёзади) */
+function blocksCard(p){
+  if (!Array.isArray(p.markets) || !p.markets.length || !can("people")) return "";
+  return `<div class="card"><h2>Бозор блоклари</h2><p class="mu" style="font-size:13px">Дўкон аризасида дўкончи шу рўйхатдан блок ёки бинони танлайди. Вергул билан ажратиб ёзинг. Бўш қолдирилса, дўкончи блок номини ўзи ёзади.</p>
+  ${p.markets.map(m => `<div class="row"><span style="min-width:110px">${esc(m.name)}</span><input data-mbl="${m.id}" value="${esc((m.blocks || []).join(", "))}" placeholder="Масалан: А блок, Б блок, 2-бино" style="flex:1;min-width:160px"><button class="btn sm" data-mbsave="${m.id}">Сақлаш</button></div>`).join("")}</div>`;
+}
 function peopleView(){
   const p = S.people; if (!p) return '<p class="mu">Юкланмоқда…</p>';
   const live = rows => Array.isArray(p.apps) ? rows.filter(r => r.status !== "pending") : rows;   // аризалар юқоридаги «Аризалар» да
@@ -418,7 +425,7 @@ function peopleView(){
   const act = r => !can("people") ? "" : r.status === "pending" ? `<button class="btn sm" data-pset="${r.id}" data-st="active">Тасдиқлаш</button> <button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Рад этиш</button>` : r.status === "active" ? `<button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Блоклаш</button>` : `<button class="btn sm" data-pset="${r.id}" data-st="active">Очиш</button>${r.reason ? ` <small class="mu">${esc(r.reason)}</small>` : ""}`;
   const nm = r => (esc(r.name) || '<span class="pill y">исм йўқ</span>') + (can("people") ? ` <button class="btn sm alt" data-prn="${r.id}" data-nm="${esc(r.name || "")}" title="Исмни ўзгартириш">✏️</button>` : "");
   const tbl = (title, rows, cols) => `<div class="card tw"><h2>${title} (${rows.length})</h2><table><tr>${cols.map(c => `<th class="${c[2] || ""}">${c[0]}</th>`).join("")}</tr>${rows.map(r => `<tr>${cols.map(c => `<td class="${c[2] || ""}">${c[1](r)}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="${cols.length}" class="mu">Ҳали йўқ</td></tr>`}</table></div>`;
-  return appsCard(p) + tbl("Йиғувчилар", live(p.collectors), [["Исм", nm], ["Телефон", r => esc(r.phone || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
+  return appsCard(p) + blocksCard(p) + tbl("Йиғувчилар", live(p.collectors), [["Исм", nm], ["Телефон", r => esc(r.phone || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
     + tbl("Ҳайдовчилар", live(p.drivers), [["Исм", nm], ["Машина", r => esc(r.car || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
     + fleetCard() + tbl("Дўконлар", live(p.shops), [["Дўкон", r => esc(r.shop || r.name) + (r.row ? ` <small class="mu">${esc(r.row)}</small>` : "")], ["Ҳолат", r => st(r.status)], ["Нархлар", r => r.prices, "n"], ["Сотилган", r => fmt(r.sold), "n"], ["Тўланган", r => fmt(r.paid), "n"], ["Карта", r => r.card ? "✓" : '<span class="pill y">йўқ</span>'], ["", act]]);
 }
@@ -700,6 +707,8 @@ document.addEventListener("click", async e => {
   if (t.dataset.pay) { const ok = t.dataset.ok === "1"; let note = null;
     if (!ok) { note = prompt("Рад этиш сабаби:"); if (!note) return; } else if (!confirm("Пулни дўкон картасига ўтказдингизми?")) return;
     await act(async () => { await rpc("admin_payout_decide", { p_id:Number(t.dataset.pay), p_ok:ok, p_note:note }); await new Promise(r => setTimeout(r, 1500)); await load(); S.pay = await rpc("admin_payouts"); draw(); }, ok ? "Белгиланди" : "Рад этилди"); return; }
+  if (t.dataset.mbsave) { const id = t.dataset.mbsave, inp = document.querySelector(`[data-mbl="${id}"]`), bl = (inp ? inp.value : "").split(/[,;\n]/).map(x => x.trim()).filter(Boolean);
+    await act(async () => { await rpc("admin_market_blocks", { p_id:Number(id), p_blocks:bl }); S.people = await rpc("admin_people"); draw(); }, "Сақланди"); return; }
   if (t.dataset.prn) { const v = prompt("Янги исм:", t.dataset.nm || ""); if (v === null) return; const nm = v.trim(); if (nm.length < 2) { toast("Исм камида 2 белги"); return; }
     await act(async () => { await rpc("admin_person_rename", { p_id:Number(t.dataset.prn), p_name:nm }); S.people = await rpc("admin_people"); draw(); }, "Сақланди"); return; }
   if (t.dataset.pset) { const st = t.dataset.st; let why = null;
