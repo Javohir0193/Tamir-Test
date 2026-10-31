@@ -128,7 +128,7 @@ const stName = o => (STAGE[o.mode] || STAGE.delivery)[Math.min(o.stage, (STAGE[o
 const stMax = o => (STAGE[o.mode] || STAGE.delivery).length - 1;
 const PAY = { none:["Онлайн тўловсиз", "m"], unpaid:["Тўлов кутилмоқда", "y"], paid:["Тўланган", "g"], expired:["Муддати ўтди", "r"], refunded:["Қайтарилган", "m"] };
 const payPill = o => { const p = PAY[o.pay_status] || ["—", "m"]; return `<span class="pill ${p[1]}">${p[0]}</span>`; };
-const ERR = { "wrong code":"Код нотўғри", admin_login_required:"Бу Telegram ҳисоб админ эмас", not_paid:"Буюртма тўланмаган", bad_amount:"Сумма нотўғри", too_much:"Тўланган суммадан кўп", reserve_too_much:"Захирадан кўп", bad_value:"Қиймат нотўғри", not_allowed:"Бу созламани бу ерда ўзгартириб бўлмайди", not_pending:"Аллақачон бажарилган", forbidden:"Бу амал учун рухсатингиз йўқ", pin_not_set:"PIN ҳали ўрнатилмаган", bad_pin:"PIN 6–12 та рақамдан иборат бўлиши керак", locked:"Кўп хато уриниш. 15 дақиқа кутинг", over_limit:"Сизнинг лимитингиздан катта сумма. Бухгалтер ёки эга яратсин", reason_required:"Сабабни ёзинг", already_cancelled:"Буюртма аллақачон бекор қилинган", already_done:"Етказилган буюртмани бекор қилиб бўлмайди", second_approval:"Катта сумма: бошқа админ тасдиқлаши керак", person_not_active:"Одам фаол эмас ёки роли мос эмас", profile_not_found:"Бундай рақамли одам сайтга ҳали кирмаган", cannot_self:"Ўзингизни блоклаб ёки эгаликдан ол бўлмайди", over:"", cannot_revert:"Бу ўзгаришни қайтариб бўлмайди", over_balance:"Қолдиқдан кўп сумма", too_many_rows:"Қатор кўп (2000 гача)" };
+const ERR = { "wrong code":"Код нотўғри", admin_login_required:"Бу Telegram ҳисоб админ эмас", not_paid:"Буюртма тўланмаган", bad_amount:"Сумма нотўғри", too_much:"Тўланган суммадан кўп", reserve_too_much:"Захирадан кўп", bad_value:"Қиймат нотўғри", not_allowed:"Бу созламани бу ерда ўзгартириб бўлмайди", not_pending:"Аллақачон бажарилган", forbidden:"Бу амал учун рухсатингиз йўқ", pin_not_set:"PIN ҳали ўрнатилмаган", bad_pin:"PIN 6–12 та рақамдан иборат бўлиши керак", locked:"Кўп хато уриниш. 15 дақиқа кутинг", over_limit:"Сизнинг лимитингиздан катта сумма. Бухгалтер ёки эга яратсин", reason_required:"Сабабни ёзинг", already_cancelled:"Буюртма аллақачон бекор қилинган", already_done:"Етказилган буюртмани бекор қилиб бўлмайди", second_approval:"Катта сумма: бошқа админ тасдиқлаши керак", person_not_active:"Одам фаол эмас ёки роли мос эмас", profile_not_found:"Бундай рақамли одам сайтга ҳали кирмаган", cannot_self:"Ўзингизни блоклаб ёки эгаликдан ол бўлмайди", over:"", cannot_revert:"Бу ўзгаришни қайтариб бўлмайди", over_balance:"Қолдиқдан кўп сумма", too_many_rows:"Қатор кўп (2000 гача)", not_finished:"Ариза ҳали тўлиқ юборилмаган, тасдиқлаб бўлмайди" };
 const errText = e => { const m = (e && e.message) || String(e); for (const k in ERR) if (m.indexOf(k) >= 0) return ERR[k]; return m; };
 
 async function rpc(name, args){
@@ -393,15 +393,34 @@ function fleetCard(){
   <table><tr><th>Ҳайдовчи</th><th>Машина</th><th>Гувоҳнома</th><th>Ҳолат</th><th>Парк</th></tr>
   ${f.drivers.map(d => `<tr><td>${esc(d.name)}</td><td>${esc(d.car || "")}</td><td>${esc(d.license || "—")}${d.has_photo ? " 📷" : ""}</td><td>${d.status === "active" ? '<span class="pill g">Фаол</span>' : d.status === "pending" ? '<span class="pill y">Кутилмоқда</span>' : '<span class="pill r">Блок</span>'}</td><td>${ed ? `<select data-fas="${d.id}">${fopt(d.fleet_id)}</select>` : esc(d.fleet_id ? ((f.fleets.find(z => z.id === d.fleet_id) || {}).name || "") : "—")}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳайдовчи йўқ</td></tr>'}</table></div>`;
 }
+/* ---------- Аризалар: тўлиқ юборилганлар навбати (эскиси биринчи) ва чала аризалар ---------- */
+const APP_RL = { seller:"Дўкон", collector:"Йиғувчи", driver:"Ҳайдовчи" };
+const APP_STEP = { r_phone:"телефон", c_phone:"телефон", d_phone:"телефон", phone:"телефон", r_form:"анкета", c_name:"исм", d_name:"исм", name:"исм", c_market:"бозор", market:"бозор", row:"жой", d_car:"машина", d_lic:"гувоҳнома", d_photo:"гувоҳнома", cats:"бўлимлар" };
+const ago = t => { const m = Math.max(0, Math.round((Date.now() - new Date(t).getTime()) / 60000)); return m < 60 ? m + " дақ." : m < 1440 ? Math.floor(m / 60) + " соат" : Math.floor(m / 1440) + " кун"; };
+function appsCard(p){
+  if (!Array.isArray(p.apps)) return "";
+  const det = r => (r.role === "seller" ? [esc(r.shop || r.name), esc(r.row || ""), r.market ? esc(r.market) : '<span class="pill y">бозор йўқ</span>', r.cats ? r.cats + " бўлим" : ""]
+    : r.role === "collector" ? [r.market ? esc(r.market) : '<span class="pill y">бозор йўқ</span>']
+    : [esc(r.car || ""), r.license ? "🪪 " + esc(r.license) : "", r.has_photo ? "📷" : ""]).filter(Boolean).join(" · ");
+  const btn = r => can("people") ? `<button class="btn sm" data-pset="${r.id}" data-st="active">Тасдиқлаш</button> <button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Рад этиш</button>` : "";
+  const un = p.unfinished || [];
+  return `<div class="card tw"><h2>Аризалар (${p.apps.length})</h2><p class="mu" style="font-size:13px">Тўлиқ юборилган аризалар, энг эскиси биринчи. Тасдиқлангач, одамга ботда илова тугмаси боради.</p>
+  <table><tr><th class="n">№</th><th>Тури</th><th>Исм</th><th>Маълумот</th><th>Телефон</th><th>Келган</th><th></th></tr>
+  ${p.apps.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${APP_RL[r.role] || r.role}</td><td>${esc(r.name) || '<span class="pill y">исм йўқ</span>'}</td><td>${det(r)}</td><td>${esc(r.phone || "")}</td><td>${dt(r.created)}<br><small class="mu">${ago(r.created)} олдин</small></td><td>${btn(r)}</td></tr>`).join("") || '<tr><td colspan="7" class="mu">Янги ариза йўқ</td></tr>'}</table>
+  ${un.length ? `<details style="margin-top:10px"><summary class="mu">Чала аризалар (${un.length}): ботда бошлаган, лекин охиригача юбормаган</summary>
+  <table><tr><th>Тури</th><th>Исм</th><th>Телефон</th><th>Тўхтаган қадам</th><th>Бошлаган</th></tr>
+  ${un.map(r => `<tr class="mu"><td>${APP_RL[r.role] || r.role}</td><td>${esc(r.name) || "—"}</td><td>${esc(r.phone || "—")}</td><td><span class="pill m">${APP_STEP[r.step] || esc(r.step)}</span></td><td>${dt(r.created)}</td></tr>`).join("")}</table></details>` : ""}</div>`;
+}
 function peopleView(){
   const p = S.people; if (!p) return '<p class="mu">Юкланмоқда…</p>';
+  const live = rows => Array.isArray(p.apps) ? rows.filter(r => r.status !== "pending") : rows;   // аризалар юқоридаги «Аризалар» да
   const st = s => s === "active" ? '<span class="pill g">Фаол</span>' : s === "pending" ? '<span class="pill y">Кутилмоқда</span>' : '<span class="pill r">Блок</span>';
   const act = r => !can("people") ? "" : r.status === "pending" ? `<button class="btn sm" data-pset="${r.id}" data-st="active">Тасдиқлаш</button> <button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Рад этиш</button>` : r.status === "active" ? `<button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Блоклаш</button>` : `<button class="btn sm" data-pset="${r.id}" data-st="active">Очиш</button>${r.reason ? ` <small class="mu">${esc(r.reason)}</small>` : ""}`;
   const nm = r => (esc(r.name) || '<span class="pill y">исм йўқ</span>') + (can("people") ? ` <button class="btn sm alt" data-prn="${r.id}" data-nm="${esc(r.name || "")}" title="Исмни ўзгартириш">✏️</button>` : "");
   const tbl = (title, rows, cols) => `<div class="card tw"><h2>${title} (${rows.length})</h2><table><tr>${cols.map(c => `<th class="${c[2] || ""}">${c[0]}</th>`).join("")}</tr>${rows.map(r => `<tr>${cols.map(c => `<td class="${c[2] || ""}">${c[1](r)}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="${cols.length}" class="mu">Ҳали йўқ</td></tr>`}</table></div>`;
-  return tbl("Йиғувчилар", p.collectors, [["Исм", nm], ["Телефон", r => esc(r.phone || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
-    + tbl("Ҳайдовчилар", p.drivers, [["Исм", nm], ["Машина", r => esc(r.car || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
-    + fleetCard() + tbl("Дўконлар", p.shops, [["Дўкон", r => esc(r.shop || r.name) + (r.row ? ` <small class="mu">${esc(r.row)}</small>` : "")], ["Ҳолат", r => st(r.status)], ["Нархлар", r => r.prices, "n"], ["Сотилган", r => fmt(r.sold), "n"], ["Тўланган", r => fmt(r.paid), "n"], ["Карта", r => r.card ? "✓" : '<span class="pill y">йўқ</span>'], ["", act]]);
+  return appsCard(p) + tbl("Йиғувчилар", live(p.collectors), [["Исм", nm], ["Телефон", r => esc(r.phone || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
+    + tbl("Ҳайдовчилар", live(p.drivers), [["Исм", nm], ["Машина", r => esc(r.car || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
+    + fleetCard() + tbl("Дўконлар", live(p.shops), [["Дўкон", r => esc(r.shop || r.name) + (r.row ? ` <small class="mu">${esc(r.row)}</small>` : "")], ["Ҳолат", r => st(r.status)], ["Нархлар", r => r.prices, "n"], ["Сотилган", r => fmt(r.sold), "n"], ["Тўланган", r => fmt(r.paid), "n"], ["Карта", r => r.card ? "✓" : '<span class="pill y">йўқ</span>'], ["", act]]);
 }
 
 /* ---------- Тўловлар ---------- */
