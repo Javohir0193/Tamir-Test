@@ -404,6 +404,7 @@ document.addEventListener("click", async e => {
 });
 
 // ===== Бугун: дўконнинг буюртмалари — ботдаги хабар билан бир хил тугмалар (Бор/Йўқ → Тасдиқлаш → Тайёр → Йиғувчига бердим / Машинага юкладим) =====
+S.chk = S.chk || {};
 const ST = { offered:"Тасдиқ кутилмоқда", confirmed:"Тасдиқланган", ready:"Тайёр" };
 const left = t => { const m = Math.max(0, Math.round((t - Date.now()) / 60000)); return m ? `⏳ ${m} дақиқа қолди` : "⏳ вақт тугаяпти"; };
 function ordCard(o){
@@ -416,11 +417,13 @@ function ordCard(o){
   const yes = o.lines.filter(l => l.says_yes !== false).length;
   const rows = !o.confirmed
     ? o.lines.map((l, i) => `<button class="tg ${l.says_yes === false ? "no" : ""}" data-otg="${o.msg_id}:${l.line_no}" aria-pressed="${l.says_yes !== false}"><span>${i + 1}.</span><span>${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="yn">${l.says_yes === false ? "❌ Йўқ" : "✅ Бор"}</span></button>`).join("")
+    : !o.ready ? o.lines.filter(l => l.says_yes !== false && l.status !== "pending").map((l, i) => { const on = !!S.chk[o.msg_id + ":" + l.line_no]; return `<button class="tg ${on ? "" : "no"}" data-chk="${o.msg_id}:${l.line_no}" aria-pressed="${on}"><span>${on ? "☑️" : "⬜"}</span><span>${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="yn">${on ? "Йиғилди" : "Йиғинг"}</span></button>`; }).join("")
     : o.lines.map(l => `<div class="irow" style="grid-template-columns:1fr auto"><span>${l.says_yes === false || l.status === "pending" ? "❌" : l.loaded ? "✅" : "⬜"} ${esc(l.name)}<small>${fmt(l.qty)} ${esc(unitOf({ unit:l.unit }))}${l.price ? " · " + fmt(l.price) + " сўм" : ""}</small></span><span class="hint">${esc(ST[l.status] || "")}${l.loaded ? (sc ? " · берилди" : " · юкланди") : ""}</span></div>`).join("");
   const who = sc && o.picker ? `🧺 Йиғувчи: ${esc(o.picker.name)}${o.picker.phone ? ` · <a href="tel:${esc(o.picker.phone)}">${esc(o.picker.phone)}</a>` : ""}`
     : o.driver ? `🚚 Ҳайдовчи: ${esc(o.driver.name)}${o.driver.car ? " · " + esc(o.driver.car) : ""}${o.driver.phone ? " · " + esc(o.driver.phone) : ""}` : "";
   const acts = !o.confirmed ? `<button class="main" data-ocf="${o.msg_id}">👍 Тасдиқлаш (${yes}/${o.lines.length} бор)</button>`
-    : !o.ready ? (yes ? `<button class="main" data-ordready="${o.msg_id}">📦 Тайёр</button>` : "")
+    : !o.ready ? (yes ? (() => { const need = o.lines.filter(l => l.says_yes !== false && l.status !== "pending"), got = need.filter(l => S.chk[o.msg_id + ":" + l.line_no]).length;
+        return got === need.length ? `<button class="main" data-ordready="${o.msg_id}">📦 Тайёр</button>` : `<button class="main" disabled style="opacity:.5">☑️ Ҳаммасини белгиланг (${got}/${need.length})</button>`; })() : "")
     : !loadedAll ? `<button class="main" data-ordload="${o.msg_id}">${give}</button>` : "";
   return `<div class="list" style="margin-bottom:10px"><div class="irow" style="grid-template-columns:1fr auto"><span><b>№${o.no}</b> · ${esc(o.slot || "")}<small>${esc(state)}</small></span><b class="${o.ready ? "ok" : "warn"}">${!o.confirmed && o.until ? left(o.until) : o.ready ? "тайёр" : "кутилмоқда"}</b></div>
     ${rows}
@@ -473,6 +476,7 @@ document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t) return;
   if (t.dataset.tab) setTab(t.dataset.tab);
   else if (t.hasAttribute("data-ordreload")) todayLoad();
+  else if (t.dataset.chk){ S.chk[t.dataset.chk] = !S.chk[t.dataset.chk]; if (TG && TG.HapticFeedback) TG.HapticFeedback.selectionChanged(); todayLoad(); }
   else if (t.dataset.ordready || t.dataset.ordload || t.dataset.ocf || t.dataset.otg){
     if (S.busy) return; S.busy = true; t.disabled = true;
     const [mid, ln] = String(t.dataset.otg || "").split(":");
