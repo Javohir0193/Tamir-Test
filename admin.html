@@ -664,6 +664,7 @@ function histCard(){
 /* ---------- Буюртма тафсилоти ---------- */
 async function openOrder(no){
   let d, ppl = null, onotes = []; try { d = await rpc("admin_order", { p_no:Number(no) }); if (can("orders_edit")) ppl = await rpc("admin_people"); onotes = await rpc("admin_notes", { p_kind:"order", p_ref:String(no) }); } catch(e){ sessErr(e); return; }
+  let evs = []; try { evs = await rpc("admin_order_events", { p_no:Number(no) }); } catch(e){ evs = []; }   // 20261031_25 қўлланмагунча жим
   if (!d) { toast("Буюртма топилмади"); return; }
   const o = d.order, kv = (a) => a.filter(x => x[1] != null && x[1] !== "").map(([n, v]) => `<span>${n}</span><span>${v}</span>`).join("");
   const items = (o.items || []).map(i => `<tr><td>${esc(i.n || i.name)}</td><td class="n">${i.q || i.qty || ""} ${esc(i.u || "")}</td><td class="n">${i.price ? fmt(i.price) : ""}</td></tr>`).join("");
@@ -676,6 +677,9 @@ async function openOrder(no){
     <div class="row"><span style="width:80px">Ҳайдовчи:</span><select id="as-driver" style="flex:1">${opts(ppl.drivers)}</select><button class="btn sm" data-assign="driver" data-no="${o.no}">Тайинлаш</button></div>
     <p class="mu" style="font-size:13px">Алмаштиришда сабаб сўралади, эски ва янги одамга Telegram'да хабар боради.</p></div>` : "";
   const hist = (d.history || []).length ? `<div class="card"><h2>Ўзгаришлар тарихи</h2>${d.history.map(h => `<div style="padding:8px 0;border-top:1px solid #eee"><div class="mu" style="font-size:12.5px">${dt(h.at)} · ${esc(h.who || "")}</div><div><b>${esc(actT(h.action))}</b>${h.new ? ` <span class="mu">${esc(valT(h.new))}</span>` : ""}</div>${h.reason ? `<div class="mu" style="font-size:12.5px">Сабаб: ${esc(h.reason)}</div>` : ""}</div>`).join("")}</div>` : "";
+  const EVF = { stage:"Босқич", pay_status:"Тўлов ҳолати", picker_id:"Йиғувчи", driver_id:"Ҳайдовчи" };
+  const evTxt = e => e.field === "created" ? "Буюртма яратилди" : e.field === "stage" ? `Босқич: ${(Number(e.old) || 0) + 1} → ${(Number(e.new) || 0) + 1}` : e.field === "received_ok" ? `Мижоз: ${e.new === "true" ? "«Олдим»" : "«Етишмади»"}` : e.field === "received_at" ? "Мижоз буюртмани қабул қилди" : e.field === "cancelled_at" ? (e.new ? "Бекор қилинди" : "Бекор қилиш қайтарилди") : `${EVF[e.field] || e.field}: ${esc(e.old || "—")} → ${esc(e.new || "—")}`;
+  const evbox = (evs || []).length ? `<div class="card"><h2>Ҳолатлар журнали</h2>${evs.map(e => `<div style="padding:6px 0;border-top:1px solid #eee"><div class="mu" style="font-size:12.5px">${dt(e.at)} · ${esc(e.who || e.actor)}</div><div>${evTxt(e)}</div></div>`).join("")}</div>` : "";
   const bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
   bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">Буюртма №${o.no} ${payPill(o)}</h2><button class="btn alt sm" data-x>Ёпиш</button></div>
   <div class="card"><div class="kv">${kv([["Мижоз", esc(o.customer_name)], ["Телефон", `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`], ["Манзил", esc(o.address || "")], ["Вақт", esc(o.slot || "")], ["Тури", esc(o.mode)], ["Босқич", `${o.stage + 1}/${stMax(o) + 1} · ${esc(stName(o))}`], ["Йиғувчи", esc(d.picker || "")], ["Ҳайдовчи", esc(d.driver || "")], ["Яратилган", dt(o.created_at)]])}</div>
@@ -687,7 +691,7 @@ async function openOrder(no){
   ${d.ledger.length ? `<div class="card tw"><h2>Пул журнали</h2><table>${led}</table><p class="mu" style="font-size:13px">Йиғинди: ${fmt(d.ledger.reduce((a, l) => a + Number(l.amount), 0))} (0 бўлиши керак)</p></div>` : ""}
   <div class="card tw"><h2>Қайтаришлар</h2>${rfs ? `<table>${rfs}</table>` : '<p class="mu">Йўқ</p>'}
   ${o.cancelled_at ? `<div style="margin-top:10px"><span class="pill r">Бекор қилинган</span> <span class="mu">${esc(o.cancel_reason || "")}</span></div>` : can("orders_edit") && o.stage < (o.mode === "pickup" ? 3 : 4) ? `<div class="row" style="margin-top:10px"><input id="cr" placeholder="Бекор қилиш сабаби" style="flex:1"><button class="btn sm" data-ocancel="${o.no}">🚫 Бекор қилиш</button></div>` : ""}
-  ${o.pay_status === "paid" && can("refund") ? `<div class="row" style="margin-top:10px"><select id="rk"><option value="reserve">Захирани қайтариш</option><option value="item">Топилмаган товар</option><option value="cancel">Бекор қилиш</option><option value="other">Бошқа</option></select><input id="ra" inputmode="numeric" placeholder="Сумма" style="width:120px"><input id="rr" placeholder="Сабаб" style="flex:1"><button class="btn sm" data-rnew="${o.no}">Яратиш</button></div>` : ""}</div>${hist}${notesBox("order", o.no, onotes)}</div>`;
+  ${o.pay_status === "paid" && can("refund") ? `<div class="row" style="margin-top:10px"><select id="rk"><option value="reserve">Захирани қайтариш</option><option value="item">Топилмаган товар</option><option value="cancel">Бекор қилиш</option><option value="other">Бошқа</option></select><input id="ra" inputmode="numeric" placeholder="Сумма" style="width:120px"><input id="rr" placeholder="Сабаб" style="flex:1"><button class="btn sm" data-rnew="${o.no}">Яратиш</button></div>` : ""}</div>${hist}${evbox}${notesBox("order", o.no, onotes)}</div>`;
   document.body.appendChild(bx);
 }
 function closeSheet(){ const s = $("sheet"); if (s) s.remove(); }
