@@ -1278,6 +1278,7 @@ footer .f-bottom{display:flex;justify-content:space-between;align-items:center;g
 <script src="pull.js"></script>
 <script src="maps.js"></script>
 <script src="catalog.js"></script>
+<script src="push.js"></script>
 <script>
 // ===== Настройки магазина =====
 const CFG = window.TAMIR_CONFIG || {};            // config.js: асосий ёки синов базаси
@@ -2469,6 +2470,11 @@ function profileBox(){
   if (!S.reqLogin) return "";
   return `<div class="acc warn"><span><span>Для заказа нужно один раз войти через Telegram — так мы подтверждаем номер телефона.</span></span></div>`;
 }
+// телефонга билдиришнома: буюртма ҳолати ўзгарса (тўланди, йўлда, етказилди), телефон блокда бўлса ҳам
+function pushBar(){
+  const b = dbReady && window.TamirPush ? TamirPush.btn("lnk") : "";
+  return b ? `<div class="acc"><span>Статус заказа придёт уведомлением, даже когда телефон заблокирован.</span>${b}</div>` : "";
+}
 function accountBar(){
   if (!dbReady) return "";
   if (S.profile) return `<div class="acc"><span>👤 <b>${esc(S.profile.name || "")}</b> ${esc(S.profile.phone || "")}</span><button class="lnk" data-logout>Выйти</button></div>`;
@@ -2515,7 +2521,7 @@ function pollLogin(){
 }
 function loggedIn(){
   clearInterval(S.loginTimer); closeLogin(); logEvent("login");
-  toast("✅ Вы вошли через Telegram"); loadOrders();
+  toast("✅ Вы вошли через Telegram"); loadOrders(); if (window.TamirPush) TamirPush.refresh();
   if (S.tab === "cart") renderCart(); else if (S.tab === "orders") renderOrders(); else if (S.view === "car") renderCar(); else rerender();
 }
 async function doLogout(){ try { await sb.rpc("logout"); } catch(e){} S.profile = null; S.orders = []; await loadOrders(); renderOrders(); }
@@ -2542,6 +2548,8 @@ async function initDB(){
     dbReady = true; S.orders = [];
     loadCatalog(); loadMarkets(); loadSettings(); flushEvents();
     await loadProfile();
+    TamirPush.init({ app:"shop", base:"ru", rpc:(fn, a) => sb.rpc(fn, a).then(r => { if (r.error) throw r.error; return r.data; }),
+      lang:() => (window.getLang && getLang() === "uz") ? "uz" : "ru", tr:s => (window.getLang && getLang() === "uz" && window.tUz) ? tUz(s) : s });
     await loadOrders();
     sb.channel("orders-live").on("postgres_changes", { event:"*", schema:"public", table:"orders" }, loadOrders).subscribe();
     setInterval(() => loadOrders(true), 15000);
@@ -2654,11 +2662,11 @@ function renderOrders(){
   if (DK()) return renderOrdersDk();
   const v = document.getElementById("view");
   if (!S.orders.length){
-    v.innerHTML = syncNote() + accountBar() + `<div class="empty"><p>Заказов пока нет. Здесь появится статус каждого заказа.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>` + sellerBox();
+    v.innerHTML = syncNote() + accountBar() + pushBar() + `<div class="empty"><p>Заказов пока нет. Здесь появится статус каждого заказа.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>` + sellerBox();
     return;
   }
   const keep = new Map(); document.querySelectorAll(".mapbox[data-map]").forEach(el => keep.set(el.dataset.map, el));
-  v.innerHTML = syncNote() + accountBar() + S.orders.map(o => orderHTML(o)).join("") + sellerBox();
+  v.innerHTML = syncNote() + accountBar() + pushBar() + S.orders.map(o => orderHTML(o)).join("") + sellerBox();
   mountMaps(keep);
 }
 

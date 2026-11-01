@@ -17,6 +17,7 @@
 <script src="icons.js"></script>
 
 <script src="catalog.js"></script>
+<script src="push.js"></script>
 <style>
 :root{--bg:#F0F2F5;--card:#fff;--ink:#222;--muted:#7A808A;--line:#E3E6EB;--accent:#F97316;--ok:#1E9E5A;--warn:#D9822B;--no:#C9CDD3}
 *{box-sizing:border-box}
@@ -238,7 +239,8 @@ function render(keepFocus){
   }
   if (S.tab === "acct") {
     const d = S.data;
-    $("app").innerHTML = `${hdr(d.seller)}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
+    const pb = TamirPush.btn("", "display:block;width:100%;margin:0 0 10px;padding:12px;border-radius:12px;background:#fff;border:1px solid rgba(31,36,48,.13);font:inherit;font-weight:600;color:#1F2430");
+    $("app").innerHTML = `${hdr(d.seller)}${pb}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
     updateBar(); acctLoad(); return;
   }
   renderPrices(keepFocus);
@@ -551,7 +553,7 @@ function loginView(msg){
 }
 async function boot(){
   if (!IN_TG && !SES) return loginView();
-  try { S.data = await call({ action:"load" }); setTab("today"); }
+  try { S.data = await call({ action:"load" }); TamirPush.init({ app:"seller", base:"uz", token:() => SES, lang:() => "uz" }); setTab("today"); }
   catch (err) { if (err.message !== "auth" && err.message !== "reg") $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 }
 boot();
