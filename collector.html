@@ -20,6 +20,7 @@
 <script src="maps.js"></script>
 
 <script src="catalog.js"></script>
+<script src="push.js"></script>
 <style>
 .pick{position:fixed;inset:0;z-index:50;background:#fff;display:flex;flex-direction:column}
 .pick-top{display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;font-size:17px}
@@ -295,8 +296,10 @@ function earnHTML(){
   const e = S.d.earn;
   if (!e) return `<h1>💳 Ҳисоб</h1><div class="card muted">Ҳисоб ҳали кўринмайди: бот янгиланмаган.</div>`;
   return `<h1>💳 Ҳисоб</h1>${splitHTML(S.d.split)}<div class="card"><div class="kv"><span>Тўланиши керак</span><b>${fmt(e.due || 0)} сўм</b><span>Кутилмоқда (24 соат / мижоз тасдиғи)</span><b>${fmt((e.waiting || 0) + (e.held || 0))} сўм</b><span>Тўланган</span><b>${fmt(e.paid || 0)} сўм</b></div>
-    <p class="muted">Ҳақ буюртма етказилгач, мижоз «Олдим» деганда ёки 24 соатдан кейин «Тўланиши керак»га ўтади.</p></div>`;
+    <p class="muted">Ҳақ буюртма етказилгач, мижоз «Олдим» деганда ёки 24 соатдан кейин «Тўланиши керак»га ўтади.</p></div>${pushCard()}`;
 }
+// телефонга билдиришнома (Telegram ичида кўринмайди — у ерда бот хабари келади)
+const pushCard = () => { const b = TamirPush.btn("btn ghost", "width:100%"); return b ? `<div class="card">${b}<p class="muted" style="margin:8px 0 0">Янги буюртма ва тўлов хабарлари телефон блокда бўлса ҳам келади.</p></div>` : ""; };
 function render(){
   document.querySelectorAll("nav button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === S.tab ? "page" : "false"));
   const o = S.open && S.d.my.find(x => x.no === S.open);
@@ -406,6 +409,7 @@ async function boot(){
   try {
     await load(); $("nav").hidden = false; $("hme").textContent = (S.d.me && S.d.me.name) || "";
     if (!IN_TG) { $("hout").hidden = false; $("hout").onclick = () => { dropSes(); loginView(); }; }
+    TamirPush.init({ app:"collector", base:"uz", token:() => SES, lang:() => LG.lang(), tr:s => LG.tr(s) });
     render(); LASTSIG = null; SEEN = new Set((S.d.open || []).map(o => o.no)); clearInterval(boot.iv); boot.iv = setInterval(pingTick, 3000); document.addEventListener("visibilitychange", () => { if (!document.hidden && (SES || IN_TG)) pingTick(true); });
   } catch (err) { if (err.message !== "auth") $("app").innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 }

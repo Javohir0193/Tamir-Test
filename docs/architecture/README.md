@@ -211,6 +211,25 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
   Qaror (8-bo'lim, 4): yig'uvchi ham, haydovchi ham do'konga pul bermaydi; `shop_collect` rejimida
   «to'lov so'rash» tugmasi ko'rsatilmaydi.
 
+### ADR-011. Telefonga bildirishnoma: Web Push (VAPID), Telegram xabarlari qoladi
+
+- **Kontekst:** xodimlar xabarni Telegram botdan oladi, mijozga esa faqat sayt ichida ko'rinadi. Telefon
+  bloklangan holatda ham ekranga chiqadigan bildirishnoma kerak, 5 ta ilovada (mijoz, do'kon, yig'uvchi,
+  haydovchi, admin). Native ilova yo'q, budjet 0.
+- **Variantlar:**
+  - A) Web Push (service worker + VAPID): bepul, tashqi xizmatsiz, mavjud saytga qo'shiladi. Android Chrome'da
+    to'liq ishlaydi; iPhone'da faqat iOS 16.4+ va sayt «Bosh ekranga qo'shilgan» bo'lsa; Telegram ichida yo'q.
+  - B) Firebase (FCM) + native ilova: iPhone'da ham to'liq, lekin ilova do'konlari, hisob va alohida kod kerak.
+  - C) Faqat Telegram: o'zgarish yo'q, mijozga bildirishnoma yo'q.
+- **Qaror:** A. Telegram xabarlari o'zgarmaydi, push ularning ustiga qo'shiladi.
+- **Qanday ishlaydi:** `push.js` tugmasi → `push_subscribe` (sessiya mavjud jadvallar orqali tekshiriladi) →
+  `push_subs`. Bot `send()` Telegram'ga yuborganda shu `tg_chat_id`ga obuna bo'lgan telefonlarga ham push
+  yuboradi (o'z harakatiga javob bundan mustasno). Mijozga: `orders_push` triggeri → `bot_post({push_order})`.
+  VAPID kalitini bot o'zi yaratadi (`app_settings.vapid_private`, faqat service role ko'radi).
+- **Xavfsizlik:** endpoint faqat ma'lum push xizmatlariga (SSRF yo'q), matn telefon kaliti bilan shifrlanadi
+  (RFC 8291), `push_subs` RLS yopiq, bir kishiga ko'pi bilan 10 ta qurilma, eskirgan obunalar (404/410) o'chadi.
+- **Oqibat:** migratsiya 27 (`.down.sql` bilan), bot va sayt alohida yangilanadi. Tartib: avval bot, keyin SQL, keyin sayt.
+
 ---
 
 ## 5. Modullar (monolit ichida)
