@@ -60,7 +60,15 @@
   function paint() {
     ST = state();
     var els = document.querySelectorAll("[data-push]");
-    for (var i = 0; i < els.length; i++) { els[i].hidden = ST === "none"; els[i].textContent = BUSY ? txt("busy") : txt(ST === "none" ? "off" : ST); }
+    for (var i = 0; i < els.length; i++) {
+      var e = els[i], full = BUSY ? txt("busy") : txt(ST === "none" ? "off" : ST);
+      e.hidden = ST === "none";
+      if (e.getAttribute("data-push") === "icon") {          // ихчам: фақат белги, тўлиқ матн — сарлавҳа ва экран ўқувчи учун
+        e.textContent = BUSY ? "⏳" : ST === "on" ? "🔔" : "🔕";
+        e.setAttribute("title", full); e.setAttribute("aria-label", full);
+        e.setAttribute("aria-pressed", ST === "on" ? "true" : "false");
+      } else e.textContent = full;
+    }
   }
   function enable() {
     BUSY = true; paint();
@@ -118,9 +126,12 @@
       paint(); refresh();
     },
     refresh: refresh,
-    btn: function (cls, style) {
+    // icon: true — тор жой учун (масалан, админ панел сарлавҳаси) фақат 🔔/🔕 белги
+    btn: function (cls, style, icon) {
       if (!O || state() === "none") return "";
-      return '<button type="button" class="' + (cls || "btn alt") + '" data-push' + (style ? ' style="' + style + '"' : "") + ">" + txt(state()) + "</button>";
+      var st = state(), full = txt(st);
+      return '<button type="button" class="' + (cls || "btn alt") + '" data-push' + (icon ? '="icon" title="' + full + '" aria-label="' + full + '"' : "") + (style ? ' style="' + style + '"' : "") + ">" +
+        (icon ? (st === "on" ? "🔔" : "🔕") : full) + "</button>";
     },
     state: state
   };
