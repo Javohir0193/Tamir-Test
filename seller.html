@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Дўкон">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="config.js"></script>
 <script src="tglogin.js"></script>
@@ -109,6 +109,60 @@ header small{display:block;color:var(--muted);font-size:13px}
 .lgn .btn{border:0;border-radius:14px;height:52px;line-height:52px;color:var(--ink);background:var(--accent);font-weight:700;font-size:16px}.lgn .btn[disabled]{opacity:.5}
 .tabs .out{flex:0 0 auto;padding:10px 12px;color:var(--muted)}
 </style>
+<link rel="stylesheet" href="xtheme.css">
+<style>
+/* Ҳайдовчи иловаси дизайни (xtheme.css) дўкон кабинетига: шиша панел, тагчизиқли бўлимлар, оқ карталар, тўқ сариқ градиент тугмалар.
+   Фақат кўриниш: мантиқ ва маълумот ўзгармайди. */
+:root{--bg:#F6F3EE;--card:#FFFFFF;--ink:#1F2430;--muted:rgba(31,36,48,.67);--line:rgba(31,36,48,.12);--ok:#10B981;--warn:#D97706;--gl:rgba(31,36,48,.11)}
+html,body{font:400 15px/1.4 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{overflow-x:visible!important} /* html'даги hidden viewportга ўтади — ёпишқоқ панел ишлаши учун */
+.wrap{padding-top:0}
+/* юқори панел: ҳайдовчидаги каби бутун эн бўйлаб, ёпишқоқ, бўлимлар ичида */
+header{display:block;position:sticky;top:0;z-index:5;margin:0 -12px 12px;padding:calc(10px + env(safe-area-inset-top,0px)) 0 0}
+header .hrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 16px 10px}
+header .hl{min-width:0}
+header h1.qx{font-size:18px;font-weight:800}
+header small{font-size:13.5px;margin-top:2px;line-height:1.35;overflow:hidden;text-overflow:ellipsis}
+.stat{flex:none;color:rgba(31,36,48,.67)}.stat b{color:#1F2430;font-size:18px;font-weight:800}
+header .tabs{display:flex;gap:0;margin:0;background:transparent!important;border-top:1px solid rgba(31,36,48,.10);border-bottom:0!important;position:static}
+header .tabs button{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;border:0!important;border-radius:0;background:none!important;padding:13px 2px;font-size:14px;font-weight:600;border-bottom:3px solid transparent!important}
+header .tabs button[aria-pressed="true"]{color:#1F2430!important;border-bottom-color:var(--accent)!important;background:none!important}
+header .tabs .out{flex:0 0 48px;padding:13px 0}
+/* карталар ва рўйхатлар */
+.list,.msg,.kpi div,.kpi2 div,.search,.more{background:#FFFFFF;border:1px solid var(--gl);border-radius:14px}
+.item,.irow,.tg{border-bottom-color:var(--gl)!important}
+.irow,.tg,.oacts{background:#FFFFFF}
+.kpi b,.kpi2 b{font-weight:800}
+.sec{font-size:16px;font-weight:700;color:#1F2430;margin:16px 2px 8px}
+.nm{font-weight:600}
+.irow b.warn,.hint.warn{color:var(--warn)}
+/* чиплар: ҳайдовчи панелидаги фаол тугма каби */
+.chip{background:#FFFFFF;border:1px solid var(--gl);color:#1F2430;padding:7px 12px}
+.chip[aria-pressed="true"]{background:rgba(249,115,22,.14)!important;color:#1F2430!important;border-color:rgba(249,115,22,.45)}
+.chip[data-imp]{background:var(--grad)!important;color:#fff!important;border:0;box-shadow:0 6px 20px rgba(249,115,22,.22)}
+/* тез тўлдириш ва ҳисоб блоклари */
+.fast{background:#FFFFFF;border:1px solid rgba(249,115,22,.30);border-radius:14px}
+.fast p{color:rgba(31,36,48,.72)}
+.fast .irow{background:transparent;padding-left:0;padding-right:0}
+.list+.fast{margin-top:10px!important}
+.pct{border:1px solid rgba(31,36,48,.14);background:#FFFFFF}
+.pct[aria-pressed="true"]{background:rgba(249,115,22,.14);border-color:rgba(249,115,22,.45);color:#1F2430}
+/* тугмалар: асосийси — градиент, қолгани — оқ рамкали (ҳайдовчидаги .btn / .btn.alt) */
+.go,.oacts button.main,.imp .acts .main,#today .acts .main,.bar button{background:var(--grad)!important;color:#fff!important;border:0;box-shadow:0 6px 20px rgba(249,115,22,.22)}
+.oacts button.main:disabled,.bar button:disabled,.go:disabled{background:#E9E4DC!important;color:rgba(31,36,48,.5)!important;box-shadow:none;opacity:1!important}
+.oacts button:not(.main),#today .acts button:not(.main),.imp .acts button:not(.main),.imp .filebtn{background:#FFFFFF;border:1px solid rgba(31,36,48,.13);color:#1F2430}
+.oacts button,.bar button{border-radius:12px}
+.bar{background:linear-gradient(transparent,#F6F3EE 35%)!important}
+.price input{border-width:1px;background:#FFFFFF}.price input:focus{border-color:var(--accent)}
+.sw{background:#F1EDE6!important}
+.sw button[aria-pressed="true"].y{background:linear-gradient(135deg,#10B981,#059669)}
+.tg .yn{background:rgba(16,185,129,.14);color:#047857}.tg.no .yn{background:#F1EDE6;color:rgba(31,36,48,.67)}
+.sug{border-color:rgba(249,115,22,.45);color:#C2410C}
+.imp>div{background:#F6F3EE}.imp h2{color:#1F2430}
+.toast{box-shadow:0 8px 24px rgba(31,36,48,.12)}
+.lgn .btn{color:#fff}
+a{color:#C2410C}
+</style>
 </head>
 <body>
 <div class="wrap" id="app"><div class="msg">Юкланмоқда…</div></div>
@@ -173,15 +227,18 @@ function itemHTML(p){
 const placeLine = x => { const t = [x.market, x.row && x.row !== x.shop ? x.row : ""].filter(Boolean).join(" · "); return `<small>📍 ${t ? esc(t) : "бозор кўрсатилмаган"}</small>`; };
 const TABS = [["today", "📋 Бугун"], ["prices", "🏷 Нархлар"], ["acct", "💰 Ҳисоб"]];
 const tabsHTML = () => `<nav class="tabs">${TABS.map(([id, n]) => `<button data-tab="${id}" aria-pressed="${S.tab === id}">${n}</button>`).join("")}${IN_TG ? "" : `<button class="out" data-out aria-label="Чиқиш" title="Чиқиш">⎋</button>`}</nav>`;
+// Тепадаги панел: ҳайдовчи иловаси каби логотип + дўкон/исм + бўлимлар (фақат кўриниш)
+const LOGO = `<h1 class="qx" aria-label="Ta'mir Seller"><span class="qx-i qx-star qx-sub" aria-hidden="true"><svg viewBox="20 26 160 152"><defs><linearGradient id="gqs" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset=".35" stop-color="#F97316"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs><rect x="36" y="56" width="128" height="116" rx="10" fill="url(#gqs)"/><rect x="26" y="28" width="148" height="10" rx="4" fill="#7C2D12"/><path d="M30 36 H58 V60 A14 14 0 0 1 30 60 Z" fill="#EA580C"/><path d="M58 36 H86 V60 A14 14 0 0 1 58 60 Z" fill="#FDBA74"/><path d="M86 36 H114 V60 A14 14 0 0 1 86 60 Z" fill="#EA580C"/><path d="M114 36 H142 V60 A14 14 0 0 1 114 60 Z" fill="#FDBA74"/><path d="M142 36 H170 V60 A14 14 0 0 1 142 60 Z" fill="#EA580C"/><g transform="translate(62 84) scale(.38)"><path d="M135.97,13.16 L150.87,49.13 L186.84,64.03 L171.94,100.00 L186.84,135.97 L150.87,150.87 L135.97,186.84 L100.00,171.94 L64.03,186.84 L49.13,150.87 L13.16,135.97 L28.06,100.00 L13.16,64.03 L49.13,49.13 L64.03,13.16 L100.00,28.06Z" fill="#fff"/><path d="M128.32,31.63 L140.05,59.95 L168.37,71.68 L156.64,100.00 L168.37,128.32 L140.05,140.05 L128.32,168.37 L100.00,156.64 L71.68,168.37 L59.95,140.05 L31.63,128.32 L43.36,100.00 L31.63,71.68 L59.95,59.95 L71.68,31.63 L100.00,43.36Z" fill="none" stroke="#EA580C" stroke-opacity=".35" stroke-width="4"/><g transform="translate(22 14) scale(0.78)" fill="#EA580C"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></g></svg></span><span class="qx-t"><span class="qx-w" aria-hidden="true"><svg class="qx-ht" viewBox="48 56 114 112"><g fill="#F97316"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg>a<svg class="qx-ap" viewBox="0 0 40 40"><path d="M27.27,2.45 L30.28,9.72 L37.55,12.73 L34.54,20.00 L37.55,27.27 L30.28,30.28 L27.27,37.55 L20.00,34.54 L12.73,37.55 L9.72,30.28 L2.45,27.27 L5.46,20.00 L2.45,12.73 L9.72,9.72 L12.73,2.45 L20.00,5.46Z" fill="#F97316"/></svg>mir</span><em>Seller</em></span></h1>`;
+const hdr = (x, stat) => `<header><div class="hrow"><div class="hl">${LOGO}<small>🏪 ${esc(x.shop)} · ${esc(x.name)}</small>${placeLine(x)}</div>${stat || ""}</div>${tabsHTML()}</header>`;
 function render(keepFocus){
   if (S.tab === "today") {
     const d = S.data;
-    $("app").innerHTML = `<header><div><h1>🏪 ${esc(d.seller.shop)}</h1><small>${esc(d.seller.name)}</small>${placeLine(d.seller)}</div></header>${tabsHTML()}<div id="today"><div class="msg">Юкланмоқда…</div></div>`;
+    $("app").innerHTML = `${hdr(d.seller)}<div id="today"><div class="msg">Юкланмоқда…</div></div>`;
     updateBar(); return;
   }
   if (S.tab === "acct") {
     const d = S.data;
-    $("app").innerHTML = `<header><div><h1>💰 Ҳисоб</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small>${placeLine(d.seller)}</div></header>${tabsHTML()}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
+    $("app").innerHTML = `${hdr(d.seller)}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
     updateBar(); acctLoad(); return;
   }
   renderPrices(keepFocus);
@@ -191,8 +248,7 @@ function renderPrices(keepFocus){
   const empty = list.filter(p => !cur(p)).length;
   const cats = [{ id:"all", name:"Ҳаммаси" }, ...d.cats.filter(c => d.products.some(p => p.cat === c.id))];
   $("app").innerHTML = `
-    <header><div><h1>🏷 Нархларим</h1><small>${esc(d.seller.name)} · ${esc(d.seller.shop)}</small>${placeLine(d.seller)}</div>
-      <div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div></header>${tabsHTML()}
+    ${hdr(d.seller, `<div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div>`)}
     <button class="chip" data-imp style="margin:0 0 8px;background:var(--ink);color:#fff">📄 Excel / CSV файлдан нарх юклаш</button>
     <button class="chip" data-newp style="margin:0 0 8px;background:var(--card)">➕ Каталогда йўқ товарни таклиф қилиш</button>
     <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9099" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
