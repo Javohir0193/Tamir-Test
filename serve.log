@@ -1,0 +1,122 @@
+ UPDATE  The latest version of `serve` is 14.2.6
+ INFO  Accepting connections at http://0.0.0.0:4173
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /admin.html?390
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 301 in 63 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /admin
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 6 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /xtheme.css
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 5 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /config.js
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /icons.js
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /hidehdr.js
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /pull.js
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /admin-i18n.js
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 6 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 6 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 7 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 7 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 9 ms
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 GET /push.js
+ HTTP  11/1/2026 2:14:59 PM 127.0.0.1 Returned 200 in 5 ms
+ HTTP  11/1/2026 2:15:00 PM 127.0.0.1 GET /sw.js
+ HTTP  11/1/2026 2:15:00 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /admin.html?360
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 301 in 1 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /admin
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 0 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /xtheme.css
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /config.js
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /icons.js
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /hidehdr.js
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /pull.js
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /admin-i18n.js
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 GET /push.js
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:01 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:02 PM 127.0.0.1 GET /sw.js
+ HTTP  11/1/2026 2:15:02 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /admin.html?1100
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 301 in 1 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /admin
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /xtheme.css
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /config.js
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /icons.js
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /hidehdr.js
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /pull.js
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /admin-i18n.js
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 GET /push.js
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:03 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:04 PM 127.0.0.1 GET /sw.js
+ HTTP  11/1/2026 2:15:04 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /admin.html?390
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 301 in 0 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /admin
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /xtheme.css
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /config.js
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /icons.js
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /hidehdr.js
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /pull.js
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /admin-i18n.js
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 GET /push.js
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:18 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:19 PM 127.0.0.1 GET /sw.js
+ HTTP  11/1/2026 2:15:19 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /admin.html?340
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 301 in 1 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /admin
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /xtheme.css
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /config.js
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /icons.js
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /hidehdr.js
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /pull.js
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /admin-i18n.js
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 3 ms
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 GET /push.js
+ HTTP  11/1/2026 2:15:20 PM 127.0.0.1 Returned 200 in 4 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /sw.js
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /admin.html?1100
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 301 in 0 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /admin
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /xtheme.css
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 0 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /config.js
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /icons.js
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /hidehdr.js
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /pull.js
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /admin-i18n.js
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 1 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 GET /push.js
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:21 PM 127.0.0.1 Returned 200 in 2 ms
+ HTTP  11/1/2026 2:15:22 PM 127.0.0.1 GET /sw.js
+ HTTP  11/1/2026 2:15:22 PM 127.0.0.1 Returned 200 in 1 ms
