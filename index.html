@@ -2453,7 +2453,7 @@ async function loadSettings(){
       r.data.bodies.forEach(b => CARS.push({ id:b.id, e:b.e || "🚚", n:b.n, cap:"до " + b.cap + " кг", capKg:+b.cap, hint:hint[b.id] || "", near:+b.near, mid:+b.mid, far:+b.far, p:+b.near }));
       if (!CARS.some(c => c.id === S.car)) S.car = (CARS.find(c => c.id === "l") || CARS[0]).id;
     }
-    S.payOn = r.data.payments_on === "true"; S.payTest = r.data.pay_test_mode === "true"; S.providers = Array.isArray(r.data.providers) ? r.data.providers : [];
+    S.payOn = r.data.payments_on === "true"; S.payTest = r.data.pay_test_mode === "true" && CFG.env === "test";   /* 28: асосий сайтда синов тугмаси йўқ */ S.providers = Array.isArray(r.data.providers) ? r.data.providers : [];
     if (r.data.require_login) S.reqLogin = r.data.require_login !== "false";
     rerender();
   } catch(e){ console.warn("settings", e); }
