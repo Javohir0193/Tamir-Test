@@ -40,6 +40,21 @@ node scripts/check-csp.mjs      # CSP: ҳар саҳифани браузерд�
 
 Худди шу текширувлар ҳар бир PR'да GitHub Actions'да ишлайди (`.github/workflows/ci.yml`), қўшимча gitleaks махфий калитларни қидиради.
 
+CI'да учта иш бор: `checks` (юқоридагилар), `db` (миграциялар + pgTAP) ва `e2e` (Playwright). `main` ҳимояси шу учаласи яшил бўлишини талаб қилади.
+Dependabot (`.github/dependabot.yml`) ҳар душанба GitHub Actions ва `e2e/` кутубхоналарини текшириб PR очади.
+
+### e2e (Playwright)
+
+`e2e/` — харидор сайтини ҳақиқий браузерда текширади: бозор → сават → буюртма → «🧪 Тестовая оплата» → тўланди (телефон ва компьютер ўлчамида).
+Сайт маҳаллий `127.0.0.1/Tamir-Test/` да очилади, Supabase сўровлари `e2e/gateway.mjs` орқали маҳаллий Postgres'даги **ҳақиқий** функцияларга (create_order, pay_test …)
+anon/authenticated роли билан узатилади. Test ва prod Supabase'га ҳеч нарса кетмайди (prod'га уриниш — тест хатоси). Харидор «Telegram орқали кирган» ҳолати `e2e/seed.sql` да.
+
+```bash
+createdb tamir_e2e
+cd e2e && npm ci && npx playwright install chromium
+PGDATABASE=tamir_e2e npm run db && PGDATABASE=tamir_e2e npm test
+```
+
 ## База
 
 `supabase/audit/` — Supabase SQL Editor'да ишга тушириладиган, **фақат ўқийдиган** сўровлар:
@@ -56,7 +71,8 @@ node scripts/check-csp.mjs      # CSP: ҳар саҳифани браузерд�
 
 `supabase/ops/test_reset_data.sql` — **фақат test** базада буюртмалар ва пул ҳаракатини тозалаш (каталог, ходимлар, созламалар қолади, олдин захира олади).
 
-`supabase/tests/` ва `scripts/db-test.sh` — CI ҳар PR'да бўш Postgres'га baseline ва ҳамма миграцияларни қўллайди, орқага қайтаради, яна қўллайди, кейин RLS, ҳуқуқлар ва `search_path` ни текширади. Маҳаллий:
+`supabase/tests/` ва `scripts/db-test.sh` — CI ҳар PR'да бўш Postgres'га baseline ва ҳамма миграцияларни қўллайди, орқага қайтаради, яна қўллайди, кейин RLS, ҳуқуқлар ва `search_path` ни текширади.
+`supabase/tests/pgtap/` — pgTAP тестлари: API шартномаси (сайт чақирадиган функциялар, имзо, ҳуқуқлар) ва асосий оқим (кириш шарти, текширувлар, сервер ҳисоблаган сумма, RLS, «Тестовая оплата», қайта тўлов йўқлиги). Ҳар файл ўзи `rollback` қилади. Маҳаллий учун `postgresql-16-pgtap` ва `pg_prove` керак:
 
 ```bash
 createdb tamir_ci && PGDATABASE=tamir_ci scripts/db-test.sh

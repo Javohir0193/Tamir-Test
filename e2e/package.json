@@ -1,0 +1,14 @@
+{
+  "name": "tamir-e2e",
+  "private": true,
+  "description": "Харидор сайтининг e2e синови (Playwright). Ҳақиқий базага эмас, CI'даги бўш Postgres'га уланади.",
+  "scripts": {
+    "db": "bash setup-db.sh",
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@supabase/supabase-js": "2.45.4",
+    "pg": "8.16.3"
+  }
+}

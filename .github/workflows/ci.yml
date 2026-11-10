@@ -36,7 +36,7 @@ jobs:
         run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 detect --source /repo --redact -v
 
   db:
-    # Миграциялар бўш базага қўлланади, орқага қайтарилади ва яна қўлланади (scripts/db-test.sh).
+    # Миграциялар бўш базага қўлланади, орқага қайтарилади ва яна қўлланади, кейин pgTAP тестлари (scripts/db-test.sh).
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -53,5 +53,51 @@ jobs:
       PGDATABASE: postgres
     steps:
       - uses: actions/checkout@v4
-      - name: Миграциялар (олдинга, орқага, яна олдинга)
+      - name: pgTAP (базага кенгайтма, runner'га pg_prove)
+        run: |
+          docker exec ${{ job.services.postgres.id }} bash -c "apt-get update -qq && apt-get install -y -qq postgresql-16-pgtap > /dev/null"
+          sudo apt-get update -qq && sudo apt-get install -y -qq libtap-parser-sourcehandler-pgtap-perl > /dev/null
+      - name: Миграциялар (олдинга, орқага, яна олдинга) ва pgTAP
         run: scripts/db-test.sh
+
+  e2e:
+    # Харидор сайти браузерда (Playwright): бозор → сават → буюртма → «Тестовая оплата».
+    # База — шу ердаги бўш Postgres (e2e/setup-db.sh); test ва prod Supabase'га сўров кетмайди (e2e/gateway.mjs).
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Кутубхоналар
+        working-directory: e2e
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: База (миграциялар + синов маълумоти)
+        run: bash e2e/setup-db.sh
+      - name: Playwright
+        working-directory: e2e
+        run: npx playwright test
+      - name: Ҳисобот (хато бўлса)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            e2e/playwright-report
+            e2e/test-results
+          retention-days: 7
