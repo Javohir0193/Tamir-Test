@@ -18,7 +18,7 @@
 
 `config.js` сайт манзилига қараб базани ўзи танлайди:
 
-- `tamir-test.netlify.app` → **test** базаси
+- `javohir0193.github.io/Tamir-Test/` (GitHub Pages, `main` дан ўзи янгиланади) ва `tamir-test.netlify.app` → **test** базаси
 - қолган манзиллар → **prod** базаси
 
 `config.js` да фақат очиқ (publishable) калитлар туради. Махфий калитни (secret, service_role) кодга ҳеч қачон ёзманг.
@@ -34,6 +34,7 @@ npx serve .        # кейин http://localhost:3000
 ```bash
 node scripts/check-refs.mjs     # уланган файллар мавжудми
 node scripts/check-inline.mjs   # HTML ичидаги скриптлар синтаксиси
+node scripts/sync-csp-meta.mjs  # _headers даги CSP'ни саҳифалардаги <meta> га ёзади (GitHub Pages учун; CI --check)
 node scripts/check-csp.mjs      # CSP: ҳар саҳифани браузерда очиб, блокланган манба йўқлигини текширади (Playwright керак)
 ```
 
