@@ -8,3 +8,5 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.csv
+e2e/test-results/
+e2e/playwright-report/
