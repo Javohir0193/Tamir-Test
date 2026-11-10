@@ -255,6 +255,7 @@ function renderPrices(keepFocus){
     ${hdr(d.seller, `<div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div>`)}
     <button class="chip" data-imp style="margin:0 0 8px;background:var(--ink);color:#fff">📄 Excel / CSV файлдан нарх юклаш</button>
     <button class="chip" data-newp style="margin:0 0 8px;background:var(--card)">➕ Каталогда йўқ товарни таклиф қилиш</button>
+    <button class="chip" data-myprops style="margin:0 0 8px;background:var(--card)">📋 Менинг таклифларим</button>
     <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A9099" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="Товар қидириш…" value="${esc(S.q)}"></label>
     <div class="chips">${cats.map(c => `<button class="chip" data-cat="${c.id}" aria-pressed="${S.cat === c.id}">${esc(c.name)}</button>`).join("")}</div>
@@ -299,6 +300,7 @@ document.addEventListener("click", e => {
   else if (b.dataset.stf) { S.st = b.dataset.stf; S.shown = PAGE; render(); }
   else if ("imp" in b.dataset) openImp();
   else if ("newp" in b.dataset) openNewP();
+  else if ("myprops" in b.dataset) openMyProps();
   else if ("out" in b.dataset) { dropSes(); loginView(); }
   else if (b.dataset.pct) { S.pct = +b.dataset.pct; render(); }
   else if ("more" in b.dataset) { S.shown += PAGE; render(); }
@@ -386,7 +388,7 @@ function matchProduct(name){
 }
 // Сарлавҳали жадвал (намуна файл каби): ID / Номи / Нарх / Бор устунлари номидан топилади. Сарлавҳасиз — эски усул (ном + нарх).
 const HDR = { id:/^(id|№|код|kod|артикул)$/i, name:/^(ном|номи|nomi|товар|tovar|наимен|назв|name|mahsulot|маҳсулот)/i, spec:/^(тавсиф|tavsif|описан|spec)/i,
-  price:/(нарх|narx|цена|price|сўм|сум)/i, stock:/^(бор|bor|налич|stock|mavjud|мавжуд)/i };
+  price:/(нарх|narx|цена|price|сўм|сум)/i, stock:/^(бор|bor|налич|stock|mavjud|мавжуд)/i, unit:/^(ўлчов|o['ʻ’`]?lchov|ед|единиц|unit)/i };
 function findHdr(cells){
   const h = {}; cells.forEach((c, i) => { const v = String(c).trim(); for (const k in HDR) if (h[k] === undefined && HDR[k].test(v)) { h[k] = i; break; } });
   return h.price !== undefined && (h.name !== undefined || h.id !== undefined) ? h : null;
@@ -398,10 +400,12 @@ function rowsToImp(rows){
   const byId = new Map(S.data.products.map(p => [p.id, p]));
   for (const cells of rows.slice(0, 2000)){
     if (!seen){ seen = true; hdr = findHdr(cells); if (hdr) continue; }
-    let id = 0, name = "", price = 0, stock = true;
+    let id = 0, name = "", price = 0, stock = true, nm = "", sp = "", unit = "";
     if (hdr){
       id = hdr.id !== undefined ? +String(cells[hdr.id] ?? "").replace(/\D/g, "") || 0 : 0;
-      name = String(cells[hdr.name] ?? "").trim() + (hdr.spec !== undefined && cells[hdr.spec] ? " " + String(cells[hdr.spec]).trim() : "");
+      nm = String(cells[hdr.name] ?? "").trim(); sp = hdr.spec !== undefined ? String(cells[hdr.spec] ?? "").trim() : "";
+      unit = hdr.unit !== undefined ? String(cells[hdr.unit] ?? "").trim() : "";
+      name = nm + (sp ? " " + sp : "");
       price = priceOf(cells[hdr.price]); stock = hdr.stock !== undefined ? stockOf(cells[hdr.stock]) : true;
     } else ({ name, price } = pickRow(cells));
     const wasFirst = first; first = false;
@@ -410,7 +414,7 @@ function rowsToImp(rows){
     if (!price){ if (name || id) out.push({ name:name || "#" + id, price:0, m:null, on:false }); continue; }   // нархи бўш қатор: ўтказилади
     const m = id && byId.has(id) ? { p:byId.get(id), score:1 } : name ? matchProduct(name) : null;
     const st = !m ? "no" : m.score >= 0.8 ? "ok" : m.score >= 0.5 ? "warn" : "no";
-    out.push({ name:name || "#" + id, price, stock, m: st === "no" ? null : m, st, on: st === "ok" });
+    out.push({ name:name || "#" + id, nm:nm || name, sp, unit, price, stock, m: st === "no" ? null : m, st, on: st === "ok" });
   }
   return out;
 }
@@ -449,9 +453,10 @@ function impHTML(){
     ${rows.length ? `<p class="hint" style="margin:4px 0 8px">${rows.length} қатор: <b style="color:var(--ok)">${ok} аниқ</b> · <b style="color:var(--warn)">${wr} шубҳали</b> · ${no} топилмади. Шубҳалилар (номи ноаниқ ёки нархи бозордан жуда фарқ қилади) белгиланмаган: текшириб, тўғри бўлса ўзингиз белгиланг.</p>
       <div style="border-radius:12px;overflow:hidden">${rows.map((r, i) => `<label class="irow ${r.m ? "" : "no"}">
         <input type="checkbox" data-impck="${i}" ${r.on ? "checked" : ""} ${r.m ? "" : "disabled"}>
-        <span>${esc(r.name)}<small>${r.m ? "→ " + esc(nameOf(r.m.p)) + " · " + esc(specOf(r.m.p)) : r.price ? "каталогдан топилмади (ўтказиб юборилади)" : "нарх ёзилмаган (ўтказиб юборилади)"}${r.chk && r.chk.st === "warn" ? `<br><span style="color:var(--warn)">⚠ Бозорда ~${fmt(r.chk.med)} сўм, сизники ${r.chk.dev > 0 ? "+" : ""}${r.chk.dev}%</span>` : ""}${r.m && r.stock === false ? " · йўқ" : ""}</small></span>
+        <span>${esc(r.name)}<small>${r.m ? "→ " + esc(nameOf(r.m.p)) + " · " + esc(specOf(r.m.p)) : r.note ? esc(r.note) : r.price ? "каталогдан топилмади: янги товар сифатида таклиф қилишингиз мумкин" : "нарх ёзилмаган (ўтказиб юборилади)"}${r.chk && r.chk.st === "warn" ? `<br><span style="color:var(--warn)">⚠ Бозорда ~${fmt(r.chk.med)} сўм, сизники ${r.chk.dev > 0 ? "+" : ""}${r.chk.dev}%</span>` : ""}${r.m && r.stock === false ? " · йўқ" : ""}</small></span>
         <b class="${r.st || "no"}">${r.price ? fmt(r.price) : ""}</b></label>`).join("")}</div>
-      <div class="acts"><button class="main" data-impapply ${on ? "" : "disabled"}>Нархларга қўйиш (${on})</button></div>
+      <div class="acts"><button class="main" data-impapply ${on ? "" : "disabled"}>Нархларга қўйиш (${on})</button>
+        ${rows.some(r => !r.m && r.price && !r.sent) ? `<button data-impprop>➕ Топилмаганларни таклиф қилиш (${rows.filter(r => !r.m && r.price && !r.sent).length})</button>` : ""}</div>
       <p class="hint">Бу фақат рўйхатга қўяди; ёзиш учун кейин пастдаги «Сақлаш» тугмасини босасиз.</p>` : ""}
   </div></div>`;
 }
@@ -463,6 +468,7 @@ document.addEventListener("click", e => {
   if (!S.imp) return; const t = e.target;
   if (t.hasAttribute("data-impclose") || t.hasAttribute("data-impbg")) closeImp();
   else if (t.hasAttribute("data-imptpl")) tplCSV();
+  else if (t.hasAttribute("data-impprop")) openPropMany();
   else if (t.hasAttribute("data-impgo")){ const ta = $("imptxt"); S.imp.text = ta.value; S.imp.rows = buildImp(ta.value); if (!S.imp.rows.length) toast("Қатор топилмади: ном ва нарх устунлари керак"); impChecked(); }
   else if (t.hasAttribute("data-impapply")){
     let n = 0; for (const r of S.imp.rows) if (r.on && r.m){ setEdit(r.m.p.id, { price:r.price, in_stock:r.stock !== false }); if (S.edits[r.m.p.id]) S.fromFile[r.m.p.id] = true; n++; }
@@ -489,6 +495,56 @@ document.addEventListener("change", e => {
     }).catch(e => toast(e && e.message === "no_inflate" ? "Бу қурилмада .xlsx ўқилмайди: Excel'да «CSV» қилиб сақланг" : e && e.message === "too_big" ? "Файл жуда катта" : "Файлни ўқиб бўлмади (.xlsx ёки .csv керак)"));
   }
 });
+
+// ===== Файлда топилмаган қаторлар → бирданига янги товар таклифи (админ тасдиқлагач каталогга чиқади, нарх шу заҳоти сақланади) =====
+const UNITS = ["дона", "қоп", "кг", "тонна", "м", "м²", "м³", "литр", "рулон", "қадоқ"];
+function openPropMany(){
+  const list = S.imp.rows.map((r, i) => ({ r, i })).filter(x => !x.r.m && x.r.price && !x.r.sent).slice(0, 50);
+  const el = document.createElement("div"); el.id = "pmwrap";
+  el.innerHTML = `<div class="imp" data-pmbg><div>
+    <h2>➕ Янги товарлар таклифи (${list.length})</h2>
+    <p class="hint" style="margin:0 0 8px">Булар каталогда топилмади. Белгиланганлари админга боради: тасдиқлагач мижозларга кўринади, нархингиз шу заҳоти сақланади. Аввал қидирувдан текширинг: товар бошқача номда бўлиши мумкин.</p>
+    <label class="field">Тоифа (ҳаммаси учун)<select id="pm_cat">${S.data.cats.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select></label>
+    <div style="border-radius:12px;overflow:hidden">${list.map(({ r, i }) => `<label class="irow">
+      <input type="checkbox" data-pmck="${i}" checked>
+      <span>${esc(r.nm || r.name)}<small>${esc(r.sp || "")}</small></span>
+      <span style="display:flex;gap:6px;align-items:center"><input data-pmunit="${i}" value="${esc(r.unit || "дона")}" list="pm_units" maxlength="15" style="width:72px;border:1px solid var(--line);border-radius:8px;padding:4px 6px"><b>${fmt(r.price)}</b></span></label>`).join("")}</div>
+    <datalist id="pm_units">${UNITS.map(u => `<option value="${u}">`).join("")}</datalist>
+    <div class="acts"><button class="main" data-pmsend>Админга юбориш</button><button data-pmclose>Ёпиш</button></div>
+  </div></div>`;
+  document.body.appendChild(el);
+}
+document.addEventListener("click", async e => {
+  const t = e.target, w = $("pmwrap"); if (!w) return;
+  if (t.hasAttribute("data-pmclose") || t.hasAttribute("data-pmbg")) w.remove();
+  else if (t.hasAttribute("data-pmsend")){
+    const idx = [...w.querySelectorAll("[data-pmck]")].filter(x => x.checked).map(x => +x.dataset.pmck);
+    if (!idx.length) { toast("Ҳеч нарса белгиланмаган"); return; }
+    const rows = idx.map(i => { const r = S.imp.rows[i]; return { name:r.nm || r.name, spec:r.sp || "", unit:(w.querySelector(`[data-pmunit="${i}"]`).value || "дона").trim(), price:r.price }; });
+    t.disabled = true;
+    try {
+      const res = await call({ action:"propose_many", cat:$("pm_cat").value, rows });
+      let ok = 0; const bad = [];
+      (res.rows || []).forEach((x, k) => { const r = S.imp.rows[idx[k]]; if (x.ok) { ok++; r.sent = true; r.note = "админга юборилди"; } else { r.note = x.error; bad.push(r.nm + ": " + x.error); } });
+      w.remove(); if (S.imp) showImp();
+      toast(bad.length ? `✓ ${ok} та юборилди, ${bad.length} таси йўқ: ${bad[0]}` : `✓ ${ok} та товар админга юборилди`);
+    } catch (err) { t.disabled = false; toast(err.message); }
+  }
+});
+// ===== Менинг таклифларим: кутилмоқда / каталогга қўшилди / рад этилди (сабаби билан) =====
+const PROPST = { wait:["⏳ Кутилмоқда", "var(--warn)"], ok:["✅ Каталогда", "var(--ok)"], no:["❌ Рад этилди", "#C0392B"] };
+async function openMyProps(){
+  const el = document.createElement("div"); el.id = "mpwrap";
+  el.innerHTML = `<div class="imp" data-mpbg><div><h2>📋 Менинг таклифларим</h2><div id="mplist" class="hint">Юкланмоқда…</div><div class="acts"><button data-mpclose>Ёпиш</button></div></div></div>`;
+  document.body.appendChild(el);
+  try {
+    const { list = [] } = await call({ action:"s_proposals" });
+    $("mplist").innerHTML = list.length ? `<div style="border-radius:12px;overflow:hidden">${list.map(x => `<div class="irow" style="grid-template-columns:1fr auto">
+      <span>${esc(x.name)}<small>${esc([x.spec, x.unit].filter(Boolean).join(" · "))}${x.st === "no" && x.reason ? `<br>Сабаб: ${esc(x.reason)}` : ""}</small></span>
+      <b style="color:${PROPST[x.st][1]}">${PROPST[x.st][0]}</b></div>`).join("")}</div>` : "Ҳали таклиф юбормагансиз.";
+  } catch (err) { $("mplist").textContent = err.message; }
+}
+document.addEventListener("click", e => { const w = $("mpwrap"); if (w && (e.target.hasAttribute("data-mpclose") || e.target.hasAttribute("data-mpbg"))) w.remove(); });
 
 // ===== Каталогда йўқ янги товарни таклиф қилиш: админга бориб, тасдиқлангач каталогга чиқади (нархингиз шу заҳоти сақланади) =====
 function openNewP(){

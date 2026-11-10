@@ -132,7 +132,7 @@ const stName = o => (STAGE[o.mode] || STAGE.delivery)[Math.min(o.stage, (STAGE[o
 const stMax = o => (STAGE[o.mode] || STAGE.delivery).length - 1;
 const PAY = { none:["Онлайн тўловсиз", "m"], unpaid:["Тўлов кутилмоқда", "y"], paid:["Тўланган", "g"], expired:["Муддати ўтди", "r"], refunded:["Қайтарилган", "m"] };
 const payPill = o => { const p = PAY[o.pay_status] || ["—", "m"]; return `<span class="pill ${p[1]}">${p[0]}</span>`; };
-const ERR = { "wrong code":"Код нотўғри", admin_login_required:"Бу Telegram ҳисоб админ эмас", not_paid:"Буюртма тўланмаган", bad_amount:"Сумма нотўғри", too_much:"Тўланган суммадан кўп", reserve_too_much:"Захирадан кўп", bad_value:"Қиймат нотўғри", not_allowed:"Бу созламани бу ерда ўзгартириб бўлмайди", not_pending:"Аллақачон бажарилган", forbidden:"Бу амал учун рухсатингиз йўқ", pin_not_set:"PIN ҳали ўрнатилмаган", bad_pin:"PIN 6–12 та рақамдан иборат бўлиши керак", locked:"Кўп хато уриниш. 15 дақиқа кутинг", over_limit:"Сизнинг лимитингиздан катта сумма. Бухгалтер ёки эга яратсин", reason_required:"Сабабни ёзинг", already_cancelled:"Буюртма аллақачон бекор қилинган", already_done:"Етказилган буюртмани бекор қилиб бўлмайди", second_approval:"Катта сумма: бошқа админ тасдиқлаши керак", person_not_active:"Одам фаол эмас ёки роли мос эмас", profile_not_found:"Бундай рақамли одам сайтга ҳали кирмаган", cannot_self:"Ўзингизни блоклаб ёки эгаликдан ол бўлмайди", over:"", cannot_revert:"Бу ўзгаришни қайтариб бўлмайди", over_balance:"Қолдиқдан кўп сумма", too_many_rows:"Қатор кўп (2000 гача)", not_finished:"Ариза ҳали тўлиқ юборилмаган, тасдиқлаб бўлмайди", bad_card:"Карта рақами 16 та рақам бўлиши керак", holder_required:"Карта эгасининг исмини ёзинг" };
+const ERR = { "wrong code":"Код нотўғри", admin_login_required:"Бу Telegram ҳисоб админ эмас", not_paid:"Буюртма тўланмаган", bad_amount:"Сумма нотўғри", too_much:"Тўланган суммадан кўп", reserve_too_much:"Захирадан кўп", bad_value:"Қиймат нотўғри", not_allowed:"Бу созламани бу ерда ўзгартириб бўлмайди", not_pending:"Аллақачон бажарилган", forbidden:"Бу амал учун рухсатингиз йўқ", pin_not_set:"PIN ҳали ўрнатилмаган", bad_pin:"PIN 6–12 та рақамдан иборат бўлиши керак", locked:"Кўп хато уриниш. 15 дақиқа кутинг", over_limit:"Сизнинг лимитингиздан катта сумма. Бухгалтер ёки эга яратсин", reason_required:"Сабабни ёзинг", already_cancelled:"Буюртма аллақачон бекор қилинган", already_done:"Етказилган буюртмани бекор қилиб бўлмайди", second_approval:"Катта сумма: бошқа админ тасдиқлаши керак", person_not_active:"Одам фаол эмас ёки роли мос эмас", profile_not_found:"Бундай рақамли одам сайтга ҳали кирмаган", cannot_self:"Ўзингизни блоклаб ёки эгаликдан ол бўлмайди", over:"", cannot_revert:"Бу ўзгаришни қайтариб бўлмайди", over_balance:"Қолдиқдан кўп сумма", too_many_rows:"Қатор кўп (2000 гача)", not_finished:"Ариза ҳали тўлиқ юборилмаган, тасдиқлаб бўлмайди", bad_card:"Карта рақами 16 та рақам бўлиши керак", holder_required:"Карта эгасининг исмини ёзинг", bad_category:"Бундай тоифа йўқ" };
 const errText = e => { const m = (e && e.message) || String(e); for (const k in ERR) if (m.indexOf(k) >= 0) return ERR[k]; return m; };
 
 async function rpc(name, args){
@@ -478,9 +478,14 @@ function pricesView(){
   const pv = S.prev;
   const okN = pv ? pv.data.filter(r => r.st === "ok" || r.st === "warn").length : 0;
   const pr = S.props || [];
-  return `${pr.length ? `<div class="card"><h2>🆕 Янги товар таклифлари (${pr.length})</h2><p class="mu" style="font-size:13px">Дўкон ёки йиғувчи каталогда йўқ товарни таклиф қилган. Ботдаги «Каталогга қўшиш / Рад этиш» билан бир хил: қайси биридан ҳал қилсангиз ҳам бўлади.</p>
-    ${pr.map(x => `<div class="card" style="border:1px solid var(--ln)"><b>${esc(x.name)}</b> <small class="mu">${esc(x.spec || "")} · ${esc(x.unit)} · ${esc(x.cat)}</small>
+  const pcats = [...new Set((d.products || []).map(p => p.cat))].sort();
+  return `${pr.length ? `<div class="card"><h2>🆕 Янги товар таклифлари (${pr.length})</h2><p class="mu" style="font-size:13px">Дўкон ёки йиғувчи каталогда йўқ товарни таклиф қилган. Қўшишдан олдин номи, тавсифи, ўлчови ва тоифасини тузатиш мумкин. Рад этишда сабабини ёзинг: таклиф қилганга Telegram'да боради. Ботдаги тугмалар ҳам шу қоида билан ишлайди.</p>
+    ${pr.map(x => `<div class="card" style="border:1px solid var(--ln)" data-np="${x.id}">
+      <div class="mu" style="font-size:12px">${x.by ? esc(x.by) : "—"}${x.at ? " · " + dt(x.at) : ""}</div>
+      <div class="row"><input data-npf="name" value="${esc(x.name)}" maxlength="80" style="flex:2" aria-label="Номи"><input data-npf="spec" value="${esc(x.spec || "")}" maxlength="80" style="flex:2" aria-label="Тавсиф" placeholder="тавсиф"></div>
+      <div class="row"><input data-npf="unit" value="${esc(x.unit)}" maxlength="15" style="flex:1" aria-label="Ўлчов"><select data-npf="cat" style="flex:1" aria-label="Тоифа">${[...new Set([x.cat, ...pcats])].map(c => `<option ${c === x.cat ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>
       <div class="mu" style="font-size:13px">${x.offers.length ? x.offers.map(f => `${esc(f.shop)}: ${fmt(f.price)} сўм`).join(" · ") : x.base ? `Нарх: ${fmt(x.base)} сўм` : "Нарх кўрсатилмаган"}</div>
+      ${(x.similar || []).length ? `<div style="font-size:13px;color:var(--warn)">⚠️ Каталогда ўхшаш: ${x.similar.map(q => esc(`${q.name} ${q.spec || ""}`.trim()) + ` <small class="mu">#${q.id}</small>`).join("; ")}</div>` : ""}
       <div class="row" style="margin-top:8px"><button class="btn sm" data-npd="${x.id}" data-ok="1">✅ Каталогга қўшиш</button><button class="btn alt sm" data-npd="${x.id}" data-ok="0">❌ Рад этиш</button></div></div>`).join("")}</div>` : ""}
   <div class="card"><h2>Нархларни юклаш (Excel / CSV)</h2>
     <div class="row"><select id="pshop" style="flex:1">${shops.map(x => `<option value="${x.id}" ${String(x.id) === S.pshop ? "selected" : ""}>${esc(x.name)}${x.row ? " · " + esc(x.row) : ""} (${x.prices} та нарх)</option>`).join("") || "<option>Дўкон йўқ</option>"}</select></div>
@@ -722,8 +727,12 @@ document.addEventListener("click", async e => {
   if (t.dataset.open) { e.preventDefault(); closeSheet(); openOrder(t.dataset.open); return; }
   if ("x" in t.dataset) { closeSheet(); return; }
   if (t.dataset.go) { S.tab = t.dataset.go; await tabData(); draw(); return; }
-  if (t.dataset.npd) { const ok = t.dataset.ok === "1"; if (!ok && !confirm("Таклиф рад этилсинми? Унинг нархлари ўчади.")) return;
-    await act(async () => { await rpc("admin_product_decide", { p_id:Number(t.dataset.npd), p_ok:ok }); S.props = await rpc("admin_product_proposals"); S.prices = await rpc("admin_prices"); draw(); }, ok ? "Каталогга қўшилди" : "Рад этилди"); return; }
+  if (t.dataset.npd) { const ok = t.dataset.ok === "1", id = Number(t.dataset.npd);
+    let reason = null; const patch = {};
+    if (!ok) { reason = prompt("Рад этиш сабаби (таклиф қилганга боради). Унинг нархлари ўчади:", ""); if (reason === null) return; if (reason.trim().length < 3) { alert("Сабабни ёзинг (камида 3 ҳарф)."); return; } }
+    else { const x = (S.props || []).find(p => p.id === id), card = t.closest("[data-np]");
+      if (x && card) card.querySelectorAll("[data-npf]").forEach(f => { const k = f.dataset.npf, v = f.value.trim(); if (v !== String(x[k] ?? "")) patch[k] = v; }); }
+    await act(async () => { await rpc("admin_product_decide", { p_id:id, p_ok:ok, p_reason:reason, p_patch:patch }); S.props = await rpc("admin_product_proposals"); S.prices = await rpc("admin_prices"); draw(); }, ok ? "Каталогга қўшилди" : "Рад этилди"); return; }
   if (t.dataset.pay) { const ok = t.dataset.ok === "1"; let note = null;
     if (!ok) { note = prompt("Рад этиш сабаби:"); if (!note) return; } else if (!confirm("Пулни дўкон картасига ўтказдингизми?")) return;
     await act(async () => { await rpc("admin_payout_decide", { p_id:Number(t.dataset.pay), p_ok:ok, p_note:note }); await new Promise(r => setTimeout(r, 1500)); await load(); S.pay = await rpc("admin_payouts"); draw(); }, ok ? "Белгиланди" : "Рад этилди"); return; }

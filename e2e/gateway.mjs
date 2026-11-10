@@ -93,6 +93,20 @@ export function createGateway(pool = new pg.Pool()) {
       const r = await asService("select public.seller_offers_check($1, $2::jsonb) as v", [sid, JSON.stringify(body.rows || [])]);
       return { status: 200, body: { rows: r.rows[0].v } };
     }
+    if (a === "propose_many") {   // ботдаги каби: ҳар қатор product_propose (30-миграция), хатоси қаторга ёзилади (админга Telegram хабари бу ерда йўқ)
+      const out = [];
+      for (const x of (body.rows || []).slice(0, 50)) {
+        try {
+          const r = await asService("select public.product_propose($1, $1, $2, $3, $4, $5, $6) as v", [sid, x.name, x.spec || "", x.cat || body.cat, x.unit, Math.round(Number(x.price)) || 0]);
+          out.push({ ok: true, id: r.rows[0].v.id });
+        } catch (e) { out.push({ ok: false, error: e.message }); }
+      }
+      return { status: 200, body: { rows: out } };
+    }
+    if (a === "s_proposals") {
+      const r = await asService("select public.seller_proposals($1) as v", [sid]);
+      return { status: 200, body: { list: r.rows[0].v } };
+    }
     if (a === "s_orders") return { status: 200, body: { orders: [], sc: false } };
     if (a === "load") {
       const r = await pool.query(`select jsonb_build_object(
