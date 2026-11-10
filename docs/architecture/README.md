@@ -230,6 +230,20 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
   (RFC 8291), `push_subs` RLS yopiq, bir kishiga ko'pi bilan 10 ta qurilma, eskirgan obunalar (404/410) o'chadi.
 - **Oqibat:** migratsiya 27 (`.down.sql` bilan), bot va sayt alohida yangilanadi. Tartib: avval bot, keyin SQL, keyin sayt.
 
+### ADR-012. Katalog qidiruvi: PostgreSQL (pg_trgm), OpenSearch hozircha yo'q
+
+- **Kontekst (2026-11-10):** katalogda ~200 tovar (keyin bir necha ming), qidiruv kirill/lotin, xato yozilgan so'z va
+  ko'p so'zli so'rovni («цемент 400») topishi, bozor va toifa bo'yicha filtrlashi kerak. Jamoa 1 kishi, budjet 0.
+- **Variantlar:**
+  - A) PostgreSQL: `search_key_norm` (kirill/lotin bitta kalit) + `pg_trgm` GIN indeksi, har so'z alohida
+    (`like '%so'z%'` yoki `word_similarity ≥ 0.5`). Qo'shimcha server yo'q, RLS/huquqlar bitta joyda, tranzaksiya bilan mos.
+  - B) Postgres full-text (`tsvector`): o'zbek tili uchun stemmer yo'q, lotin/kirill aralash va xato so'zni topmaydi.
+  - C) OpenSearch/Elasticsearch: morfologiya, sinonim, facet'lar kuchli; lekin alohida klaster (≥2 GB RAM, oyiga pul),
+    sinxronlash (CDC/outbox), monitoring va xavfsizlik ishi. Hozirgi hajmda foydasi sezilmaydi.
+- **Qaror:** A. `catalog_search(q, cat, market, sort, limit)` (migratsiya 31), eski `search_products` saqlanadi.
+- **Qachon qayta ko'riladi:** 10 000+ faol tovar, qidiruv p95 > 150 ms, yoki sinonim/facet (brend, o'lcham bo'yicha
+  hisoblagich) kerak bo'lsa. Shunda C: `products` o'zgarishlari outbox jadvali orqali OpenSearch'ga, sayt API'si o'zgarmaydi.
+
 ---
 
 ## 5. Modullar (monolit ichida)

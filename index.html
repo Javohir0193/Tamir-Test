@@ -2828,14 +2828,16 @@ function sHit(p, q){
   h = sNorm(h); if (w.every(x => h.includes(x))) return true;
   return !!(S.fz && S.fz.q === q.trim() && S.fz.ids.has(p.id));   // база топган (хато ёзилган / лотинча) сўзлар
 }
-// Қидирув базада (search_products): кирилл/лотин ва хато ёзилган сўзни ҳам топади. Тармоқ бўлмаса — оддий қидирув ишлайверади.
+// Қидирув базада (catalog_search, захира: search_products): кирилл/лотин ва хато ёзилган сўзни ҳам топади. Тармоқ бўлмаса — оддий қидирув ишлайверади.
 function fzSearch(){
   clearTimeout(S.fzT);
   const q = (S.q || "").trim();
   if (q.length < 2 || !sb || !dbReady || (S.fz && S.fz.q === q)) return;
   S.fzT = setTimeout(async () => {
     try {
-      const r = await sb.rpc("search_products", { p_q:q, p_limit:60 });
+      // catalog_search (31-миграция): ҳар сўз алоҳида («цемент 400» → «Цемент М400»); функция йўқ бўлса — эски search_products
+      let r = await sb.rpc("catalog_search", { p_q:q, p_limit:60 });
+      if (r.error) r = await sb.rpc("search_products", { p_q:q, p_limit:60 });
       if (r.error || !Array.isArray(r.data) || (S.q || "").trim() !== q) return;
       S.fz = { q, ids:new Set(r.data.map(x => x.id)) };
       if (S.tab === "catalog" && !S.pid){ if (DK()) renderCatalog(); else { const b = document.getElementById("catbody"); if (b) b.innerHTML = catBody(); } }
