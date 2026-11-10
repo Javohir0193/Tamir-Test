@@ -34,6 +34,7 @@ npx serve .        # кейин http://localhost:3000
 ```bash
 node scripts/check-refs.mjs     # уланган файллар мавжудми
 node scripts/check-inline.mjs   # HTML ичидаги скриптлар синтаксиси
+node scripts/check-csp.mjs      # CSP: ҳар саҳифани браузерда очиб, блокланган манба йўқлигини текширади (Playwright керак)
 ```
 
 Худди шу текширувлар ҳар бир PR'да GitHub Actions'да ишлайди (`.github/workflows/ci.yml`), қўшимча gitleaks махфий калитларни қидиради.
@@ -67,3 +68,8 @@ createdb tamir_ci && PGDATABASE=tamir_ci scripts/db-test.sh
 1. Ҳар бир ўзгариш алоҳида шохчада ва PR орқали.
 2. Аввал test сайтда текширилади, кейин prod.
 3. Базадаги ҳар бир ўзгариш орқага қайтариш (down) скрипти билан.
+
+## Синов тўлови (pay_test)
+
+«🧪 Тестовая оплата» фақат **test** базада ишлайди: `app_settings.pay_test_mode = 'true'` **ва** `app_settings.app_env = 'test'` (28-миграция).
+`app_env` ни фақат test базада `supabase/ops/mark_test_env.sql` билан қўйинг. Prod базада `app_env` бўлмаса синов тўлови ёпиқ.
