@@ -29,6 +29,9 @@ jobs:
       - name: Уланган файллар мавжудлиги
         run: node scripts/check-refs.mjs
 
+      - name: CSP мета-тег _headers билан бир хил (GitHub Pages учун)
+        run: node scripts/sync-csp-meta.mjs --check
+
       - name: Махфий калитлар (gitleaks)
         run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.18.4 detect --source /repo --redact -v
 

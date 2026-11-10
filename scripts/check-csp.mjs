@@ -1,7 +1,8 @@
 // CSP текшируви: _headers даги сарлавҳалар билан ҳар бир саҳифани Chromium'да очади ва браузер блоклаган
 // (securitypolicyviolation) нарсаларни санайди. Ташқи манбалар (CDN, Supabase, Telegram, шрифтлар) тармоққа
 // чиқмасдан сохта жавоб билан алмаштирилади, аммо CSP уларни ҳақиқий манзили бўйича текширади.
-// Ишлатиш:  node scripts/check-csp.mjs [кутубхоналар_папкаси]
+// Ишлатиш:  node scripts/check-csp.mjs [--pages] [кутубхоналар_папкаси]
+//   --pages — GitHub Pages каби сарлавҳасиз ишга туширади (фақат мета-тег CSP текширилади)
 //   кутубхоналар_папкаси (ихтиёрий) — npm pack қилинган supabase-js@2.45.4 ва leaflet@1.9.4 турган жой;
 //   берилмаса сохта кутубхона ишлатилади (CSP учун етарли, лекин харита каби динамик қисмлар текширилмайди).
 // Playwright ва Chromium керак (CI'да йўқ, маҳаллий текширув).
@@ -12,7 +13,8 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const LIBS = process.argv[2] || "";
+const PAGES_MODE = process.argv.includes("--pages");     // GitHub Pages каби: сарлавҳасиз, фақат саҳифадаги <meta> CSP
+const LIBS = process.argv.slice(2).find((a) => !a.startsWith("--")) || "";
 const require = createRequire(import.meta.url);
 let chromium;
 try { ({ chromium } = require("playwright")); } catch { ({ chromium } = await import("playwright")); }
@@ -44,7 +46,7 @@ const server = createServer((req, res) => {
   if (p === "/") p = "/index.html";
   const f = join(ROOT, p);
   if (!f.startsWith(ROOT) || !existsSync(f)) { res.writeHead(404); res.end(); return; }
-  res.writeHead(200, { "content-type": TYPES[extname(f)] || "application/octet-stream", ...headersFor(p) });
+  res.writeHead(200, { "content-type": TYPES[extname(f)] || "application/octet-stream", ...(PAGES_MODE ? {} : headersFor(p)) });
   res.end(readFileSync(f));
 });
 await new Promise((r) => server.listen(0, "127.0.0.1", r));
@@ -88,7 +90,8 @@ for (const path of PAGES) {
   page.on("console", (m) => { if (m.type() === "error" && /Content Security Policy/i.test(m.text())) v.push(m.text().slice(0, 200)); });
   await stubs(page);
   const res = await page.goto(BASE + path, { waitUntil: "load" });
-  const csp = res.headers()["content-security-policy"] || "";
+  const csp = PAGES_MODE ? await page.$eval('meta[http-equiv="Content-Security-Policy"]', (m) => m.content).catch(() => "")
+    : res.headers()["content-security-policy"] || "";
   if (!csp) { console.log(`✗ ${path}: CSP сарлавҳаси йўқ`); bad++; }
   // Ҳар бир тугма/табни бир марта босиш — динамик юкланадиган манбалар (харита, xlsx) ҳам текширилсин.
   await page.waitForTimeout(3000);
@@ -109,9 +112,9 @@ for (const path of PAGES) {
   await stubs(page);                    // кейин қўшилган route устун туради
   await page.route("https://evil.example/", (r) => r.fulfill({ status: 200, contentType: "text/html", body: `<iframe id=a src="${BASE}/admin.html"></iframe><iframe id=b src="${BASE}/seller.html"></iframe>` }));
   await page.goto("https://evil.example/"); await page.waitForTimeout(1500);
-  for (const id of ["a", "b"]) {
+  for (const id of PAGES_MODE ? ["a"] : ["a", "b"]) {        // мета-тег frame-ancestors'ни билмайди: Pages'да фақат админ ҳимояланади (JS)
     const fr = await (await page.$("#" + id)).contentFrame();
-    const loaded = fr && (await fr.evaluate(() => location.href).catch(() => "")).startsWith(BASE);
+    const loaded = fr && (await fr.evaluate(() => location.href.startsWith(location.origin) && getComputedStyle(document.documentElement).display !== "none").catch(() => false));
     console.log(`${loaded ? "✗" : "✓"} бегона сайт ичида ${id === "a" ? "admin" : "seller"}: ${loaded ? "ОЧИЛДИ" : "блокланди"}`);
     if (loaded) bad++;
   }
