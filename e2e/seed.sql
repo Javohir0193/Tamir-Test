@@ -13,6 +13,8 @@ insert into public.sellers (id, name, role, status, shop, market_id) overriding 
   (9002, 'E2E дўкон 2', 'seller', 'active', 'E2E-2', 901);
 -- 200 «Бетон М200», 201 «Щебень» (catalog.js ва seed_catalog_from_js.sql дан). Энг арзон: 200 → дўкон 2, 201 → дўкон 1.
 insert into public.offers (seller_id, product_id, price) values (9001, 200, 700000), (9002, 200, 690000), (9001, 201, 15000);
+-- Дўкон кабинети (seller-import.spec): 204 «Пескобетон» нинг бозор нархи (дўкон 2) — файлдаги 10 баравар қимматни огоҳлантириш учун.
+insert into public.offers (seller_id, product_id, price) values (9002, 204, 100000);
 
 insert into auth.users (id) values ('00000000-0000-4000-8000-00000000e2e0');
 insert into public.profiles (id, name, phone) overriding system value values (9001, 'E2E Харидор', '+998901112233');

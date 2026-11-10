@@ -9,6 +9,7 @@ import { createRequire } from "node:module";
 export const TEST_HOST = "mlhhmohaxpetptmrtqrz.supabase.co";
 export const PROD_HOST = "agajmytkjpkihvaurqij.supabase.co";
 export const E2E_UID = "00000000-0000-4000-8000-00000000e2e0";   // seed.sql билан бир хил
+export const E2E_SELLER_ID = 9001, E2E_SELLER_SES = "e2e-seller-session";   // seed.sql даги дўкон 1 ва унинг браузер сессияси (сохта)
 const CDN_SUPABASE = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js";
 const require = createRequire(import.meta.url);
 const SUPABASE_UMD = readFileSync(require.resolve("@supabase/supabase-js/dist/umd/supabase.js"));
@@ -72,6 +73,54 @@ export function createGateway(pool = new pg.Pool()) {
     return { status: 200, body: r.rows[0].v };
   }
 
+  // Дўкон кабинети (seller.html) боти — tg-bot Edge Function (у private репода) ўрнини босувчи ОДДИЙ нусха, фақат e2e учун.
+  // Сессия: x-sel-session = E2E_SELLER_SES → seed.sql даги дўкон 9001. Нарх ёзиш ва текшириш — ботдаги каби
+  // ҳақиқий SQL функциялар (seller_offers_save / seller_offers_check, 29-миграция) service_role билан.
+  async function asService(sql, params = []) {
+    const c = await pool.connect();
+    try { await c.query("begin"); await c.query("set local role service_role"); const r = await c.query(sql, params); await c.query("commit"); return r; }
+    catch (e) { await c.query("rollback").catch(() => {}); throw e; }
+    finally { c.release(); }
+  }
+  async function sellerBot(headers, body) {
+    if (headers["x-sel-session"] !== E2E_SELLER_SES) return { status: 401, body: { error: "auth" } };
+    const sid = E2E_SELLER_ID, a = body.action;
+    if (a === "save") {
+      const r = await asService("select public.seller_offers_save($1, $2::jsonb, 'seller') as v", [sid, JSON.stringify(body.offers || [])]);
+      return { status: 200, body: { ok: true, saved: (body.offers || []).length, ...r.rows[0].v } };
+    }
+    if (a === "imp_check") {
+      const r = await asService("select public.seller_offers_check($1, $2::jsonb) as v", [sid, JSON.stringify(body.rows || [])]);
+      return { status: 200, body: { rows: r.rows[0].v } };
+    }
+    if (a === "propose_many") {   // ботдаги каби: ҳар қатор product_propose (30-миграция), хатоси қаторга ёзилади (админга Telegram хабари бу ерда йўқ)
+      const out = [];
+      for (const x of (body.rows || []).slice(0, 50)) {
+        try {
+          const r = await asService("select public.product_propose($1, $1, $2, $3, $4, $5, $6) as v", [sid, x.name, x.spec || "", x.cat || body.cat, x.unit, Math.round(Number(x.price)) || 0]);
+          out.push({ ok: true, id: r.rows[0].v.id });
+        } catch (e) { out.push({ ok: false, error: e.message }); }
+      }
+      return { status: 200, body: { rows: out } };
+    }
+    if (a === "s_proposals") {
+      const r = await asService("select public.seller_proposals($1) as v", [sid]);
+      return { status: 200, body: { list: r.rows[0].v } };
+    }
+    if (a === "s_orders") return { status: 200, body: { orders: [], sc: false } };
+    if (a === "load") {
+      const r = await pool.query(`select jsonb_build_object(
+          'seller', (select jsonb_build_object('name', name, 'shop', shop, 'categories', categories, 'market', null, 'row', row_no) from public.sellers where id = $1),
+          'cats', (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'name', name_uz) order by sort, id), '[]') from public.categories),
+          'products', (select coalesce(jsonb_agg(jsonb_build_object('id', p.id, 'cat', p.cat, 'name', p.name, 'spec', p.spec, 'unit', p.unit, 'emoji', p.emoji,
+                 'best', (select min(o.price) from public.offers o where o.product_id = p.id and o.in_stock and o.seller_id <> $1)) order by p.id), '[]')
+               from public.products p where p.active),
+          'offers', (select coalesce(jsonb_object_agg(product_id, jsonb_build_object('price', price, 'in_stock', in_stock)), '{}') from public.offers where seller_id = $1)) as v`, [sid]);
+      return { status: 200, body: r.rows[0].v };
+    }
+    return { status: 400, body: { error: "e2e: action йўқ: " + a } };
+  }
+
   async function handle(route) {
     const req = route.request(), url = new URL(req.url());
     const json = (status, body) => route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(body) });
@@ -86,6 +135,9 @@ export function createGateway(pool = new pg.Pool()) {
       }
       if (path === "/auth/v1/user") return json(200, { id: E2E_UID, aud: "authenticated", role: "authenticated", is_anonymous: true });
       if (path === "/auth/v1/logout") return route.fulfill({ status: 204 });
+      if (path === "/functions/v1/tg-bot" && req.method() === "POST") {
+        const r = await sellerBot(req.headers(), req.postData() ? JSON.parse(req.postData()) : {}); return json(r.status, r.body);
+      }
       const user = who(req.headers());
       let m = path.match(/^\/rest\/v1\/rpc\/([a-z0-9_]+)$/);
       if (m) { const r = await rpc(user, m[1], req.postData() ? JSON.parse(req.postData()) : {}); return json(r.status, r.body); }
