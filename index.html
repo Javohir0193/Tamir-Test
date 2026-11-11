@@ -2569,7 +2569,7 @@ async function initDB(){
   } catch(e){ console.error("initDB", e); dbReady = false; }
 }
 // Заказ создаёт СЕРВЕР (create_order): цены, доставку и сумму считает база. Телефон присылает только товары и количество.
-const ORDER_ERR = { login_required:"Сначала войдите через Telegram.", too_many:"Слишком много заказов за час. Попробуйте позже.",
+const ORDER_ERR = { account_blocked:"Аккаунт заблокирован. Напишите в поддержку.", login_required:"Сначала войдите через Telegram.", too_many:"Слишком много заказов за час. Попробуйте позже.",
   market_required:"Выберите рынок, где собрать заказ (вверху страницы).", address_required:"Укажите адрес объекта.",
   phone_required:"Укажите телефон, чтобы мы могли связаться.", name_required:"Укажите имя.", empty_cart:"Корзина пуста.",
   min_order:"Сумма товаров меньше минимальной для заказа.",
@@ -2697,7 +2697,7 @@ function helpBox(o){
 // Ставить оценку можно только владельцу заказа, после доставки и в течение 30 дней. Все проверки — на сервере.
 const RATE = { open:{}, data:{}, pick:{}, text:{} };
 const RATE_ERR = { not_delivered:"Оценить можно после получения заказа", cancelled:"Заказ отменён", too_late:"Срок для оценки прошёл (30 дней)",
-  own_shop:"Нельзя оценивать свой магазин", too_fast:"Слишком много оценок. Попробуйте позже.", not_in_order:"Этого нет в заказе" };
+  own_shop:"Нельзя оценивать свой магазин", account_blocked:"Аккаунт заблокирован. Напишите в поддержку.", too_fast:"Слишком много оценок. Попробуйте позже.", not_in_order:"Этого нет в заказе" };
 document.addEventListener("input", e => { const t = e.target; if (t && t.dataset && t.dataset.ratet) RATE.text[t.dataset.ratet] = t.value; });
 function rateBox(o){
   if (S.seller || !S.profile || !dbReady || o.cancelled || o.payStatus === "expired" || o.stage < (o.mode === "pickup" ? 3 : 4)) return "";   // сервер (review_window) билан бир хил

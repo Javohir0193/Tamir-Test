@@ -260,6 +260,20 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
 - **Oqibat:** sayt pickup uchun 5 bosqich ko'rsatadi («Выдан» = 4), server esa 3 ni oxirgi deb hisoblaydi (eski nomuvofiqlik).
   Baholash server qoidasiga ergashadi; bosqichlarni bitta ro'yxatga keltirish alohida vazifa.
 
+### ADR-014. Antifrod: SQL qoidalari + admin qarori, avtomatik bloklash yo'q
+
+- **Kontekst (2026-11-11):** ko'p buyurtma berib to'lamaslik, bitta telefon bir nechta akkauntda, tez-tez «olmadim»
+  shikoyati, baholarni sun'iy ko'tarish — hech kim ko'rmaydi. `blacklist` belgisi bor edi, lekin buyurtmani to'xtatmasdi.
+- **Variantlar:**
+  - A) Tashqi xizmat (Sift, SEON). Kuchli, lekin pullik va shaxsiy ma'lumot chet elga chiqadi (mahalliy saqlash talabi).
+  - B) SQL qoidalari (`fraud_scan`, pg_cron har 10 daqiqa) + `fraud_flags` + admin qarori. Bepul, tushunarli, sozlanadi.
+  - C) ML skoring. Ma'lumot hali kam, hozir foydasiz.
+- **Qaror:** B (migratsiya 33). 7 qoida, chegaralar `app_settings.fraud_*`. Har belgi `key` bo'yicha bir marta (soat/kun/oy
+  oynasi bilan), Telegram'da adminga xabar. Tizim faqat belgilaydi; «Фирибгар + блок» ni admin bosadi → `blacklist`,
+  shundan keyin `orders`/`reviews` ga BEFORE INSERT trigger yangi yozuvni `account_blocked` bilan to'xtatadi.
+- **Qachon qayta ko'riladi:** kuniga 100+ belgi yoki to'lov firibgarligi (karta) paydo bo'lsa — to'lov provayderining
+  3-D Secure / antifrod natijasini `payments.raw` dan qoidaga qo'shish, keyin C.
+
 ---
 
 ## 5. Modullar (monolit ichida)
