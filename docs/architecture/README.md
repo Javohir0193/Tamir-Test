@@ -244,6 +244,22 @@ Har ADR: kontekst → variantlar → qaror → oqibat.
 - **Qachon qayta ko'riladi:** 10 000+ faol tovar, qidiruv p95 > 150 ms, yoki sinonim/facet (brend, o'lcham bo'yicha
   hisoblagich) kerak bo'lsa. Shunda C: `products` o'zgarishlari outbox jadvali orqali OpenSearch'ga, sayt API'si o'zgarmaydi.
 
+### ADR-013. Reyting va sharhlar: faqat haqiqiy xaridor, bitta `reviews` jadvali
+
+- **Kontekst (2026-11-11):** xaridor do'konni faqat narx bo'yicha tanlaydi, sifat haqida signal yo'q. Soxta baho
+  (o'z do'koniga, buyurtmasiz, raqobatchiga) ishonchni buzadi va antifrod uchun ham manba bo'ladi.
+- **Variantlar:**
+  - A) Ochiq sharhlar (har kim yozadi) + moderatsiya. Tez to'ladi, lekin soxta sharhga ochiq, moderatsiya og'ir.
+  - B) Faqat yetkazilgan buyurtma egasi, buyurtmadagi do'kon/tovarga, bir buyurtmada bitta baho; qoidalar SQL'da.
+  - C) B + do'kon javobi, rasm, foydali/foydasiz ovozlari. Keyingi qadam, hozir kerak emas.
+- **Qaror:** B (migratsiya 32). `reviews (order_no, profile_id, seller_id | product_id, rating 1–5, body, status)`,
+  `review_save` ichida: egasi, `stage` ≥ oxirgi bosqich (pickup 3, delivery 4 — `admin_order_cancel` va dashboard bilan bir
+  xil), bekor qilinmagan, `review_days` (30) kun ichida, o'z do'koniga emas (profil `tg_id` = do'kon `tg_chat_id`).
+  Havola/telefon/@username bo'lgan matn `pending` (admin ko'rguncha yashirin). Admin yashirgani qayta yozilsa ham yashirin.
+  O'rtacha baho `ratings_summary()` orqali (ochiq view qo'shilmadi: `anon` uchun view ro'yxati 3 ta bilan cheklangan).
+- **Oqibat:** sayt pickup uchun 5 bosqich ko'rsatadi («Выдан» = 4), server esa 3 ni oxirgi deb hisoblaydi (eski nomuvofiqlik).
+  Baholash server qoidasiga ergashadi; bosqichlarni bitta ro'yxatga keltirish alohida vazifa.
+
 ---
 
 ## 5. Modullar (monolit ichida)

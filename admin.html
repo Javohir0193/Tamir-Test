@@ -124,7 +124,7 @@ const fmt = n => Math.round(Number(n) || 0).toLocaleString("ru-RU").replace(/,/g
 const sum = n => fmt(n) + " сўм";
 const dt = t => t ? new Date(t).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "—";
 function toast(t){ const e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2800); }
-let sb, CODE = "", S = { comm:null, tab:"home", days:7, dash:null, orders:[], refunds:[], people:null, settings:null, filter:"all", q:"", me:null, pay:null, admins:null, audit:null, aq:"", view:"list", an:null, andays:30, shist:null, custs:null, cq:"", staff:null, prices:null, tks:null, tkf:"open", pf:"all", pq:"", prev:null, pshop:"", rc:null, rcprov:"click" };
+let sb, CODE = "", S = { comm:null, tab:"home", days:7, dash:null, orders:[], refunds:[], people:null, settings:null, filter:"all", q:"", me:null, pay:null, admins:null, audit:null, aq:"", view:"list", an:null, andays:30, shist:null, custs:null, cq:"", staff:null, prices:null, tks:null, tkf:"open", revs:null, revf:"pending", pf:"all", pq:"", prev:null, pshop:"", rc:null, rcprov:"click" };
 try { CODE = sessionStorage.getItem("acode") || ""; } catch(e){}
 
 const STAGE = { delivery:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Йўлда","Етказилди"], pickup:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Олиб кетишга тайёр"], car:["Қабул қилинди","Машина топилди","Юкланмоқда","Йўлда","Етказилди"] };
@@ -220,6 +220,7 @@ async function tabData(){
     if (S.tab === "prices") { S.prices = await rpc("admin_prices"); try { S.props = await rpc("admin_product_proposals"); } catch(e){ S.props = null; } }
     if (S.tab === "an") S.an = await rpc("admin_analytics", { p_days:S.andays });
     if (S.tab === "tix") S.tks = await rpc("admin_tickets", { p_status:S.tkf === "all" ? null : S.tkf });
+    if (S.tab === "rev") S.revs = await rpc("admin_reviews", { p_status:S.revf === "all" ? null : S.revf, p_limit:200 });
     if (S.tab === "cust") S.custs = await rpc("admin_customers", { p_q:S.cq || null, p_limit:100 });
   } catch(e){ sessErr(e); }
 }
@@ -229,8 +230,8 @@ async function reload(){ const b = document.getElementById("rf"); if (b) { b.dis
 /* ---------- Қобиқ ---------- */
 const ROLE_N = { owner:"Эга", operator:"Оператор", accountant:"Бухгалтер", support:"Қўллаб-қувватлаш" };
 const can = p => { const r = (S.me && S.me.roles) || []; if (r.includes("owner")) return true; return ({ orders_edit:["operator"], money:["accountant"], payout:["accountant"], catalog:["operator"], refund:["accountant", "operator"], tickets:["operator", "support"], people:["operator"], audit:["accountant"], admins:[], settings:[] }[p] || []).some(x => r.includes(x)); };
-const TAB_IC = { home:"home", orders:"box", cust:"user", tix:"chat", pay:"card", money:"wallet", people:"user", set:"tool", an:"list", prices:"tag", audit:"list", admins:"user" };
-const TABS = () => [["home", "Бош", 1], ["orders", "Буюртмалар", 1], ["cust", "Мижозлар", 1], ["tix", "Мурожаатлар", can("tickets")], ["pay", "Тўловлар", can("payout")], ["money", "Пул", can("money")], ["people", "Одамлар", 1], ["set", "Созламалар", 1], ["an", "Аналитика", 1], ["prices", "Нархлар", can("catalog")], ["audit", "Журнал", can("audit")], ["admins", "Админлар", can("admins")]].filter(t => t[2]);
+const TAB_IC = { home:"home", orders:"box", cust:"user", tix:"chat", rev:"star", pay:"card", money:"wallet", people:"user", set:"tool", an:"list", prices:"tag", audit:"list", admins:"user" };
+const TABS = () => [["home", "Бош", 1], ["orders", "Буюртмалар", 1], ["cust", "Мижозлар", 1], ["tix", "Мурожаатлар", can("tickets")], ["rev", "Шарҳлар", can("tickets")], ["pay", "Тўловлар", can("payout")], ["money", "Пул", can("money")], ["people", "Одамлар", 1], ["set", "Созламалар", 1], ["an", "Аналитика", 1], ["prices", "Нархлар", can("catalog")], ["audit", "Журнал", can("audit")], ["admins", "Админлар", can("admins")]].filter(t => t[2]);
 function shell(){
   $("app").innerHTML = `<header><div class="hd"><h1 class="qx" aria-label="Ta'mir Admin"><span class="qx-i qx-star" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="qag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset=".35" stop-color="#F97316"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs><path d="M135.97,13.16 L150.87,49.13 L186.84,64.03 L171.94,100.00 L186.84,135.97 L150.87,150.87 L135.97,186.84 L100.00,171.94 L64.03,186.84 L49.13,150.87 L13.16,135.97 L28.06,100.00 L13.16,64.03 L49.13,49.13 L64.03,13.16 L100.00,28.06Z" fill="url(#qag)"/><path d="M128.32,31.63 L140.05,59.95 L168.37,71.68 L156.64,100.00 L168.37,128.32 L140.05,140.05 L128.32,168.37 L100.00,156.64 L71.68,168.37 L59.95,140.05 L31.63,128.32 L43.36,100.00 L31.63,71.68 L59.95,59.95 L71.68,31.63 L100.00,43.36Z" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/><g transform="translate(22 14) scale(0.78)" fill="#fff"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg></span><span class="qx-t"><span class="qx-w" aria-hidden="true"><svg class="qx-ht" viewBox="48 56 114 112"><g transform="translate(0 0) scale(1)" fill="#F97316"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg>a<svg class="qx-ap" viewBox="0 0 40 40"><path d="M27.27,2.45 L30.28,9.72 L37.55,12.73 L34.54,20.00 L37.55,27.27 L30.28,30.28 L27.27,37.55 L20.00,34.54 L12.73,37.55 L9.72,30.28 L2.45,27.27 L5.46,20.00 L2.45,12.73 L9.72,9.72 L12.73,2.45 L20.00,5.46Z" fill="#F97316"/></svg>mir</span><em>Admin</em></span> ${CFG.env === "test" ? '<span class="pill y">СИНОВ</span>' : ""}</h1><button class="btn alt sm" id="rf">Янгилаш</button><span class="mu" style="font-size:13px">${esc(S.me ? S.me.name : "")} · ${esc(((S.me && S.me.roles) || []).map(r => ROLE_N[r] || r).join(", "))}</span>${TamirPush.btn("btn alt sm")}<button class="btn alt sm" id="lo">Чиқиш</button></div><nav id="nav"></nav></header><main id="main"></main>`;
   $("rf").onclick = reload;
@@ -239,7 +240,7 @@ function shell(){
 }
 function draw(keepTop){
   const al = (S.dash.alerts || []).length + (S.dash.refunds_pending ? 0 : 0);
-  $("nav").innerHTML = TABS().map(([k, n]) => { const pp = S.dash.payouts_pending ? S.dash.payouts_pending.n : 0, bd = k === "home" ? al : k === "pay" ? pp : k === "people" ? S.dash.pending_people : k === "tix" ? (S.tkopen || 0) : 0; return `<button data-t="${k}" class="${S.tab === k ? "on" : ""}">${window.IC ? IC.i(TAB_IC[k] || "list", 18) + " " : ""}${n}${bd ? `<span class="badge">${bd}</span>` : ""}</button>`; }).join("");
+  $("nav").innerHTML = TABS().map(([k, n]) => { const pp = S.dash.payouts_pending ? S.dash.payouts_pending.n : 0, bd = k === "home" ? al : k === "pay" ? pp : k === "people" ? S.dash.pending_people : k === "tix" ? (S.tkopen || 0) : k === "rev" ? (S.revs && S.revs.pending || 0) : 0; return `<button data-t="${k}" class="${S.tab === k ? "on" : ""}">${window.IC ? IC.i(TAB_IC[k] || "list", 18) + " " : ""}${n}${bd ? `<span class="badge">${bd}</span>` : ""}</button>`; }).join("");
   $("nav").querySelectorAll("button").forEach(b => b.onclick = () => {
     if (S.tab === b.dataset.t) return;
     S.tab = b.dataset.t; S.sy = 0;
@@ -248,13 +249,13 @@ function draw(keepTop){
   });
   const k = TABKEY[S.tab], sy = keepTop ? 0 : window.scrollY;
   if (k && S[k] == null) { $("main").innerHTML = '<div class="skel"><i></i><i></i><i></i></div>'; return; }
-  try { $("main").innerHTML = ({ home:homeView, orders:ordersView, money:moneyView, people:peopleView, set:setView, pay:payView, audit:auditView, admins:adminsView, prices:pricesView, cust:custView, an:anView, tix:tixView })[S.tab](); }
+  try { $("main").innerHTML = ({ home:homeView, orders:ordersView, money:moneyView, people:peopleView, set:setView, pay:payView, audit:auditView, admins:adminsView, prices:pricesView, cust:custView, an:anView, tix:tixView, rev:revView })[S.tab](); }
   catch(e){ $("main").innerHTML = '<div class="card"><p class="err">Хато: ' + esc(e.message) + '</p><button class="btn" onclick="reload()">Қайта юклаш</button></div>'; return; }
   bind();
   if (sy) window.scrollTo(0, sy);
 }
-const TABKEY = { people:"people", set:"settings", pay:"pay", audit:"audit", admins:"admins", prices:"prices", an:"an", tix:"tks", cust:"custs" };
-const snap = () => { try { return JSON.stringify([S.dash, S.orders, S.refunds, S.tkopen, S.people, S.fleets, S.settings, S.shist, S.pay, S.staff, S.shops, S.comm, S.audit, S.admins, S.prices, S.props, S.an, S.tks, S.custs]); } catch(_){ return String(Math.random()); } };
+const TABKEY = { people:"people", set:"settings", pay:"pay", audit:"audit", admins:"admins", prices:"prices", an:"an", tix:"tks", rev:"revs", cust:"custs" };
+const snap = () => { try { return JSON.stringify([S.dash, S.orders, S.refunds, S.tkopen, S.people, S.fleets, S.settings, S.shist, S.pay, S.staff, S.shops, S.comm, S.audit, S.admins, S.prices, S.props, S.an, S.tks, S.revs, S.custs]); } catch(_){ return String(Math.random()); } };
 async function refreshTab(){ const t = S.tab, b = snap(); await tabData(); if (S.tab === t && snap() !== b) draw(); }
 let bgBusy = false;
 async function bgRefresh(){
@@ -619,6 +620,19 @@ function tixView(){
   <div class="card tw"><table><tr><th>№</th><th>Мижоз</th><th>Буюртма</th><th>Ҳолат</th><th>Сўнгги хабар</th><th>Вақт</th></tr>
   ${t.map(x => `<tr data-tkdet="${x.id}" style="cursor:pointer"><td><b>${x.id}</b></td><td>${esc(x.name || "—")}<br><small class="mu">${esc(x.phone || "")}</small></td><td>${x.order_no || "—"}</td><td><span class="pill ${TKN[x.status][1]}">${TKN[x.status][0]}</span>${x.decision ? ` <small class="mu">${DECN[x.decision]}</small>` : ""}</td><td>${x.last_from === "customer" ? "👤 " : "🛠 "}${esc(x.last || "")}</td><td>${dt(x.at)}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Мурожаат йўқ</td></tr>'}</table></div>`;
 }
+/* ---------- Шарҳлар (32-миграция): ҳавола/телефонли шарҳлар «Текширувда», яшириш сабаби билан ---------- */
+const REVN = { pending:["Текширувда", "y"], shown:["Кўринади", "g"], hidden:["Яширилган", "r"] };
+function revView(){
+  const r = S.revs; if (!r) return '<p class="mu">Юкланмоқда…</p>';
+  const it = r.items || [];
+  return `<div class="row">${[["pending", "Текширувда" + (r.pending ? " (" + r.pending + ")" : "")], ["shown", "Кўринади"], ["hidden", "Яширилган"], ["all", "Ҳаммаси"]].map(([k, n]) => `<button class="btn sm ${S.revf === k ? "" : "alt"}" data-revf="${k}">${n}</button>`).join(" ")}</div>
+  ${it.length ? `<div class="card tw"><table><tr><th>Баҳо</th><th>Нимага</th><th>Шарҳ</th><th>Мижоз</th><th>Ҳолат</th><th></th></tr>
+  ${it.map(x => `<tr><td><b>${"★".repeat(x.r)}</b><small class="mu">${"★".repeat(5 - x.r)}</small><br><small class="mu">№${x.no} · ${dt(x.at)}</small></td><td>${esc(x.target || "")}</td>
+    <td style="max-width:360px;white-space:pre-wrap">${esc(x.body || "—")}${x.reason ? `<br><small class="mu">Сабаб: ${esc(x.reason)}</small>` : ""}</td>
+    <td>${esc(x.by || "—")}<br><small class="mu">${esc(x.phone || "")}</small></td><td><span class="pill ${REVN[x.status][1]}">${REVN[x.status][0]}</span></td>
+    <td>${x.status !== "shown" ? `<button class="btn sm" data-revset="${x.id}:shown">Кўрсатиш</button> ` : ""}${x.status !== "hidden" ? `<button class="btn sm alt" data-revset="${x.id}:hidden">Яшириш</button>` : ""}</td></tr>`).join("")}</table></div>`
+  : '<p class="mu">Шарҳ йўқ.</p>'}`;
+}
 async function openTix(id){
   let d; try { d = await rpc("admin_ticket", { p_id:Number(id) }); } catch(e){ sessErr(e); return; }
   if (!d) { toast("Топилмади"); return; }
@@ -776,6 +790,10 @@ document.addEventListener("click", async e => {
     if (v !== null && (!Number.isFinite(v) || v < 0 || v > 30)) { toast("Фоиз 0 дан 30 гача бўлсин"); return; } const why = prompt("Сабаб (мас. «катта дўкон, келишув»):"); if (!why) return;
     await act(async () => { await rpc("admin_set_commission", { p_seller:id, p_pct:v, p_reason:why }); S.comm = await rpc("admin_commissions"); draw(); }, "Сақланди"); return; }
   if (t.dataset.tkf) { S.tkf = t.dataset.tkf; await tabData(); draw(); return; }
+  if (t.dataset.revf) { S.revf = t.dataset.revf; await tabData(); draw(); return; }
+  if (t.dataset.revset) { const [id, st] = t.dataset.revset.split(":"); let reason = null;
+    if (st === "hidden") { reason = prompt("Яшириш сабаби (журналга ёзилади):", ""); if (reason === null) return; if (reason.trim().length < 3) { alert("Сабабни ёзинг (камида 3 ҳарф)."); return; } }
+    await act(async () => { await rpc("admin_review_set", { p_id:Number(id), p_status:st, p_reason:reason }); await tabData(); draw(); }, st === "hidden" ? "Яширилди" : "Кўрсатилди"); return; }
   if (t.dataset.tkdet) { openTix(t.dataset.tkdet); return; }
   if (t.dataset.trep) { const b = $("trep").value.trim(); if (!b) return; const id = Number(t.dataset.trep);
     await act(async () => { await rpc("admin_ticket_reply", { p_id:id, p_body:b }); closeSheet(); await reload(); openTix(id); }, "Юборилди"); return; }
