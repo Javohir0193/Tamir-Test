@@ -46,11 +46,19 @@ Excel'да «Нарх» ва «Бор» устунларини тўлдирад�
 npx serve .        # кейин http://localhost:3000
 ```
 
+## Саҳифа коди ва CSP
+
+Ҳар саҳифанинг JavaScript коди алоҳида файлда: `index.html` → `page-index.js`, `admin.html` → `page-admin.js`
+(+ `admin-frame.js`), `seller.html` → `page-seller.js`, `collector.html` → `page-collector.js`,
+`driver.html` → `page-driver.js`, `register.html` → `page-register.js`. CSP `script-src`'да `'unsafe-inline'` йўқ,
+шунинг учун HTML ичига `<script>…</script>` ёки `onclick="…"` ёзманг — браузер уни ишга туширмайди.
+Ҳодисалар учун `addEventListener` ёки `el.onclick = …` ишлатинг.
+
 ## Текширувлар
 
 ```bash
 node scripts/check-refs.mjs     # уланган файллар мавжудми
-node scripts/check-inline.mjs   # HTML ичидаги скриптлар синтаксиси
+node scripts/check-inline.mjs   # HTML'да inline <script> ва onclick="…" йўқлиги (CSP 'unsafe-inline'сиз)
 node scripts/sync-csp-meta.mjs  # _headers даги CSP'ни саҳифалардаги <meta> га ёзади (GitHub Pages учун; CI --check)
 node scripts/check-csp.mjs      # CSP: ҳар саҳифани браузерда очиб, блокланган манба йўқлигини текширади (Playwright керак)
 ```
