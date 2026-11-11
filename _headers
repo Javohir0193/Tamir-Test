@@ -5,6 +5,8 @@
 #   (test сайт GitHub Pages'да, у бу файлни ўқимайди; CI фарқ бўлса хато беради).
 # Текшириш: node scripts/check-csp.mjs (ҳар саҳифани CSP билан очиб, бузилиш йўқлигини текширади).
 # Яндекс Карталар учун: style-src blob:, frame-src/child-src api-maps.yandex.ru, 'unsafe-eval' (Яндекс шаблонлари учун тавсия қилади).
+# script-src'да 'unsafe-inline' ЙЎҚ (2026-11-11): саҳифа коди алоҳида page-*.js файлларда, HTML ичида <script>…</script>
+#   ва onclick="…" ёзманг — браузер блоклайди (node scripts/check-inline.mjs CI'да текширади). style-src'да ҳозирча бор (style="…").
 # frame-ancestors: Telegram Web (web.telegram.org) Mini App'ни iframe ичида очади, шунинг учун фақат у ва ўзимиз.
 
 /*
@@ -12,7 +14,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), payment=(), geolocation=(self)
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://telegram.org https://api-maps.yandex.ru https://*.api-maps.yandex.ru https://suggest-maps.yandex.ru https://*.maps.yandex.net https://yandex.ru https://*.yandex.ru https://*.yandex.net https://yastatic.net; style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com https://cdnjs.cloudflare.com https://*.yandex.ru https://*.yandex.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api-maps.yandex.ru https://*.api-maps.yandex.ru https://suggest-maps.yandex.ru https://yandex.ru https://*.yandex.ru https://*.yandex.net; frame-src https://api-maps.yandex.ru https://*.yandex.ru https://*.yandex.net; child-src https://api-maps.yandex.ru https://*.yandex.ru https://*.yandex.net blob:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://telegram.org https://api-maps.yandex.ru https://*.api-maps.yandex.ru https://suggest-maps.yandex.ru https://*.maps.yandex.net https://yandex.ru https://*.yandex.ru https://*.yandex.net https://yastatic.net; style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com https://cdnjs.cloudflare.com https://*.yandex.ru https://*.yandex.net; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api-maps.yandex.ru https://*.api-maps.yandex.ru https://suggest-maps.yandex.ru https://yandex.ru https://*.yandex.ru https://*.yandex.net; frame-src https://api-maps.yandex.ru https://*.yandex.ru https://*.yandex.net; child-src https://api-maps.yandex.ru https://*.yandex.ru https://*.yandex.net blob:; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org; upgrade-insecure-requests
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   X-Permitted-Cross-Domain-Policies: none
 
