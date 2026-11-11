@@ -1,0 +1,723 @@
+window.__pull=function(){return reload()};
+"use strict";
+const CFG = window.TAMIR_CONFIG || {};
+const LBAR = `<header><div class="hd"><h1 class="qx" aria-label="Ta'mir Admin"><span class="qx-i qx-star" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="qag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset=".35" stop-color="#F97316"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs><path d="M135.97,13.16 L150.87,49.13 L186.84,64.03 L171.94,100.00 L186.84,135.97 L150.87,150.87 L135.97,186.84 L100.00,171.94 L64.03,186.84 L49.13,150.87 L13.16,135.97 L28.06,100.00 L13.16,64.03 L49.13,49.13 L64.03,13.16 L100.00,28.06Z" fill="url(#qag)"/><path d="M128.32,31.63 L140.05,59.95 L168.37,71.68 L156.64,100.00 L168.37,128.32 L140.05,140.05 L128.32,168.37 L100.00,156.64 L71.68,168.37 L59.95,140.05 L31.63,128.32 L43.36,100.00 L31.63,71.68 L59.95,59.95 L71.68,31.63 L100.00,43.36Z" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/><g transform="translate(22 14) scale(0.78)" fill="#fff"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg></span><span class="qx-t"><span class="qx-w" aria-hidden="true"><svg class="qx-ht" viewBox="48 56 114 112"><g transform="translate(0 0) scale(1)" fill="#F97316"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg>a<svg class="qx-ap" viewBox="0 0 40 40"><path d="M27.27,2.45 L30.28,9.72 L37.55,12.73 L34.54,20.00 L37.55,27.27 L30.28,30.28 L27.27,37.55 L20.00,34.54 L12.73,37.55 L9.72,30.28 L2.45,27.27 L5.46,20.00 L2.45,12.73 L9.72,9.72 L12.73,2.45 L20.00,5.46Z" fill="#F97316"/></svg>mir</span><em>Admin</em></span></h1></div></header>`;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const fmt = n => Math.round(Number(n) || 0).toLocaleString("ru-RU").replace(/,/g, " ");
+const sum = n => fmt(n) + " сўм";
+const dt = t => t ? new Date(t).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "—";
+function toast(t){ const e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2800); }
+let sb, CODE = "", S = { comm:null, tab:"home", days:7, dash:null, orders:[], refunds:[], people:null, settings:null, filter:"all", q:"", me:null, pay:null, admins:null, audit:null, aq:"", view:"list", an:null, andays:30, shist:null, custs:null, cq:"", staff:null, prices:null, tks:null, tkf:"open", pf:"all", pq:"", prev:null, pshop:"", rc:null, rcprov:"click" };
+try { CODE = sessionStorage.getItem("acode") || ""; } catch(e){}
+
+const STAGE = { delivery:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Йўлда","Етказилди"], pickup:["Қабул қилинди","Тасдиқланди","Йиғилмоқда","Олиб кетишга тайёр"], car:["Қабул қилинди","Машина топилди","Юкланмоқда","Йўлда","Етказилди"] };
+const stName = o => (STAGE[o.mode] || STAGE.delivery)[Math.min(o.stage, (STAGE[o.mode] || STAGE.delivery).length - 1)];
+const stMax = o => (STAGE[o.mode] || STAGE.delivery).length - 1;
+const PAY = { none:["Онлайн тўловсиз", "m"], unpaid:["Тўлов кутилмоқда", "y"], paid:["Тўланган", "g"], expired:["Муддати ўтди", "r"], refunded:["Қайтарилган", "m"] };
+const payPill = o => { const p = PAY[o.pay_status] || ["—", "m"]; return `<span class="pill ${p[1]}">${p[0]}</span>`; };
+const ERR = { "wrong code":"Код нотўғри", admin_login_required:"Бу Telegram ҳисоб админ эмас", not_paid:"Буюртма тўланмаган", bad_amount:"Сумма нотўғри", too_much:"Тўланган суммадан кўп", reserve_too_much:"Захирадан кўп", bad_value:"Қиймат нотўғри", not_allowed:"Бу созламани бу ерда ўзгартириб бўлмайди", not_pending:"Аллақачон бажарилган", forbidden:"Бу амал учун рухсатингиз йўқ", pin_not_set:"PIN ҳали ўрнатилмаган", bad_pin:"PIN 6–12 та рақамдан иборат бўлиши керак", locked:"Кўп хато уриниш. 15 дақиқа кутинг", over_limit:"Сизнинг лимитингиздан катта сумма. Бухгалтер ёки эга яратсин", reason_required:"Сабабни ёзинг", already_cancelled:"Буюртма аллақачон бекор қилинган", already_done:"Етказилган буюртмани бекор қилиб бўлмайди", second_approval:"Катта сумма: бошқа админ тасдиқлаши керак", person_not_active:"Одам фаол эмас ёки роли мос эмас", profile_not_found:"Бундай рақамли одам сайтга ҳали кирмаган", cannot_self:"Ўзингизни блоклаб ёки эгаликдан ол бўлмайди", over:"", cannot_revert:"Бу ўзгаришни қайтариб бўлмайди", over_balance:"Қолдиқдан кўп сумма", too_many_rows:"Қатор кўп (2000 гача)", not_finished:"Ариза ҳали тўлиқ юборилмаган, тасдиқлаб бўлмайди", bad_card:"Карта рақами 16 та рақам бўлиши керак", holder_required:"Карта эгасининг исмини ёзинг", bad_category:"Бундай тоифа йўқ" };
+const errText = e => { const m = (e && e.message) || String(e); for (const k in ERR) if (m.indexOf(k) >= 0) return ERR[k]; return m; };
+
+async function rpc(name, args){
+  const r = await sb.rpc(name, Object.assign({ p_code:CODE }, args || {}));
+  if (r.error) throw r.error;
+  return r.data;
+}
+
+/* ---------- Кириш ---------- */
+async function init(){
+  if (!window.supabase || !CFG.supabaseUrl) { $("app").innerHTML = LBAR + `<div class="login"><p class="err">Базага уланиб бўлмади</p></div>`; return; }
+  sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey);
+  const cur = await sb.auth.getSession();
+  if (!cur.data.session) { const r = await sb.auth.signInAnonymously(); if (r.error) { $("app").innerHTML = LBAR + `<div class="login"><p class="err">${esc(r.error.message)}</p></div>`; return; } }
+  await gate();
+}
+async function profile(){ const r = await sb.rpc("my_profile"); return r.error ? null : r.data; }
+async function gate(){
+  const p = await profile();
+  if (!p) return loginView();
+  if (!p.admin) return notAdminView(p);
+  if (!CODE) return pinView();
+  try { S.me = await rpc("admin_me"); await load();
+    TamirPush.init({ app:"admin", base:"uz", token:() => CODE, rpc:(fn, a) => sb.rpc(fn, a).then(r => { if (r.error) throw r.error; return r.data; }),
+      lang:() => { try { return localStorage.getItem("adm_lang") === "ru" ? "ru" : "uz"; } catch (e) { return "uz"; } }, tr:s => window.admTr ? admTr(s) : s });
+    shell(); }
+  catch(e){
+    const m = (e && e.message) || "";
+    if (/wrong code|admin_login/.test(m)) { dropSession(); return pinView(errText(e)); }
+    $("app").innerHTML = LBAR + `<div class="login"><p class="err">${esc(errText(e))}</p><p class="mu">7-schema-admin2.sql базага ишга туширилганми?</p><button class="btn" id="retryBtn">Қайта уриниш</button></div>`;
+    $("retryBtn").onclick = () => location.reload();
+  }
+}
+function dropSession(){ CODE = ""; S.me = null; try { sessionStorage.removeItem("acode"); } catch(_){} }
+function loginView(){
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>Админ кириши</h2><p class="mu">Аввал Telegram орқали кирасиз, кейин шахсий PIN киритасиз.</p>
+    <p><a class="btn" id="tg" target="_blank" rel="noopener" href="#" style="display:inline-block;text-decoration:none">Telegram орқали кириш</a></p><p class="msg" id="lm">Тайёрланмоқда…</p></div>`;
+  sb.rpc("login_start", { p_consent:true }).then(r => {
+    if (r.error || !r.data) { $("lm").textContent = "Киришни бошлаб бўлмади. Бироздан кейин қайта уриниб кўринг."; return; }
+    $("tg").href = `https://t.me/${r.data.bot}?start=login_${r.data.token}`; $("lm").textContent = "Telegram'да «Рақамни юбориш» ни босинг, кейин шу саҳифага қайтинг.";
+    const t0 = Date.now(), iv = setInterval(async () => { if (Date.now() - t0 > 600000) { clearInterval(iv); return; } if (await profile()) { clearInterval(iv); gate(); } }, 2500);
+  });
+}
+function notAdminView(p){
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>Рухсат йўқ</h2><p>Сиз <b>${esc(p.name || p.phone || "")}</b> сифатида кирдингиз, лекин бу ҳисоб админ эмас.</p><button class="btn alt" id="lo">Чиқиш</button></div>`;
+  $("lo").onclick = async () => { await sb.rpc("logout"); location.reload(); };
+}
+function pinView(err){
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>PIN</h2><p class="err" id="pe">${esc(err || "")}</p>
+    <p><input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Кириш</button></div>`;
+  const go = async () => {
+    const pin = $("pin").value.trim(); if (!pin) return;
+    const r = await sb.rpc("admin_login", { p_pin:pin });
+    if (r.error) { if (/pin_not_set/.test(r.error.message)) return setPinView(); $("pe").textContent = errText(r.error); return; }
+    if (r.data && r.data.error) { $("pe").textContent = r.data.error === "locked" ? ERR.locked : "PIN нотўғри"; $("pin").value = ""; return; }
+    CODE = r.data.token; try { sessionStorage.setItem("acode", CODE); } catch(e){} gate();
+  };
+  $("go").onclick = go; $("pin").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+}
+function setPinView(err){
+  $("app").innerHTML = LBAR + `<div class="login card"><h2>Янги PIN ўрнатиш</h2><p class="mu">6–12 та рақам. Уни ҳеч кимга айтманг.</p><p class="err" id="pe">${esc(err || "")}</p>
+    <p><input id="p1" type="password" inputmode="numeric" placeholder="Янги PIN" autocomplete="off" style="width:100%"></p>
+    <p><input id="p2" type="password" inputmode="numeric" placeholder="PIN'ни такрорланг" autocomplete="off" style="width:100%"></p><button class="btn" id="go">Сақлаш</button></div>`;
+  $("go").onclick = async () => {
+    if ($("p1").value !== $("p2").value) { $("pe").textContent = "PIN'лар бир хил эмас"; return; }
+    const r = await sb.rpc("admin_set_pin", { p_code:CODE || null, p_pin:$("p1").value.trim() });
+    if (r.error) { $("pe").textContent = errText(r.error); return; }
+    pinView("PIN ўрнатилди. Энди кириш.");
+  };
+}
+
+/* ---------- Маълумот ---------- */
+async function load(){
+  const [d, o, rf] = await Promise.all([rpc("admin_dashboard", { p_days:S.days }), rpc("admin_list_orders"), rpc("admin_refunds")]);
+  const arr = x => Array.isArray(x) ? x : (x ? [x] : []);
+  S.dash = d; S.orders = arr(o); S.refunds = arr(rf);
+  if (can("tickets")) { try { S.tkopen = Number(await rpc("admin_ticket_count")); } catch(e){} }
+}
+async function tabData(){
+  try {
+    if (S.tab === "people") { S.people = await rpc("admin_people"); try { S.fleets = await rpc("admin_fleets"); } catch(e){ S.fleets = null; } }
+    if (S.tab === "set") { S.settings = await rpc("admin_settings"); try { S.shist = S.settings.can_edit ? await rpc("admin_settings_history") : null; } catch(e){ S.shist = null; } }
+    if (S.tab === "pay") { S.pay = await rpc("admin_payouts"); try { S.staff = await rpc("admin_staff"); } catch(e){ S.staff = null; } try { S.shops = await rpc("admin_shop_queue"); } catch(e){ S.shops = null; } try { S.comm = await rpc("admin_commissions"); } catch(e){ S.comm = null; } }
+    if (S.tab === "audit") S.audit = await rpc("admin_audit", { p_limit:150, p_offset:0, p_q:S.aq || null });
+    if (S.tab === "admins") S.admins = await rpc("admin_admins");
+    if (S.tab === "prices") { S.prices = await rpc("admin_prices"); try { S.props = await rpc("admin_product_proposals"); } catch(e){ S.props = null; } }
+    if (S.tab === "an") S.an = await rpc("admin_analytics", { p_days:S.andays });
+    if (S.tab === "tix") S.tks = await rpc("admin_tickets", { p_status:S.tkf === "all" ? null : S.tkf });
+    if (S.tab === "cust") S.custs = await rpc("admin_customers", { p_q:S.cq || null, p_limit:100 });
+  } catch(e){ sessErr(e); }
+}
+function sessErr(e){ if (/wrong code|admin_login/.test((e && e.message) || "")) { dropSession(); pinView("Сессия тугади. Қайта киринг."); } else toast(errText(e)); }
+async function reload(){ const b = document.getElementById("rf"); if (b) { b.disabled = true; b.textContent = "…"; } try { await load(); await tabData(); draw(); toast("Янгиланди"); } catch(e){ sessErr(e); } finally { const c = document.getElementById("rf"); if (c) { c.disabled = false; c.textContent = "Янгилаш"; } } }
+
+/* ---------- Қобиқ ---------- */
+const ROLE_N = { owner:"Эга", operator:"Оператор", accountant:"Бухгалтер", support:"Қўллаб-қувватлаш" };
+const can = p => { const r = (S.me && S.me.roles) || []; if (r.includes("owner")) return true; return ({ orders_edit:["operator"], money:["accountant"], payout:["accountant"], catalog:["operator"], refund:["accountant", "operator"], tickets:["operator", "support"], people:["operator"], audit:["accountant"], admins:[], settings:[] }[p] || []).some(x => r.includes(x)); };
+const TAB_IC = { home:"home", orders:"box", cust:"user", tix:"chat", pay:"card", money:"wallet", people:"user", set:"tool", an:"list", prices:"tag", audit:"list", admins:"user" };
+const TABS = () => [["home", "Бош", 1], ["orders", "Буюртмалар", 1], ["cust", "Мижозлар", 1], ["tix", "Мурожаатлар", can("tickets")], ["pay", "Тўловлар", can("payout")], ["money", "Пул", can("money")], ["people", "Одамлар", 1], ["set", "Созламалар", 1], ["an", "Аналитика", 1], ["prices", "Нархлар", can("catalog")], ["audit", "Журнал", can("audit")], ["admins", "Админлар", can("admins")]].filter(t => t[2]);
+function shell(){
+  $("app").innerHTML = `<header><div class="hd"><h1 class="qx" aria-label="Ta'mir Admin"><span class="qx-i qx-star" aria-hidden="true"><svg viewBox="0 0 200 200"><defs><linearGradient id="qag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset=".35" stop-color="#F97316"/><stop offset="1" stop-color="#C2410C"/></linearGradient></defs><path d="M135.97,13.16 L150.87,49.13 L186.84,64.03 L171.94,100.00 L186.84,135.97 L150.87,150.87 L135.97,186.84 L100.00,171.94 L64.03,186.84 L49.13,150.87 L13.16,135.97 L28.06,100.00 L13.16,64.03 L49.13,49.13 L64.03,13.16 L100.00,28.06Z" fill="url(#qag)"/><path d="M128.32,31.63 L140.05,59.95 L168.37,71.68 L156.64,100.00 L168.37,128.32 L140.05,140.05 L128.32,168.37 L100.00,156.64 L71.68,168.37 L59.95,140.05 L31.63,128.32 L43.36,100.00 L31.63,71.68 L59.95,59.95 L71.68,31.63 L100.00,43.36Z" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="3"/><g transform="translate(22 14) scale(0.78)" fill="#fff"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg></span><span class="qx-t"><span class="qx-w" aria-hidden="true"><svg class="qx-ht" viewBox="48 56 114 112"><g transform="translate(0 0) scale(1)" fill="#F97316"><rect x="50" y="58" width="20" height="38" rx="5"/><rect x="66" y="64" width="62" height="26" rx="3"/><path d="M124 64 Q150 62 160 92 Q161 97 156 96 Q146 82 130 84 V90 H124 Z"/><path d="M92 88 H108 V112 H92 Z"/><rect x="89" y="108" width="22" height="58" rx="9"/></g></svg>a<svg class="qx-ap" viewBox="0 0 40 40"><path d="M27.27,2.45 L30.28,9.72 L37.55,12.73 L34.54,20.00 L37.55,27.27 L30.28,30.28 L27.27,37.55 L20.00,34.54 L12.73,37.55 L9.72,30.28 L2.45,27.27 L5.46,20.00 L2.45,12.73 L9.72,9.72 L12.73,2.45 L20.00,5.46Z" fill="#F97316"/></svg>mir</span><em>Admin</em></span> ${CFG.env === "test" ? '<span class="pill y">СИНОВ</span>' : ""}</h1><button class="btn alt sm" id="rf">Янгилаш</button><span class="mu" style="font-size:13px">${esc(S.me ? S.me.name : "")} · ${esc(((S.me && S.me.roles) || []).map(r => ROLE_N[r] || r).join(", "))}</span>${TamirPush.btn("btn alt sm")}<button class="btn alt sm" id="lo">Чиқиш</button></div><nav id="nav"></nav></header><main id="main"></main>`;
+  $("rf").onclick = reload;
+  $("lo").onclick = async () => { try { await rpc("admin_logout"); } catch(e){} dropSession(); gate(); };
+  draw();
+}
+function draw(keepTop){
+  const al = (S.dash.alerts || []).length + (S.dash.refunds_pending ? 0 : 0);
+  $("nav").innerHTML = TABS().map(([k, n]) => { const pp = S.dash.payouts_pending ? S.dash.payouts_pending.n : 0, bd = k === "home" ? al : k === "pay" ? pp : k === "people" ? S.dash.pending_people : k === "tix" ? (S.tkopen || 0) : 0; return `<button data-t="${k}" class="${S.tab === k ? "on" : ""}">${window.IC ? IC.i(TAB_IC[k] || "list", 18) + " " : ""}${n}${bd ? `<span class="badge">${bd}</span>` : ""}</button>`; }).join("");
+  $("nav").querySelectorAll("button").forEach(b => b.onclick = () => {
+    if (S.tab === b.dataset.t) return;
+    S.tab = b.dataset.t; S.sy = 0;
+    draw(true); window.scrollTo(0, 0);
+    refreshTab();
+  });
+  const k = TABKEY[S.tab], sy = keepTop ? 0 : window.scrollY;
+  if (k && S[k] == null) { $("main").innerHTML = '<div class="skel"><i></i><i></i><i></i></div>'; return; }
+  try { $("main").innerHTML = ({ home:homeView, orders:ordersView, money:moneyView, people:peopleView, set:setView, pay:payView, audit:auditView, admins:adminsView, prices:pricesView, cust:custView, an:anView, tix:tixView })[S.tab](); }
+  catch(e){ $("main").innerHTML = '<div class="card"><p class="err">Хато: ' + esc(e.message) + '</p><button class="btn" id="retryBtn">Қайта юклаш</button></div>'; $("retryBtn").onclick = () => reload(); return; }
+  bind();
+  if (sy) window.scrollTo(0, sy);
+}
+const TABKEY = { people:"people", set:"settings", pay:"pay", audit:"audit", admins:"admins", prices:"prices", an:"an", tix:"tks", cust:"custs" };
+const snap = () => { try { return JSON.stringify([S.dash, S.orders, S.refunds, S.tkopen, S.people, S.fleets, S.settings, S.shist, S.pay, S.staff, S.shops, S.comm, S.audit, S.admins, S.prices, S.props, S.an, S.tks, S.custs]); } catch(_){ return String(Math.random()); } };
+async function refreshTab(){ const t = S.tab, b = snap(); await tabData(); if (S.tab === t && snap() !== b) draw(); }
+let bgBusy = false;
+async function bgRefresh(){
+  if (bgBusy || !sb || !CODE || document.hidden || !S.dash || $("sheet")) return;
+  const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && $("main") && $("main").contains(a)) return;
+  bgBusy = true;
+  try { const t = S.tab, b = snap(); await load(); await tabData(); const a2 = document.activeElement; if (S.tab === t && snap() !== b && !$("sheet") && !(a2 && /INPUT|TEXTAREA|SELECT/.test(a2.tagName) && $("main").contains(a2))) draw(); } catch(e){}
+  finally { bgBusy = false; }
+}
+
+/* ---------- Бош ---------- */
+function homeView(){
+  const d = S.dash, o = d.orders, f = d.funnel || {};
+  const fv = [["visit", "Саҳифага кирди"], ["search", "Қидирди"], ["cart_add", "Саватга қўшди"], ["checkout", "Буюртма бошлади"], ["order", "Буюртма берди"]];
+  const top = Math.max(1, ...fv.map(([k]) => (f[k] && f[k].people) || 0));
+  const al = d.alerts || [];
+  const pp = d.payouts_pending || { n:0, sum:0, oldest_min:0 };
+  const q = [[can("payout") && pp.n, `💳 Дўконга тўлов: <b>${pp.n}</b> та · ${sum(pp.sum)} · энг эскиси ${pp.oldest_min} дақ.`, "pay"], [can("payout") && d.refunds_pending, `↩️ Қайтаришлар кутмоқда: <b>${d.refunds_pending}</b>`, can("money") ? "money" : "orders"], [can("people") && d.pending_people, `🆕 Янги аризалар: <b>${d.pending_people}</b>`, "people"]].filter(x => x[0]);
+  const queue = `<div class="card"><h2>Ҳозир қилиш керак</h2>${q.length ? q.map(x => `<div class="al red" data-go="${x[2]}">${x[1]}</div>`).join("") : `<div class="al ok">✅ Навбатда иш йўқ</div>`}</div>`;
+  return queue + `<div class="row"><b>Давр:</b>${[7, 30, 90].map(n => `<button class="btn ${S.days === n ? "" : "alt"} sm" data-days="${n}">${n} кун</button>`).join("")}</div>
+  <div class="grid" style="margin-bottom:12px">
+    <div class="kpi"><small>Буюртмалар</small><b>${o.total}</b></div>
+    <div class="kpi g"><small>Тўланган</small><b>${o.paid}</b></div>
+    <div class="kpi ${o.unpaid ? "r" : ""}"><small>Тўлов кутилмоқда</small><b>${o.unpaid}</b></div>
+    <div class="kpi"><small>Муддати ўтган</small><b>${o.expired}</b></div>
+    ${o.sum != null ? `<div class="kpi"><small>Айланма</small><b>${fmt(o.sum)}</b></div>
+    <div class="kpi g"><small>Платформа даромади</small><b>${fmt(o.platform)}</b></div>
+    <div class="kpi"><small>Ўртача чек</small><b>${fmt(o.avg)}</b></div>` : ""}
+    <div class="kpi"><small>Етказилган</small><b>${o.delivered}</b></div>
+    <div class="kpi"><small>Ташрифчилар</small><b>${d.visitors}</b></div>
+    <div class="kpi"><small>Янги мижозлар</small><b>${d.new_customers} <span class="mu" style="font-size:13px">/ ${d.customers}</span></b></div></div>
+  <div class="card"><h2>Огоҳлантиришлар</h2>${al.length ? al.map(a => `<div class="al ${a.lvl === "info" ? "ok" : a.lvl}" ${a.no ? `data-open="${a.no}"` : ""}><span>${a.lvl === "red" ? "🔴" : a.lvl === "info" ? "ℹ️" : "🟡"}</span><span>${esc(a.text)}</span></div>`).join("") : `<div class="al ok">✅ Ҳаммаси жойида</div>`}</div>
+  <div class="card"><h2>Воронка (${d.days} кун, ноёб одамлар)</h2>${fv.map(([k, n]) => { const p = (f[k] && f[k].people) || 0; return `<div class="fn"><div class="t"><span>${n}</span><b>${p}</b></div><div class="bar"><i style="width:${Math.round(p / top * 100)}%"></i></div></div>`; }).join("")}</div>
+  <div class="grid"><div class="card"><h2>Кўп қидирилган</h2>${(d.top_searches || []).length ? (d.top_searches || []).map(x => `<div class="row" style="margin:3px 0"><span style="flex:1">${esc(x.q)}</span><b>${x.n}</b></div>`).join("") : '<span class="mu">Ҳали йўқ</span>'}</div>
+  <div class="card"><h2>Натижа бермаган қидирув</h2>${(d.searches_empty || []).length ? (d.searches_empty || []).map(x => `<div class="row" style="margin:3px 0"><span style="flex:1">${esc(x.q)}</span><b>${x.n}</b></div>`).join("") : '<span class="mu">Йўқ</span>'}</div></div>`;
+}
+
+/* ---------- Буюртмалар ---------- */
+function minsIn(o){ const tm = Array.isArray(o.times) && o.times.length ? Number(o.times[o.times.length - 1]) : new Date(o.created_at).getTime(); return Math.max(0, Math.round((Date.now() - tm) / 60000)); }
+function kanbanView(){
+  const fin = o => o.mode === "pickup" ? 3 : 4, today = new Date().setHours(0, 0, 0, 0);
+  const live = S.orders.filter(o => o.pay_status !== "expired" && o.pay_status !== "refunded");
+  const cols = [
+    ["Тўлов кутилмоқда", o => o.pay_status === "unpaid", [15, 30]],
+    ["Йиғувчи кутилмоқда", o => ["paid", "none"].includes(o.pay_status) && o.stage <= 1, [30, 60]],
+    ["Йиғилмоқда", o => ["paid", "none"].includes(o.pay_status) && o.stage === 2, [90, 150]],
+    ["Йўлда / тайёр", o => ["paid", "none"].includes(o.pay_status) && o.stage === 3 && o.stage < fin(o), [60, 120]],
+    ["Бугун етказилган", o => ["paid", "none"].includes(o.pay_status) && o.stage >= fin(o) && new Date(o.created_at).getTime() >= today, null]
+  ];
+  return `<div class="kb">${cols.map(([n, f, th]) => { const l = live.filter(f).sort((a, b) => b.no - a.no);
+    return `<div class="kc"><h3>${n} <span class="pill m">${l.length}</span></h3>${l.slice(0, 40).map(o => { const m = minsIn(o), lv = th ? (m >= th[1] ? "red" : m >= th[0] ? "yellow" : "") : "";
+      return `<div class="kcard ${lv}" data-open="${o.no}"><b>№${o.no}</b> ${o.mode === "car" ? "🚚" : o.mode === "pickup" ? "🛍" : "📦"} <span class="mu">${esc(o.customer_name || "")}</span><br><span>${fmt(o.pay_amount || o.total)}</span> · <span class="${lv ? "err" : "mu"}">⏱ ${m >= 60 ? Math.floor(m / 60) + " соат " + (m % 60) + " дақ" : m + " дақ"}</span></div>`; }).join("") || '<p class="mu">Йўқ</p>'}</div>`; }).join("")}</div>`;
+}
+function ordersView(){
+  if (S.view === "kanban") return `<div class="row"><button class="btn alt sm" data-view="list">Рўйхат</button><button class="btn sm" data-view="kanban">Канбан</button><span class="mu" style="font-size:13px">Сариқ ва қизил: буюртма шу босқичда одатдагидан узоқ турибди.</span></div>` + kanbanView();
+  const q = S.q.trim().toLowerCase();
+  const list = S.orders.filter(o => {
+    if (S.filter === "unpaid" && o.pay_status !== "unpaid") return false;
+    if (S.filter === "paid" && o.pay_status !== "paid") return false;
+    if (S.filter === "active" && !(o.stage < stMax(o) && ["paid", "none"].includes(o.pay_status))) return false;
+    if (S.filter === "done" && o.stage < stMax(o)) return false;
+    if (q && !`${o.no} ${o.customer_name} ${o.phone} ${o.address || ""}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const F = [["all", "Ҳаммаси"], ["unpaid", "Тўлов кутилмоқда"], ["paid", "Тўланган"], ["active", "Жараёнда"], ["done", "Етказилган"]];
+  return `<div class="row"><button class="btn sm" data-view="list">Рўйхат</button><button class="btn alt sm" data-view="kanban">Канбан</button></div><div class="row"><input type="search" id="oq" placeholder="№, исм, телефон, манзил…" value="${esc(S.q)}"><button class="btn alt sm" id="csv">Excel (CSV)</button></div>
+  <div class="row">${F.map(([k, n]) => `<button class="btn ${S.filter === k ? "" : "alt"} sm" data-f="${k}">${n}</button>`).join("")}</div>
+  <div class="card tw"><table><tr><th>№</th><th>Вақт</th><th>Мижоз</th><th>Ҳолат</th><th>Тўлов</th><th class="n">Сумма</th></tr>
+  ${list.slice(0, 200).map(o => `<tr data-open="${o.no}" style="cursor:pointer"><td><b>${o.no}</b></td><td>${dt(o.created_at)}</td><td>${esc(o.customer_name)}<br><small class="mu">${esc(o.phone)}</small></td><td>${esc(stName(o))}</td><td>${payPill(o)}</td><td class="n">${fmt(o.pay_amount || o.total)}</td></tr>`).join("") || `<tr><td colspan="6" class="mu">Буюртма йўқ</td></tr>`}</table></div>`;
+}
+function csv(){
+  const head = ["№", "Вақт", "Мижоз", "Телефон", "Манзил", "Тури", "Босқич", "Тўлов", "Товар", "Етказиш", "Хизмат ҳақи", "Захира", "Тўланган сумма", "Платформа даромади"];
+  const rows = S.orders.map(o => [o.no, o.created_at, o.customer_name, o.phone, o.address || "", o.mode, stName(o), o.pay_status, o.goods_sum || "", o.delivery_sum || "", o.service_fee || "", o.reserve_sum || "", o.pay_amount || o.total, o.platform_income || ""]);
+  const body = [head, ...rows].map(r => r.map(c => `"${String(c == null ? "" : c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿" + body], { type:"text/csv;charset=utf-8" }));
+  a.download = "buyurtmalar-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+}
+
+/* ---------- Пул ---------- */
+function moneyView(){
+  const m = S.dash.money, ok = Number(m.sum_all) === 0;
+  const rows = [["Мижозлардан тушган", m.in, ""], ["Дўконларга (товар)", m.shops, ""], ["Ҳайдовчиларга", m.drivers, ""], ["Йиғувчиларга", m.collectors, ""], ["Тўлов тизими ҳақи", m.gateway, ""], ["Платформа даромади", m.platform, "g"], ["Ушлаб турилган захира", m.reserve, ""], ["Қайтарилган", m.refunds, ""]];
+  const pend = S.refunds.filter(r => r.status === "pending");
+  return `<div class="card ${ok ? "" : ""}"><h2>Мувозанат</h2><div class="al ${ok ? "ok" : "red"}">${ok ? "✅ Ҳамма сўм жойида: тушган пул = тақсимланган пул" : "🔴 Мувозанат бузилган, фарқ: " + sum(m.sum_all)}</div>
+  <div class="kv" style="margin-top:8px">${rows.map(([n, v, c]) => `<span>${n}</span><span class="${c === "g" ? "" : ""}">${sum(v)}</span>`).join("")}</div>
+  <p class="mu" style="font-size:13px">Маълумот барча вақт учун. Қайтариш ва захира алоҳида кўрсатилган. Захира — мижозга қайтиши мумкин бўлган пул.</p></div>
+  <div class="card tw"><h2>Қайтаришлар ${pend.length ? `<span class="pill y">${pend.length} кутилмоқда</span>` : ""}</h2>
+  <table><tr><th>№ буюртма</th><th>Тури</th><th>Сабаб</th><th class="n">Сумма</th><th>Ҳолат</th><th></th></tr>
+  ${S.refunds.map(r => `<tr><td><a href="#" data-open="${r.order_no}">${r.order_no}</a></td><td>${({ reserve:"Захира", item:"Товар", cancel:"Бекор", other:"Бошқа" })[r.kind] || r.kind}</td><td>${esc(r.reason || "")}</td><td class="n">${fmt(r.amount)}</td><td>${r.status === "done" ? '<span class="pill g">Бажарилди</span>' : '<span class="pill y">Кутилмоқда</span>'}</td><td>${r.status === "pending" && can("payout") ? `<button class="btn sm" data-rdone="${r.id}">Қайтардим</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Қайтариш йўқ</td></tr>'}</table>
+  <p class="mu" style="font-size:13px">«Қайтардим» ни фақат пулни Click/Payme кабинетидан ёки қўлда мижозга ўтказганингиздан кейин босинг.</p></div>${reconView()}`;
+}
+/* ---------- Click/Payme солиштириш ---------- */
+function reconView(){
+  const r = S.rc;
+  const tb = (h, rows) => rows.length ? `<div class="tw"><table><tr>${h.map(x => `<th>${x}</th>`).join("")}</tr>${rows.map(c => `<tr>${c.map(x => `<td>${x}</td>`).join("")}</tr>`).join("")}</table></div>` : '<p class="mu">Йўқ ✅</p>';
+  return `<div class="card"><h2>Click/Payme ҳисоботини солиштириш</h2>
+  <p class="mu" style="font-size:13px">Click ёки Payme кабинетидан тўловлар ҳисоботини Excel/CSV қилиб юкланг. Тизим ҳар бир тўловни бизнинг тўловлар билан солиштиради. Ҳеч нарса ўзгармайди.</p>
+  <div class="row"><select id="rcprov"><option value="click" ${S.rcprov === "click" ? "selected" : ""}>Click</option><option value="payme" ${S.rcprov === "payme" ? "selected" : ""}>Payme</option></select>
+  <label style="margin:0"><input type="checkbox" id="rctiyin" style="width:auto"> сумма тийинда (÷100)</label><input type="file" id="rcfile" accept=".xlsx,.xls,.csv,.txt"></div>
+  ${r ? `<div class="kv" style="margin-top:10px"><span>Ҳисоботда қаторлар</span><span>${r.rows}</span><span>✅ Мос келди</span><span>${r.ok}</span><span>⚠️ Сумма фарқ қилди</span><span>${r.amount_diff.length}</span><span>🔴 Фақат уларда (бизда йўқ)</span><span>${r.only_theirs.length}</span><span>🟡 Фақат бизда (ҳисоботда йўқ)</span><span>${r.only_ours.length}</span></div>
+  <h2 style="margin-top:12px">Сумма фарқ қилди</h2>${tb(["Транзакция", "Буюртма", "Уларда", "Бизда"], r.amount_diff.map(x => [esc(x.id), x.order_no, fmt(x.theirs), fmt(x.ours)]))}
+  <h2>Фақат уларда</h2>${tb(["Транзакция", "Буюртма", "Сумма", "Сана"], r.only_theirs.map(x => [esc(x.id), x.order_no || "—", fmt(x.amount), x.date || ""]))}
+  <h2>Фақат бизда (${r.from} — ${r.to})</h2>${tb(["Буюртма", "Транзакция", "Сумма", "Вақт"], r.only_ours.map(x => [x.order_no, esc(x.id), fmt(x.amount), dt(x.at)]))}
+  <p class="mu" style="font-size:13px">«Фақат уларда» — пул тушган, лекин буюртма тўланган деб белгиланмаган: мижоз билан боғланинг. «Фақат бизда» — тизимда тўланган, лекин ҳисоботда йўқ: ҳисобот даври тўлиқми, текширинг.</p>` : ""}</div>`;
+}
+function parseStatement(file, tiyin){
+  return new Promise((res, rej) => {
+    const fr = new FileReader(); fr.onerror = () => rej(new Error("Файлни ўқиб бўлмади"));
+    fr.onload = () => { try {
+      let rows;
+      if (window.XLSX) { const wb = XLSX.read(fr.result, { type:"array", cellDates:true }); rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:"" }); }
+      else { const t = new TextDecoder().decode(fr.result).replace(/^\uFEFF/, ""); rows = t.split(/\r?\n/).map(l => l.split(/[;\t,]/)); }
+      const norm = x => String(x == null ? "" : x).toLowerCase();
+      let hi = rows.findIndex(r => r.some(c => /сумм|amount|summa|сўм/.test(norm(c))));
+      const H = hi >= 0 ? rows[hi].map(norm) : [], find = re => H.findIndex(h => re.test(h));
+      let ci = { id:find(/trans|транзак|^id$|№|номер/), amt:find(/сумм|amount|summa|сўм/), ord:find(/order|заказ|merchant|буюртма|invoice/), dt:find(/дата|date|sana|вақт|время|time/) };
+      if (hi < 0 || ci.id < 0 || ci.amt < 0) { hi = -1; ci = { id:0, amt:1, ord:-1, dt:-1 }; }
+      const out = [];
+      rows.slice(hi + 1).forEach(r => {
+        const id = String(r[ci.id] == null ? "" : r[ci.id]).trim(); if (!id) return;
+        const raw = r[ci.amt]; let amt = typeof raw === "number" ? raw : Number(String(raw).replace(/[\s\u00A0]/g, "").replace(",", ".")); if (!Number.isFinite(amt)) return;
+        if (tiyin) amt = amt / 100;
+        let d = ci.dt >= 0 ? r[ci.dt] : ""; if (d instanceof Date) d = d.toISOString().slice(0, 10); else { const m = String(d).match(/(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4})/); d = m ? (m[1] ? m[0] : `${m[6]}-${m[5]}-${m[4]}`) : ""; }
+        const o = ci.ord >= 0 ? String(r[ci.ord]).replace(/\D/g, "") : "";
+        out.push({ id, amount:String(Math.round(amt)), order_no:o || null, date:d || null });
+      });
+      res(out); } catch(e){ rej(e); } };
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+/* ---------- Одамлар ---------- */
+function fleetCard(){
+  const f = S.fleets; if (!f) return "";
+  const ed = can("people"), mk = id => (f.markets.find(m => m.id === id) || {}).name || "—";
+  const fopt = cur => `<option value="">— паркда эмас —</option>` + f.fleets.filter(x => x.active).map(x => `<option value="${x.id}" ${x.id === cur ? "selected" : ""}>${esc(x.name)}</option>`).join("");
+  return `<div class="card tw"><h2>Таксопарклар</h2>
+  <p class="mu" style="font-size:13px">Ҳар бозорга битта парк. Йиғиш тугагач буюртма шу бозорнинг паркидаги ҳайдовчиларнинг ботига тушади, биринчи «Мен оламан» босган олади. 10 дақиқа ҳеч ким олмаса, сизга огоҳлантириш келади.</p>
+  <table><tr><th>Парк</th><th>Бозор</th><th>Телефон</th><th class="n">Ҳайдовчи</th><th>Ҳолат</th><th></th></tr>
+  ${f.fleets.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.market || "—")}</td><td>${esc(x.phone || "")}</td><td class="n">${x.drivers}</td><td>${x.active ? '<span class="pill g">Фаол</span>' : '<span class="pill r">Ўчирилган</span>'}</td><td>${ed ? `<button class="btn sm alt" data-fedit="${x.id}">Ўзгартириш</button> <button class="btn sm alt" data-ftog="${x.id}">${x.active ? "Ўчириш" : "Ёқиш"}</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ҳали парк йўқ</td></tr>'}</table>
+  ${ed ? `<div class="row" style="margin-top:10px"><input id="fnm" placeholder="Парк номи" style="flex:1;min-width:120px"><select id="fmk">${f.markets.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select><input id="fph" placeholder="Телефон" style="width:130px"><button class="btn sm" data-fadd>Қўшиш</button></div>` : ""}
+  <h2 style="margin-top:14px">Ҳайдовчиларни паркка бириктириш</h2>
+  <table><tr><th>Ҳайдовчи</th><th>Машина</th><th>Гувоҳнома</th><th>Ҳолат</th><th>Парк</th></tr>
+  ${f.drivers.map(d => `<tr><td>${esc(d.name)}</td><td>${esc(d.car || "")}</td><td>${esc(d.license || "—")}${d.has_photo ? " 📷" : ""}</td><td>${d.status === "active" ? '<span class="pill g">Фаол</span>' : d.status === "pending" ? '<span class="pill y">Кутилмоқда</span>' : '<span class="pill r">Блок</span>'}</td><td>${ed ? `<select data-fas="${d.id}">${fopt(d.fleet_id)}</select>` : esc(d.fleet_id ? ((f.fleets.find(z => z.id === d.fleet_id) || {}).name || "") : "—")}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳайдовчи йўқ</td></tr>'}</table></div>`;
+}
+/* ---------- Аризалар: тўлиқ юборилганлар навбати (эскиси биринчи) ва чала аризалар ---------- */
+const APP_RL = { seller:"Дўкон", collector:"Йиғувчи", driver:"Ҳайдовчи" };
+const APP_STEP = { r_phone:"телефон", c_phone:"телефон", d_phone:"телефон", phone:"телефон", r_form:"анкета", c_name:"исм", d_name:"исм", name:"исм", c_market:"бозор", market:"бозор", row:"жой", d_car:"машина", d_lic:"гувоҳнома", d_photo:"гувоҳнома", cats:"бўлимлар" };
+const ago = t => { const m = Math.max(0, Math.round((Date.now() - new Date(t).getTime()) / 60000)); return m < 60 ? m + " дақ." : m < 1440 ? Math.floor(m / 60) + " соат" : Math.floor(m / 1440) + " кун"; };
+function appsCard(p){
+  if (!Array.isArray(p.apps)) return "";
+  const det = r => (r.role === "seller" ? [r.market ? esc(r.market) : '<span class="pill y">бозор йўқ</span>', esc(r.row || ""), r.shop && r.shop !== r.row ? esc(r.shop) : "",
+      r.card ? `💳 ${esc(r.card)}${r.card_holder ? " · " + esc(r.card_holder) : ""}` : '<span class="pill y">карта йўқ</span>', r.inn ? "СТИР " + esc(r.inn) : "", r.cats ? r.cats + " бўлим" : ""]
+    : r.role === "collector" ? [r.market ? esc(r.market) : '<span class="pill y">бозор йўқ</span>']
+    : [esc(r.car || ""), r.license ? "🪪 " + esc(r.license) : "", r.has_photo ? "📷" : ""]).filter(Boolean).join(" · ");
+  const btn = r => can("people") ? `<button class="btn sm" data-pset="${r.id}" data-st="active">Тасдиқлаш</button> <button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Рад этиш</button>` : "";
+  const un = p.unfinished || [];
+  return `<div class="card tw"><h2>Аризалар (${p.apps.length})</h2><p class="mu" style="font-size:13px">Тўлиқ юборилган аризалар, энг эскиси биринчи. Тасдиқлангач, одамга ботда илова тугмаси боради.</p>
+  <table><tr><th class="n">№</th><th>Тури</th><th>Исм</th><th>Маълумот</th><th>Телефон</th><th>Келган</th><th></th></tr>
+  ${p.apps.map((r, i) => `<tr><td class="n">${i + 1}</td><td>${APP_RL[r.role] || r.role}</td><td>${esc(r.name) || '<span class="pill y">исм йўқ</span>'}</td><td>${det(r)}</td><td>${esc(r.phone || "")}</td><td>${dt(r.created)}<br><small class="mu">${ago(r.created)} олдин</small></td><td>${btn(r)}</td></tr>`).join("") || '<tr><td colspan="7" class="mu">Янги ариза йўқ</td></tr>'}</table>
+  ${un.length ? `<details style="margin-top:10px"><summary class="mu">Чала аризалар (${un.length}): ботда бошлаган, лекин охиригача юбормаган</summary>
+  <table><tr><th>Тури</th><th>Исм</th><th>Телефон</th><th>Тўхтаган қадам</th><th>Бошлаган</th></tr>
+  ${un.map(r => `<tr class="mu"><td>${APP_RL[r.role] || r.role}</td><td>${esc(r.name) || "—"}</td><td>${esc(r.phone || "—")}</td><td><span class="pill m">${APP_STEP[r.step] || esc(r.step)}</span></td><td>${dt(r.created)}</td></tr>`).join("")}</table></details>` : ""}</div>`;
+}
+/* бозор ичидаги блок/бинолар: дўкон аризасида шу рўйхатдан танланади (бўш бўлса, дўкончи ўзи ёзади) */
+function blocksCard(p){
+  if (!Array.isArray(p.markets) || !p.markets.length || !can("people")) return "";
+  return `<div class="card"><h2>Бозор блоклари</h2><p class="mu" style="font-size:13px">Дўкон аризасида дўкончи шу рўйхатдан блок ёки бинони танлайди. Вергул билан ажратиб ёзинг. Бўш қолдирилса, дўкончи блок номини ўзи ёзади.</p>
+  ${p.markets.map(m => `<div class="row"><span style="min-width:110px">${esc(m.name)}</span><input data-mbl="${m.id}" value="${esc((m.blocks || []).join(", "))}" placeholder="Масалан: А блок, Б блок, 2-бино" style="flex:1;min-width:160px"><button class="btn sm" data-mbsave="${m.id}">Сақлаш</button></div>`).join("")}</div>`;
+}
+function peopleView(){
+  const p = S.people; if (!p) return '<p class="mu">Юкланмоқда…</p>';
+  const live = rows => Array.isArray(p.apps) ? rows.filter(r => r.status !== "pending") : rows;   // аризалар юқоридаги «Аризалар» да
+  const st = s => s === "active" ? '<span class="pill g">Фаол</span>' : s === "pending" ? '<span class="pill y">Кутилмоқда</span>' : '<span class="pill r">Блок</span>';
+  const act = r => !can("people") ? "" : r.status === "pending" ? `<button class="btn sm" data-pset="${r.id}" data-st="active">Тасдиқлаш</button> <button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Рад этиш</button>` : r.status === "active" ? `<button class="btn sm alt" data-pset="${r.id}" data-st="blocked">Блоклаш</button>` : `<button class="btn sm" data-pset="${r.id}" data-st="active">Очиш</button>${r.reason ? ` <small class="mu">${esc(r.reason)}</small>` : ""}`;
+  const nm = r => (esc(r.name) || '<span class="pill y">исм йўқ</span>') + (can("people") ? ` <button class="btn sm alt" data-prn="${r.id}" data-nm="${esc(r.name || "")}" title="Исмни ўзгартириш">✏️</button>` : "");
+  const tbl = (title, rows, cols) => `<div class="card tw"><h2>${title} (${rows.length})</h2><table><tr>${cols.map(c => `<th class="${c[2] || ""}">${c[0]}</th>`).join("")}</tr>${rows.map(r => `<tr>${cols.map(c => `<td class="${c[2] || ""}">${c[1](r)}</td>`).join("")}</tr>`).join("") || `<tr><td colspan="${cols.length}" class="mu">Ҳали йўқ</td></tr>`}</table></div>`;
+  return appsCard(p) + blocksCard(p) + tbl("Йиғувчилар", live(p.collectors), [["Исм", nm], ["Телефон", r => esc(r.phone || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
+    + tbl("Ҳайдовчилар", live(p.drivers), [["Исм", nm], ["Машина", r => esc(r.car || "")], ["Ҳолат", r => st(r.status)], ["Буюртма", r => r.orders, "n"], ["Топган", r => fmt(r.earned), "n"], ["", act]])
+    + fleetCard() + tbl("Дўконлар", live(p.shops), [["Дўкон", r => esc(r.shop || r.name) + (r.row && r.row !== r.shop ? `<br><small class="mu" style="white-space:nowrap">${esc(r.row)}</small>` : "")], ["Ҳолат", r => st(r.status)], ["Нархлар", r => r.prices, "n"], ["Сотилган", r => fmt(r.sold), "n"], ["Тўланган", r => fmt(r.paid), "n"], ["Карта", r => `<span style="white-space:nowrap">${r.card ? esc(r.card) : '<span class="pill y">йўқ</span>'}${can("payout") ? ` <button class="btn sm alt" data-scard="${r.id}" title="Картани киритиш">✏️</button>` : ""}</span>`], ["", act]]);
+}
+
+/* ---------- Тўловлар ---------- */
+function commCard(){
+  const c = S.comm; if (!c) return "";
+  const ed = c.can_edit;
+  return `<div class="card"><h2>Сотувчи комиссияси</h2>
+  <p class="mu" style="font-size:13px">Дўконга тўланадиган суммадан ушлаб қолинади, мижозга нарх ўзгармайди. Фақат янги харидларга татбиқ қилинади. Дўконга алоҳида фоиз қўйилмаса: биринчи N та буюртма учун 0%, кейин умумий фоиз. Алоҳида фоиз қўйилса, у бепул даврсиз ишлайди.</p>
+  <div class="row"><span>Умумий фоиз:</span><input id="cdef" inputmode="decimal" value="${String(c.default).replace(".", ",")}" style="width:90px" ${ed ? "" : "disabled"}><span>%</span>${ed ? '<button class="btn sm" data-cdef>Сақлаш</button>' : ""}</div>
+  <div class="row"><span>Дўконнинг биринчи</span><input id="cfree" inputmode="numeric" value="${c.free_orders}" style="width:70px" ${ed ? "" : "disabled"}><span>та буюртма учун 0%</span>${ed ? '<button class="btn sm" data-cfreesave>Сақлаш</button>' : ""}</div>
+  <div class="tw"><table><tr><th>Дўкон</th><th>Алоҳида %</th><th class="n">Ҳозирги %</th><th class="n">Буюртма</th><th class="n">Жами харид</th><th class="n">Комиссия</th><th></th></tr>
+  ${c.shops.map(x => `<tr><td>${esc(x.name)}${x.row ? ` <small class="mu">${esc(x.row)}</small>` : ""}</td><td><input data-cown="${x.id}" inputmode="decimal" placeholder="умумий" value="${x.own == null ? "" : String(x.own).replace(".", ",")}" style="width:84px" ${ed ? "" : "disabled"}></td><td class="n">${String(x.effective).replace(".", ",")}%${x.own == null && x.free_left > 0 ? `<br><small class="mu">бепул: ${x.free_left} та қолди</small>` : ""}</td><td class="n">${x.orders}</td><td class="n">${fmt(x.gross)}</td><td class="n">${fmt(x.commission)}</td><td>${ed ? `<button class="btn sm alt" data-cshop="${x.id}">Сақлаш</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="7" class="mu">Дўкон йўқ</td></tr>'}</table></div></div>`;
+}
+function payView(){
+  const p = S.pay; if (!p) return '<p class="mu">Юкланмоқда…</p>';
+  return `<div class="card"><h2>Дўконга тўлов кутмоқда (${p.pending.length})</h2>${p.pending.map(x => `<div class="card" style="border:1px solid var(--ln)"><div class="kv"><span>№ буюртма</span><span><a href="#" data-open="${x.order_no}">${x.order_no}</a></span><span>Дўкон</span><span>${esc(x.shop || "")}${x.row ? " · " + esc(x.row) : ""}</span><span>Карта</span><span><b>${esc(x.card || "—")}</b></span><span>Телефон</span><span>${esc(x.phone || "")}</span><span>Йиғувчи</span><span>${esc(x.collector || "")}</span><span>Кутяпти</span><span class="${x.minutes > 5 ? "err" : ""}">${x.minutes} дақ.</span>${x.commission > 0 ? `<span>Жами харид</span><span>${sum(x.total)}</span><span>Комиссия (${x.commission_pct}%)</span><span>− ${sum(x.commission)}</span><span>Дўконга тўланади</span><span><b>${sum(x.net)}</b></span>` : `<span>Сумма</span><span><b>${sum(x.total)}</b></span>`}</div>
+    <div class="row" style="margin-top:8px"><button class="btn" data-pay="${x.id}" data-ok="1">✅ Тўладим</button><button class="btn alt" data-pay="${x.id}" data-ok="0">❌ Рад этиш</button></div></div>`).join("") || '<div class="al ok">✅ Тўлов кутаётган йўқ</div>'}</div>
+  <div class="card tw"><h2>Охирги тўловлар</h2><table><tr><th>№</th><th>Дўкон</th><th>Ҳолат</th><th class="n">Сумма</th><th>Вақт</th></tr>${p.recent.map(x => `<tr><td>${x.order_no}</td><td>${esc(x.shop || "")}</td><td>${x.status === "paid" ? '<span class="pill g">тўланган</span>' : '<span class="pill r">рад</span>'}</td><td class="n">${fmt(x.net != null ? x.net : x.total)}${x.commission > 0 ? `<br><small class="mu">комиссия ${fmt(x.commission)}</small>` : ""}</td><td>${dt(x.at)}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳали йўқ</td></tr>'}</table>
+  ${commCard()}
+  ${shopCard()}
+  ${staffCard()}
+  <p class="mu" style="font-size:13px">«Тўладим» ни фақат пулни дўкон картасига ўтказганингиздан кейин босинг. Қарор журналга ёзилади, йиғувчига хабар кетади.</p></div>`;
+}
+
+/* ---------- Нархлар ---------- */
+const PST = { ok:["Тайёр", "g"], warn:["Шубҳали", "y"], err_product:["Товар ID нотўғри", "r"], err_price:["Нарх нотўғри", "r"] };
+function pricesView(){
+  const d = S.prices; if (!d) return '<p class="mu">Юкланмоқда…</p>';
+  const shops = d.shops.filter(x => x.status === "active");
+  if (!S.pshop && shops.length) S.pshop = String(shops[0].id);
+  const q = S.pq.trim().toLowerCase();
+  const list = d.products.filter(p => {
+    if (!p.active) return false;
+    if (S.pf === "none" && p.n > 0) return false;
+    if (S.pf === "old" && !(p.old > 0)) return false;
+    if (S.pf === "dev" && !(p.dev > 0)) return false;
+    if (q && !`${p.id} ${p.name} ${p.spec || ""}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const F = [["all", "Ҳаммаси"], ["none", "Нархсиз"], ["old", `Эски (${d.stale_days}+ кун)`], ["dev", `Шубҳали (±${d.dev_pct}%)`]];
+  const pv = S.prev;
+  const okN = pv ? pv.data.filter(r => r.st === "ok" || r.st === "warn").length : 0;
+  const pr = S.props || [];
+  const pcats = [...new Set((d.products || []).map(p => p.cat))].sort();
+  return `${pr.length ? `<div class="card"><h2>🆕 Янги товар таклифлари (${pr.length})</h2><p class="mu" style="font-size:13px">Дўкон ёки йиғувчи каталогда йўқ товарни таклиф қилган. Қўшишдан олдин номи, тавсифи, ўлчови ва тоифасини тузатиш мумкин. Рад этишда сабабини ёзинг: таклиф қилганга Telegram'да боради. Ботдаги тугмалар ҳам шу қоида билан ишлайди.</p>
+    ${pr.map(x => `<div class="card" style="border:1px solid var(--ln)" data-np="${x.id}">
+      <div class="mu" style="font-size:12px">${x.by ? esc(x.by) : "—"}${x.at ? " · " + dt(x.at) : ""}</div>
+      <div class="row"><input data-npf="name" value="${esc(x.name)}" maxlength="80" style="flex:2" aria-label="Номи"><input data-npf="spec" value="${esc(x.spec || "")}" maxlength="80" style="flex:2" aria-label="Тавсиф" placeholder="тавсиф"></div>
+      <div class="row"><input data-npf="unit" value="${esc(x.unit)}" maxlength="15" style="flex:1" aria-label="Ўлчов"><select data-npf="cat" style="flex:1" aria-label="Тоифа">${[...new Set([x.cat, ...pcats])].map(c => `<option ${c === x.cat ? "selected" : ""}>${esc(c)}</option>`).join("")}</select></div>
+      <div class="mu" style="font-size:13px">${x.offers.length ? x.offers.map(f => `${esc(f.shop)}: ${fmt(f.price)} сўм`).join(" · ") : x.base ? `Нарх: ${fmt(x.base)} сўм` : "Нарх кўрсатилмаган"}</div>
+      ${(x.similar || []).length ? `<div style="font-size:13px;color:var(--warn)">⚠️ Каталогда ўхшаш: ${x.similar.map(q => esc(`${q.name} ${q.spec || ""}`.trim()) + ` <small class="mu">#${q.id}</small>`).join("; ")}</div>` : ""}
+      <div class="row" style="margin-top:8px"><button class="btn sm" data-npd="${x.id}" data-ok="1">✅ Каталогга қўшиш</button><button class="btn alt sm" data-npd="${x.id}" data-ok="0">❌ Рад этиш</button></div></div>`).join("")}</div>` : ""}
+  <div class="card"><h2>Нархларни юклаш (Excel / CSV)</h2>
+    <div class="row"><select id="pshop" style="flex:1">${shops.map(x => `<option value="${x.id}" ${String(x.id) === S.pshop ? "selected" : ""}>${esc(x.name)}${x.row ? " · " + esc(x.row) : ""} (${x.prices} та нарх)</option>`).join("") || "<option>Дўкон йўқ</option>"}</select></div>
+    <div class="row"><button class="btn alt sm" id="ptpl">⬇ Шаблон (CSV)</button><input type="file" id="pfile" accept=".xlsx,.xls,.csv" style="flex:1"></div>
+    <p class="mu" style="font-size:13px">Шаблонни юкланг, 4-устунга (Нарх) сўмда нархни ёзинг, сақлаб шу ерга юкланг. Аввал кўриб чиқасиз, кейин сақлайсиз. ID устунига тегманг.</p>
+    ${pv ? `<div class="tw"><table><tr><th>№</th><th>Товар</th><th class="n">Эски</th><th class="n">Янги</th><th class="n">Ўзгариш</th><th>Ҳолат</th></tr>${pv.data.slice(0, 300).map(r => `<tr><td>${r.line}</td><td>${esc(r.name || "ID " + r.product_id)} <small class="mu">${esc(r.unit || "")}</small></td><td class="n">${r.old != null ? fmt(r.old) : "—"}</td><td class="n">${r.price != null ? fmt(r.price) : "—"}</td><td class="n">${r.pct != null ? r.pct + "%" : ""}</td><td><span class="pill ${PST[r.st][1]}">${PST[r.st][0]}</span>${r.st === "warn" ? ` <small class="mu">бозор ўртачаси ${fmt(r.med)}</small>` : ""}</td></tr>`).join("")}</table></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="papply" ${okN ? "" : "disabled"}>Сақлаш (${okN} та)</button><button class="btn alt" id="pcancel">Бекор қилиш</button><span class="mu">Хатоли қаторлар ёзилмайди. «Шубҳали» қаторлар ёзилади.</span></div>` : ""}</div>
+  <div class="row"><input type="search" id="pq" placeholder="Товар ёки ID…" value="${esc(S.pq)}"></div>
+  <div class="row">${F.map(([k, n]) => `<button class="btn ${S.pf === k ? "" : "alt"} sm" data-pf="${k}">${n}</button>`).join("")}</div>
+  <div class="card tw"><table><tr><th>ID</th><th>Товар</th><th class="n">Дўкон</th><th class="n">Энг арзон</th><th class="n">Ўртача</th><th>Янгиланган</th></tr>
+  ${list.slice(0, 300).map(p => `<tr data-pdet="${p.id}" style="cursor:pointer"><td>${p.id}</td><td>${esc(p.name)} <small class="mu">${esc(p.spec || "")} · ${esc(p.unit)}</small></td><td class="n">${p.n}</td><td class="n">${p.min != null ? fmt(p.min) : '<span class="pill y">йўқ</span>'}</td><td class="n">${p.med != null ? fmt(p.med) : "—"}</td><td>${p.upd ? dt(p.upd) : "—"}${p.old > 0 ? ' <span class="pill y">эски</span>' : ""}${p.dev > 0 ? ' <span class="pill r">шубҳали</span>' : ""}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Топилмади</td></tr>'}</table></div>`;
+}
+async function openPrice(id){
+  let d; try { d = await rpc("admin_price_detail", { p_product:Number(id) }); } catch(e){ sessErr(e); return; }
+  const p = S.prices.products.find(x => x.id === Number(id)) || { name:"" }, shops = S.prices.shops.filter(x => x.status === "active");
+  const bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
+  bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">${esc(p.name)} <small class="mu">${esc(p.unit || "")}</small></h2><button class="btn alt sm" data-x>Ёпиш</button></div>
+  <div class="card tw"><h2>Дўконлардаги нархлар</h2><table>${d.offers.map(o => `<tr><td>${esc(o.shop)}${o.row ? ` <small class="mu">${esc(o.row)}</small>` : ""}</td><td><input data-pp2="${o.seller_id}" value="${o.price}" inputmode="numeric" style="width:110px;text-align:right"></td><td>${dt(o.upd)}</td><td><button class="btn sm" data-psave="${o.seller_id}" data-pid="${id}">Сақлаш</button></td></tr>`).join("") || '<tr><td class="mu">Ҳали нарх йўқ</td></tr>'}</table>
+  <div class="row" style="margin-top:10px"><select id="pnew" style="flex:1">${shops.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select><input id="pnewp" inputmode="numeric" placeholder="Нарх" style="width:110px"><button class="btn sm" data-psave="new" data-pid="${id}">Қўшиш</button></div></div>
+  <div class="card tw"><h2>Нарх тарихи</h2><table>${d.history.map(h => `<tr><td>${dt(h.at)}</td><td>${esc(h.shop || "")}</td><td class="n">${h.old != null ? fmt(h.old) : "—"} → <b>${fmt(h.new)}</b></td><td class="mu">${({ excel:"Excel (админ)", admin:"админ", seller:"дўкон", seller_file:"дўкон, файлдан" })[h.src] || "қўлда"}</td></tr>`).join("") || '<tr><td class="mu">Тарих йўқ</td></tr>'}</table></div></div>`;
+  document.body.appendChild(bx);
+}
+function parsePriceFile(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = () => rej(new Error("Файлни ўқиб бўлмади"));
+    fr.onload = () => {
+      try {
+        let rows;
+        if (window.XLSX) { const wb = XLSX.read(fr.result, { type:"array" }); rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:"" }); }
+        else { const t = new TextDecoder().decode(fr.result).replace(/^\uFEFF/, ""); rows = t.split(/\r?\n/).map(l => l.split(/[;\t,]/)); }
+        const out = [];
+        rows.forEach(r => {
+          const pid = Number(String(r[0]).replace(/\s/g, "")); if (!Number.isInteger(pid) || pid <= 0) return;
+          const raw = r[3]; if (raw === "" || raw == null) return;
+          const price = typeof raw === "number" ? raw : Number(String(raw).replace(/[\s\u00A0]/g, "").replace(",", "."));
+          out.push({ product_id:pid, price:Number.isFinite(price) ? price : String(raw) });
+        });
+        res(out);
+      } catch(e){ rej(e); }
+    };
+    fr.readAsArrayBuffer(file);
+  });
+}
+function tplCsv(){
+  const rows = [["ID", "Товар", "Бирлик", "Нарх (сўм)"]].concat((S.prices.products || []).filter(p => p.active).map(p => [p.id, p.name + (p.spec ? " " + p.spec : ""), p.unit, ""]));
+  const body = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["\uFEFF" + body], { type:"text/csv;charset=utf-8" })); a.download = "narx-shablon.csv"; a.click();
+}
+
+function shopCard(){
+  const q = S.shops; if (!q) return "";
+  return `<div class="card tw"><h2>Дўконларга ўтказиш</h2><table><tr><th>Дўкон</th><th>Карта</th><th class="n">Тасдиқланган</th><th class="n">Ўтказилган</th><th class="n">Ўтказиш керак</th><th class="n">Кутилмоқда</th><th></th></tr>
+  ${q.shops.length ? q.shops.map(x => `<tr><td>${esc(x.name)}<br><small class="mu">${esc(x.phone || "")}</small></td><td>${x.card ? esc(x.card) : '<span class="mu">карта йўқ</span>'}</td><td class="n">${fmt(x.confirmed)}</td><td class="n">${fmt(x.paid)}</td><td class="n"><b>${fmt(x.due)}</b></td><td class="n mu">${fmt((x.waiting || 0) + (x.held || 0))}</td><td>${x.due > 0 ? `<button class="btn sm" data-shpay="${x.id}" data-due="${x.due}">Ўтказдим</button>` : ""}</td></tr>`).join("") : `<tr><td colspan="7" class="mu">Ҳозирча ўтказиладиган сумма йўқ</td></tr>`}</table>
+  <p class="mu" style="font-size:13px">«Тасдиқланган» — мижоз «Олдим» деган (ёки 24 соат ўтган) буюртмалар, комиссия айрилган. Картага ўзингиз ўтказинг, кейин «Ўтказдим» ни босинг: дўконга хабар боради ва унинг «Ўтказилди» суммаси ошади. Қисман ўтказиш мумкин.</p>
+  ${q.recent.length ? `<h2 style="margin-top:12px">Охирги ўтказмалар</h2><table>${q.recent.map(r => `<tr><td>${dt(r.at)}</td><td>${esc(r.name)}</td><td class="n">${fmt(r.amount)}</td><td class="mu">${esc(r.note || "")}</td></tr>`).join("")}</table>` : ""}</div>`;
+}
+
+function staffCard(){
+  const st = S.staff; if (!st) return "";
+  const RN = { collector:"Йиғувчи", driver:"Ҳайдовчи" };
+  const ho = st.held_orders || [];
+  return `<div class="card tw"><h2>Йиғувчи ва ҳайдовчи баланси</h2><table><tr><th>Исм</th><th>Рол</th><th class="n">Буюртма</th><th class="n">Тўланиши керак</th><th class="n">Тўланган</th><th class="n">Қолдиқ</th><th class="n">Кутилмоқда</th><th></th></tr>
+  ${st.people.map(x => `<tr><td>${esc(x.name)}<br><small class="mu">${esc(x.card || "карта йўқ")} · ${esc(x.phone || "")}</small></td><td>${RN[x.role] || x.role}</td><td class="n">${x.orders}</td><td class="n">${fmt(x.earned)}</td><td class="n">${fmt(x.paid)}</td><td class="n"><b>${fmt(x.due)}</b></td><td class="n mu">${fmt((x.waiting || 0) + (x.held || 0))}</td><td>${x.due > 0 ? `<button class="btn sm" data-spay="${x.id}" data-due="${x.due}">Тўладим</button>` : ""}</td></tr>`).join("") || '<tr><td colspan="8" class="mu">Ҳали етказилган буюртма йўқ</td></tr>'}</table>
+  <p class="mu" style="font-size:13px">Ҳақ мижоз «Олдим» деганда ёки етказилгандан 24 соат ўтгач «Қолдиқ»га ўтади. «Кутилмоқда» — ҳали шу вақт ўтмаган ёки мижоз «етишмади» деган буюртмалар. «Тўладим» ни пулни ўтказгандан кейин босинг: сумма ўзгартирилиши мумкин (қисман тўлов).</p>
+  ${ho.length ? `<h2 style="margin-top:12px">Мижоз «етишмади» деган буюртмалар</h2><table>${ho.map(h => `<tr><td>№${h.no}</td><td class="mu">${esc(h.note || "")}</td><td><button class="btn sm alt" data-prel="${h.no}">Қўйиб юбориш</button></td></tr>`).join("")}</table><p class="mu" style="font-size:13px">Муаммо ҳал бўлгач «Қўйиб юбориш» босинг: сабаб сўралади, ҳақ «Қолдиқ»га ўтади.</p>` : ""}
+  ${st.recent.length ? `<h2 style="margin-top:12px">Охирги тўловлар</h2><table>${st.recent.map(r => `<tr><td>${dt(r.at)}</td><td>${esc(r.name)}</td><td class="n">${fmt(r.amount)}</td><td class="mu">${esc(r.note || "")}</td></tr>`).join("")}</table>` : ""}</div>`;
+}
+
+/* ---------- Аналитика ---------- */
+const ACT = {fleet_save:"Парк сақланди",fleet_assign:"Ҳайдовчи паркка бириктирилди",payout_release:"Ҳақ қўйиб юборилди",person_rename:"Исм ўзгартирилди",admin_add:"Админ қўшилди",admin_set:"Админ ўзгартирилди",customer_tags:"Мижоз белгиси",login:"Кирди",logout:"Чиқди",note_add:"Изоҳ қўшилди",price_set:"Нарх ўзгартирилди",prices_upload:"Нархлар юкланди",recon_run:"Сверка ўтказилди",refund_create:"Қайтариш яратилди",refund_done:"Қайтариш бажарилди",revert:"Қайтарилди",set_app:"Созлама ўзгартирилди",set_commission:"Комиссия ўзгартирилди",set_commission_free:"Бепул буюртмалар сони",set_fee:"Ҳақ ўзгартирилди",set_pin:"PIN ўрнатилди",set_provider:"Тўлов тизими ўзгартирилди",set_tariff:"Тариф ўзгартирилди",staff_pay:"Ходимга тўланди",stage:"Статус ўзгартирилди",ticket_close:"Мурожаат ёпилди",ticket_reply:"Мурожаатга жавоб"};const actT = a => ACT[a] || String(a||"").replace(/^(assign_|person_)(.*)$/, (m, p, r) => (p === "assign_" ? "Тайинлаш: " : "Одам: ") + ({picker:"йиғувчи",driver:"ҳайдовчи"}[r] || r));
+const LK = {customer_payment:"Мижоз тўлови",shop_goods:"Дўконга товар пули",driver_pay:"Ҳайдовчига",collector_pay:"Йиғувчига",gateway_fee:"Тўлов тизими ҳақи",platform_income:"Платформа даромади",reserve_hold:"Нарх захираси",refund:"Қайтариш"};const lk = k => LK[k] || k;
+const OBJ = {fleet:"Парк №",order:"Буюртма №",admin:"Админ №",setting:"Созлама:",price:"Нарх (дўкон:товар):",customer:"Мижоз:",ticket:"Мурожаат №",refund:"Қайтариш №",staff:"Ходим №",person:"Одам №",payout:"Тўлов №",tariff:"Тариф:",fee:"Ҳақ:",provider:"Тўлов тизими:",seller:"Дўкон №",market:"Бозор №"};
+const KEYL = {enabled:"ёқилган",decision:"қарор",due:"тўланиши керак",paid:"тўланди",shop_id:"дўкон №",seller_id:"дўкон №",stage:"босқич",amount:"сумма",refund:"қайтариш №",kind:"тури",len:"изоҳ узунлиги",status:"ҳолат",roles:"роллар",pct:"фоиз",price:"нарх",name:"ном",phone:"телефон",reason:"сабаб"};
+const objT = (o, id) => (OBJ[o] || (o ? o + " " : "")) + (id != null && id !== "" ? " " + id : "");
+const VALN = {reserve:"захира",item:"товар",cancel:"бекор қилиш",other:"бошқа",accept:"қабул",partial:"қисман",reject:"рад этилди",picker:"йиғувчи",driver:"ҳайдовчи"};
+const valT = v => v == null || v === "" ? "" : typeof v === "object" ? Object.entries(v).map(([k, y]) => (KEYL[k] || k) + ": " + (typeof y === "object" ? JSON.stringify(y) : (VALN[y] || y))).join(", ") : String(v);
+const SETN = {reserve_pct:"Нарх захираси, %",pay_minutes:"Тўлов муддати, дақиқа",payments_on:"Тўловлар ёқилган",pay_test_mode:"Синов тўлов режими",answer_minutes:"Жавоб муддати, дақиқа",payout_alert_minutes:"Тўлов огоҳлантириши, дақиқа",unpicked_alert_minutes:"Йиғилмаган буюртма огоҳлантириши, дақиқа",fewest_tol_pct:"Кам дўкон: сават бўйича рухсат этилган қимматлик, %",seller_commission_pct:"Дўкон комиссияси, %",commission_free_orders:"Бепул буюртмалар сони",fixed_fee:"Қатъий хизмат ҳақи, сўм",tier1_pct:"1-шкала фоизи",tier2_pct:"2-шкала фоизи",tier3_pct:"3-шкала фоизи",collector_fixed:"Йиғувчи: тайинланган қисм",collector_share:"Йиғувчи: улуш, %",collector_max:"Йиғувчи максимуми",driver_pct:"Ҳайдовчидан комиссия, %",min_order:"Минимал буюртма",zone_near_km:"Яқин зона, км",zone_mid_km:"Ўрта зона, км"};const setN = k => SETN[k] || k;
+function anTip(el){document.querySelectorAll(".anbar>div").forEach(d=>d.style.outline="");const t=document.getElementById("anTip");if(t)t.textContent=el.dataset.tip;if(el.firstChild)el.firstChild.style.outline="2px solid #111"}
+// Устун устига босилса ёки сичқонча келса — изоҳ (inline onclick ўрнига, CSP 'unsafe-inline'сиз ишлаши учун)
+["click", "mouseover"].forEach(ev => document.addEventListener(ev, e => { const b = e.target.closest && e.target.closest(".anbar"); if (b) anTip(b); }));
+function anView(){
+  const a = S.an; if (!a) return '<p class="mu">Юкланмоқда…</p>';
+  const c = a.cohort, sp = a.speed, pc = (x, y) => y > 0 ? Math.round(100 * x / y) + "%" : "—";
+  const mx = Math.max(1, ...a.daily.map(x => x.n)), mn = v => v == null ? "—" : v + " дақ";
+  return `<div class="row"><b>Давр:</b>${[7, 30, 90].map(n => `<button class="btn ${S.andays === n ? "" : "alt"} sm" data-andays="${n}">${n} кун</button>`).join("")}</div>
+  <div class="card"><h2>Кунлик буюртмалар</h2><div id="anTip" style="min-height:24px;font-weight:700;margin-bottom:6px">Устун устига босинг</div><div style="display:flex;align-items:flex-end;gap:2px;height:110px">${a.daily.map(x => `<div class="anbar" data-tip="${x.day}: ${x.n} та${x.sum != null ? " · " + fmt(x.sum) : ""}" style="flex:1;height:100%;display:flex;align-items:flex-end;cursor:pointer;min-width:4px"><div style="width:100%;background:${x.n ? "var(--bl)" : "#cfd4dc"};border-radius:3px 3px 0 0;height:${x.n ? Math.max(6, Math.round(x.n / mx * 100)) : 3}%"></div></div>`).join("")}</div>
+  <p class="mu" style="font-size:13px">Ҳар устун — бир кун. Устун устига босинг (ёки курсорни олиб боринг): кун ва сумма чиқади. Энг баланд кун: ${mx} та.</p></div>
+  <div class="card"><h2>Қайтиб келган мижозлар</h2><div class="grid">
+    <div class="kpi"><small>Биринчи марта буюртма берган (180 кун)</small><b>${c.customers}</b></div>
+    <div class="kpi g"><small>30 кунда қайта буюртма берди</small><b>${pc(c.rep30_mature, c.mature30)}</b><small>${c.rep30_mature} / ${c.mature30} та (30+ кунлик)</small></div>
+    <div class="kpi g"><small>90 кунда қайта буюртма берди</small><b>${pc(c.rep90_mature, c.mature90)}</b><small>${c.rep90_mature} / ${c.mature90} та (90+ кунлик)</small></div></div>
+  <p class="mu" style="font-size:13px">Фоиз фақат шунча вақт ўтган мижозлардан ҳисобланади, янгиларини кутиш керак.</p></div>
+  <div class="card"><h2>Тезлик (ўртача)</h2><div class="grid">
+    <div class="kpi"><small>Қабул → тасдиқ</small><b>${mn(sp.to_stage1)}</b></div><div class="kpi"><small>Тасдиқ → йиғилмоқда</small><b>${mn(sp.to_stage2)}</b></div>
+    <div class="kpi"><small>Йиғиш</small><b>${mn(sp.to_stage3)}</b></div><div class="kpi"><small>Етказиш</small><b>${mn(sp.to_stage4)}</b></div>
+    <div class="kpi g"><small>Жами (буюртмадан етказишгача)</small><b>${mn(sp.total)}</b></div><div class="kpi ${sp.late_pct > 20 ? "r" : ""}"><small>4 соатдан кеч етказилган</small><b>${sp.late_pct == null ? "—" : sp.late_pct + "%"}</b></div></div></div>
+  <div class="card tw"><h2>Бозорлар бўйича</h2><table><tr><th>Бозор</th><th class="n">Буюртма</th><th class="n">Етказилган</th><th class="n">Ўртача чек</th><th class="n">Топилмаган товар</th></tr>
+  ${a.markets.map(m => `<tr><td>${esc(m.name)}</td><td class="n">${m.orders}</td><td class="n">${m.delivered}</td><td class="n">${fmt(m.avg)}</td><td class="n">${m.missing_pct}%</td></tr>`).join("")}</table></div>`;
+}
+
+/* ---------- Мижозлар ---------- */
+const TAGN = { vip:["VIP", "g"], prorab:["Прораб", "m"], blacklist:["Қора рўйхат", "r"] };
+const tagPills = t => (t || []).map(x => `<span class="pill ${TAGN[x] ? TAGN[x][1] : "m"}">${TAGN[x] ? TAGN[x][0] : esc(x)}</span>`).join(" ");
+function custView(){
+  const c = S.custs; if (!c) return '<p class="mu">Юкланмоқда…</p>';
+  return `<div class="row"><input type="search" id="cq" placeholder="Исм ёки телефон…" value="${esc(S.cq)}"><button class="btn sm" id="cqgo">Қидириш</button></div>
+  <div class="card tw"><table><tr><th>Мижоз</th><th class="n">Буюртма</th><th class="n">Жами сарф</th><th>Охирги</th><th>Белги</th></tr>
+  ${c.map(x => `<tr data-cdet="${x.id}" style="cursor:pointer"><td>${esc(x.name || "—")}<br><small class="mu">${esc(x.phone || "")}</small></td><td class="n">${x.paid}/${x.orders}</td><td class="n">${fmt(x.spent)}</td><td>${x.last ? dt(x.last) : "—"}</td><td>${tagPills(x.tags)}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Топилмади</td></tr>'}</table></div>`;
+}
+async function openCust(id){
+  let d, notes; try { d = await rpc("admin_customer", { p_id:Number(id) }); } catch(e){ sessErr(e); return; }
+  if (!d) { toast("Топилмади"); return; }
+  const p = d.profile, tg = p.tags || [], bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
+  const ed = can("people");
+  bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">${esc(p.name || "Мижоз")} ${tagPills(tg)}</h2><button class="btn alt sm" data-x>Ёпиш</button></div>
+  <div class="card"><div class="kv"><span>Телефон</span><span>${esc(p.phone || "")}</span><span>Рўйхатдан ўтган</span><span>${dt(p.since)}</span><span>Қайтаришлар</span><span>${d.refunds.n} та · ${sum(d.refunds.sum)}</span>${p.block_reason ? `<span>Қора рўйхат сабаби</span><span>${esc(p.block_reason)}</span>` : ""}</div>
+  ${ed ? `<div class="row" style="margin-top:10px">${["vip", "prorab", "blacklist"].map(k => `<label style="margin:0"><input type="checkbox" data-ctag="${k}" ${tg.includes(k) ? "checked" : ""} style="width:auto"> ${TAGN[k][0]}</label>`).join(" ")}<button class="btn sm" data-csave="${p.id}">Сақлаш</button></div><p class="mu" style="font-size:13px">«Қора рўйхат» ҳозирча фақат белги (сабаби сўралади), буюртма беришни тўхтатмайди.</p>` : ""}</div>
+  <div class="card tw"><h2>Буюртмалар (${d.orders.length})</h2><table>${d.orders.map(o => `<tr data-open="${o.no}" style="cursor:pointer"><td><b>${o.no}</b></td><td>${dt(o.at)}</td><td class="n">${fmt(o.total)}</td><td>${payPill(o)}</td></tr>`).join("") || '<tr><td class="mu">Йўқ</td></tr>'}</table></div>
+  ${notesBox("customer", p.id, d.notes)}</div>`;
+  document.body.appendChild(bx);
+}
+function notesBox(kind, ref, notes){
+  return `<div class="card"><h2>Ички изоҳлар</h2>${(notes || []).map(n => `<div style="margin:6px 0"><small class="mu">${dt(n.at)} · ${esc(n.who || "")}</small><br>${esc(n.body)}</div>`).join("") || '<p class="mu">Изоҳ йўқ</p>'}
+  <div class="row" style="margin-top:8px"><input id="nbody" placeholder="Изоҳ ёзинг (мижоз кўрмайди)" style="flex:1"><button class="btn sm" data-nadd="${kind}" data-nref="${ref}">Қўшиш</button></div></div>`;
+}
+
+/* ---------- Мурожаатлар ---------- */
+const TKN = { open:["Янги", "r"], answered:["Жавоб берилди", "y"], closed:["Ёпилган", "g"] }, DECN = { accept:"Маъқулланди", partial:"Қисман", reject:"Асоссиз" };
+function tixView(){
+  const t = S.tks; if (!t) return '<p class="mu">Юкланмоқда…</p>';
+  return `<div class="row">${[["open", "Янги"], ["answered", "Жавоб берилган"], ["closed", "Ёпилган"], ["all", "Ҳаммаси"]].map(([k, n]) => `<button class="btn sm ${S.tkf === k ? "" : "alt"}" data-tkf="${k}">${n}</button>`).join(" ")}</div>
+  <div class="card tw"><table><tr><th>№</th><th>Мижоз</th><th>Буюртма</th><th>Ҳолат</th><th>Сўнгги хабар</th><th>Вақт</th></tr>
+  ${t.map(x => `<tr data-tkdet="${x.id}" style="cursor:pointer"><td><b>${x.id}</b></td><td>${esc(x.name || "—")}<br><small class="mu">${esc(x.phone || "")}</small></td><td>${x.order_no || "—"}</td><td><span class="pill ${TKN[x.status][1]}">${TKN[x.status][0]}</span>${x.decision ? ` <small class="mu">${DECN[x.decision]}</small>` : ""}</td><td>${x.last_from === "customer" ? "👤 " : "🛠 "}${esc(x.last || "")}</td><td>${dt(x.at)}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Мурожаат йўқ</td></tr>'}</table></div>`;
+}
+async function openTix(id){
+  let d; try { d = await rpc("admin_ticket", { p_id:Number(id) }); } catch(e){ sessErr(e); return; }
+  if (!d) { toast("Топилмади"); return; }
+  const t = d.ticket, o = d.order, bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
+  bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">Мурожаат №${t.id} <span class="pill ${TKN[t.status][1]}">${TKN[t.status][0]}</span></h2><button class="btn alt sm" data-x>Ёпиш</button></div>
+  <div class="card"><div class="kv"><span>Мижоз</span><span>${esc(d.customer.name || "")} · ${esc(d.customer.phone || "")}</span>${o ? `<span>Буюртма</span><span><a href="#" data-open="${o.no}">№${o.no}</a> · ${fmt(o.total)} сўм · ${o.pay === "paid" ? "тўланган" : esc(o.pay || "")}${o.received_ok === false ? ` · мижоз «олмадим/муаммо»: ${esc(o.received_note || "")}` : ""}</span>` : ""}</div></div>
+  <div class="card"><h2>Ёзишма</h2>${d.msgs.map(m => `<div style="margin:8px 0;${m.from === "admin" ? "text-align:right" : ""}"><small class="mu">${m.from === "admin" ? esc(m.who || "Админ") : "Мижоз"} · ${dt(m.at)}</small><br>${esc(m.body)}</div>`).join("")}
+  ${t.status !== "closed" ? `<div class="row" style="margin-top:8px"><input id="trep" placeholder="Мижозга жавоб (Telegram орқали боради)" style="flex:1"><button class="btn sm" data-trep="${t.id}">Юбориш</button></div>` : ""}</div>
+  ${t.status !== "closed" ? `<div class="card"><h2>Қарор</h2><div class="row"><select id="tdec"><option value="reject">Асоссиз (пул қайтмайди)</option>${o ? '<option value="partial">Қисман қайтариш</option><option value="accept">Тўлиқ маъқуллаш</option>' : ""}</select><input id="tamt" inputmode="numeric" placeholder="Сумма, сўм" style="width:140px"></div>
+  <div class="row" style="margin-top:8px"><input id="tnote" placeholder="Сабаб (мижозга ҳам юборилади)" style="flex:1"><button class="btn sm" data-tclose="${t.id}">Ёпиш</button></div><p class="mu" style="font-size:13px">Қайтариш «Пул» бўлимида пайдо бўлади — бухгалтер пулни қайтаргач «Қайтардим» босади.</p></div>`
+  : `<div class="card"><div class="kv"><span>Қарор</span><span>${DECN[t.decision] || "—"}${t.decision_amount ? " · " + fmt(t.decision_amount) + " сўм" : ""}</span></div></div>`}</div>`;
+  document.body.appendChild(bx);
+}
+
+/* ---------- Журнал ---------- */
+function auditView(){
+  const a = S.audit; if (!a) return '<p class="mu">Юкланмоқда…</p>';
+  const brief = v => v ? esc(valT(v)).slice(0, 120) : "";
+  return `<div class="row"><input type="search" id="aq" placeholder="Амал, обьект, админ…" value="${esc(S.aq)}"><button class="btn sm" id="aqgo">Қидириш</button></div>
+  <div class="card tw"><table><tr><th>Вақт</th><th>Ким</th><th>Амал</th><th>Обьект</th><th>Ўзгариш</th><th>Сабаб</th></tr>${a.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.admin_name || "")}</td><td>${esc(actT(x.action))}</td><td>${esc(objT(x.object, x.obj_id))}</td><td class="mu" style="font-size:12.5px">${brief(x.old_value)}${x.old_value ? " → " : ""}${brief(x.new_value)}</td><td>${esc(x.reason || "")}</td></tr>`).join("") || '<tr><td colspan="6" class="mu">Ёзув йўқ</td></tr>'}</table><p class="mu" style="font-size:13px">Журналдан ҳеч нарсани ўчириб ёки ўзгартириб бўлмайди.</p></div>`;
+}
+
+/* ---------- Админлар ---------- */
+function adminsView(){
+  const a = S.admins; if (!a) return '<p class="mu">Юкланмоқда…</p>';
+  const ro = r => r.map(x => ROLE_N[x] || x).join(", ");
+  return `<div class="card tw"><h2>Админлар</h2><table><tr><th>Исм</th><th>Телефон</th><th>Рол</th><th>PIN</th><th>Охирги</th><th></th></tr>${a.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.phone || "")}</td><td>${esc(ro(x.roles))}</td><td>${x.pin ? "✓" : '<span class="pill y">йўқ</span>'}</td><td>${dt(x.last)}</td><td>${x.status === "blocked" ? `<span class="pill r">блок</span> <button class="btn sm" data-aset="${x.id}" data-ast="active">Очиш</button>` : `<select data-arole="${x.id}">${Object.keys(ROLE_N).map(r => `<option value="${r}" ${x.roles[0] === r ? "selected" : ""}>${ROLE_N[r]}</option>`).join("")}</select> <button class="btn sm alt" data-aset="${x.id}" data-ast="blocked">Блок</button>`}</td></tr>`).join("")}</table></div>
+  <div class="card"><h2>Янги админ қўшиш</h2><div class="row"><input id="ap" inputmode="tel" placeholder="Телефон (998…)"><select id="ar">${Object.keys(ROLE_N).map(r => `<option value="${r}">${ROLE_N[r]}</option>`).join("")}</select><button class="btn" id="aadd">Қўшиш</button></div>
+  <p class="mu" style="font-size:13px">Одам аввал шу сайтга Telegram орқали кирган бўлиши керак. Кейин ўзи PIN ўрнатади.</p></div>`;
+}
+
+/* ---------- Созламалар ---------- */
+function setView(){
+  const s = S.settings; if (!s) return '<p class="mu">Юкланмоқда…</p>';
+  const A = s.app || {}, ro = s.can_edit ? "" : " disabled";
+  return `<div class="card"><h2>Тўлов</h2>
+    <div class="row"><span>Онлайн тўлов:</span> <span class="pill ${A.payments_on === "true" ? "g" : "m"}">${A.payments_on === "true" ? "ЁҚИЛГАН" : "ЎЧИРИЛГАН"}</span> <span>Синов тўлови:</span> <span class="pill ${A.pay_test_mode === "true" ? "r" : "g"}">${A.pay_test_mode === "true" ? "ЁҚИЛГАН" : "ЎЧИРИЛГАН"}</span></div>
+    <p class="mu" style="font-size:13px">Хавфсизлик учун бу иккитаси фақат SQL орқали ўзгартирилади. ${A.pay_test_mode === "true" && CFG.env !== "test" ? '<b class="err">Диққат: боевой базада синов тўлови ёқилган, ҳар ким тўламасдан «тўланди» қилиши мумкин!</b>' : ""}</p>
+    ${[["pay_minutes", "Тўлов муддати (дақиқа)"], ["reserve_pct", "Нарх захираси (%)"], ["answer_minutes", "Дўкон жавоб кутиш (дақиқа)"], ["payout_alert_minutes", "Тўлов огоҳлантириши (дақиқа)"], ["unpicked_alert_minutes", "«Олинмади» огоҳлантириши (дақиқа)"], ["fewest_tol_pct", "Кам дўкон учун рухсат этилган қимматлик, бутун сават бўйича (%)"]].map(([k, n]) => `<div class="set"><label>${n}</label><input data-app="${k}" value="${esc(A[k] || "")}" inputmode="numeric"${ro}><button class="btn sm" data-saveapp="${k}"${ro}>Сақлаш</button></div>`).join("")}</div>
+  <div class="card"><h2>Тўлов тизимлари (комиссия %)</h2>${s.providers.map(p => `<div class="set"><label>${esc(p.name)}</label><input data-pp="${p.code}" value="${p.pct}" inputmode="decimal"${ro}><label style="flex:none"><input type="checkbox" data-pe="${p.code}" ${p.enabled ? "checked" : ""} style="width:auto"${ro}> ёқилган</label><button class="btn sm" data-savepp="${p.code}"${ro}>Сақлаш</button></div>`).join("")}</div>
+  <div class="card"><h2>Етказиш тарифлари (сўм)</h2>${s.tariffs.map(t => `<div class="set"><label><b>${esc(t.name)}</b> <small>${t.cap} кг гача</small></label><input data-tn="${t.id}" value="${t.near}" title="Яқин"${ro}><input data-tm="${t.id}" value="${t.mid}" title="Ўрта"${ro}><input data-tf="${t.id}" value="${t.far}" title="Узоқ"${ro}><button class="btn sm" data-savet="${t.id}"${ro}>Сақлаш</button></div>`).join("")}<p class="mu" style="font-size:13px">Устунлар: яқин · ўрта · узоқ. Янги нарх фақат кейинги буюртмаларга таъсир қилади.</p></div>
+  <div class="card"><h2>Комиссия ва ҳақлар</h2>${s.fees.map(f => `<div class="set"><label>${esc(f.note || f.key)}<small>${esc(f.key)}</small></label><input data-fee="${esc(f.key)}" value="${f.value}" inputmode="decimal"${ro}><button class="btn sm" data-savefee="${esc(f.key)}"${ro}>Сақлаш</button></div>`).join("")}<p class="mu" style="font-size:13px">Ўзгартирилган қиймат кейинги буюртмаларга қўлланади, эскилари ўзгармайди.</p></div>` + histCard();
+}
+
+async function reloadSet(){ S.settings = await rpc("admin_settings"); try { S.shist = S.settings.can_edit ? await rpc("admin_settings_history") : null; } catch(e){ S.shist = null; } }
+function histCard(){
+  const h = S.shist; if (!h) return "";
+  const AN = { set_fee:"Ҳақ", set_tariff:"Тариф", set_provider:"Тўлов тизими", set_app:"Созлама" };
+  const v = x => x == null ? "—" : typeof x === "object" ? Object.entries(x).map(([k, y]) => `${KEYL[k] || k}: ${y === true ? "ҳа" : y === false ? "йўқ" : (VALN[y] || y)}`).join(", ") : String(x);
+  return `<div class="card tw"><h2>Ўзгаришлар тарихи</h2><table><tr><th>Вақт</th><th>Ким</th><th>Нима</th><th>Эски → Янги</th><th></th></tr>
+  ${h.map(x => `<tr><td>${dt(x.at)}</td><td>${esc(x.who || "")}</td><td>${actT(x.action)}: ${esc(setN(x.key || ""))}</td><td class="mu" style="font-size:12.5px">${esc(v(x.old))} → <b>${esc(v(x.new))}</b></td><td>${x.reverted ? '<span class="pill m">қайтарилган</span>' : x.old == null ? "" : `<button class="btn alt sm" data-revert="${x.id}">Қайтариш</button>`}</td></tr>`).join("") || '<tr><td colspan="5" class="mu">Ҳали ўзгариш йўқ</td></tr>'}</table>
+  <p class="mu" style="font-size:13px">«Қайтариш» шу ўзгаришдан олдинги қийматни тиклайди. Янги ўзгариш журналга ёзилади, эскиси ўчмайди.</p></div>`;
+}
+
+/* ---------- Буюртма тафсилоти ---------- */
+async function openOrder(no){
+  let d, ppl = null, onotes = []; try { d = await rpc("admin_order", { p_no:Number(no) }); if (can("orders_edit")) ppl = await rpc("admin_people"); onotes = await rpc("admin_notes", { p_kind:"order", p_ref:String(no) }); } catch(e){ sessErr(e); return; }
+  let evs = []; try { evs = await rpc("admin_order_events", { p_no:Number(no) }); } catch(e){ evs = []; }   // 20261031_25 қўлланмагунча жим
+  if (!d) { toast("Буюртма топилмади"); return; }
+  const o = d.order, kv = (a) => a.filter(x => x[1] != null && x[1] !== "").map(([n, v]) => `<span>${n}</span><span>${v}</span>`).join("");
+  const items = (o.items || []).map(i => `<tr><td>${esc(i.n || i.name)}</td><td class="n">${i.q || i.qty || ""} ${esc(i.u || "")}</td><td class="n">${i.price ? fmt(i.price) : ""}</td></tr>`).join("");
+  const pays = d.payments.map(p => `<tr><td>${esc(p.provider)}</td><td>${p.status === "paid" ? '<span class="pill g">тўланган</span>' : esc(p.status)}</td><td class="n">${fmt(p.amount)}</td><td>${dt(p.paid_at || p.created_at)}</td></tr>`).join("");
+  const led = d.ledger.map(l => `<tr><td>${esc(lk(l.kind))}</td><td class="n">${fmt(l.amount)}</td><td class="mu">${esc(l.note || "")}</td></tr>`).join("");
+  const rfs = d.refunds.map(r => `<tr><td>${({ reserve:"Захира", item:"Товар", cancel:"Бекор", other:"Бошқа" })[r.kind]}</td><td class="n">${fmt(r.amount)}</td><td>${r.status === "done" ? '<span class="pill g">бажарилди</span>' : can("payout") ? `<button class="btn sm" data-rdone="${r.id}" data-close="1">Қайтардим</button>` : '<span class="pill y">кутилмоқда</span>'}</td></tr>`).join("");
+  const opts = (rows, cur) => `<option value="">— йўқ —</option>` + (rows || []).filter(x => x.status === "active").map(x => `<option value="${x.id}">${esc(x.name)}${x.car ? " · " + esc(x.car) : ""}</option>`).join("");
+  const assign = ppl ? `<div class="card"><h2>Тайинлаш / алмаштириш</h2>
+    <div class="row"><span style="width:80px">Йиғувчи:</span><select id="as-picker" style="flex:1">${opts(ppl.collectors)}</select><button class="btn sm" data-assign="picker" data-no="${o.no}">Тайинлаш</button></div>
+    <div class="row"><span style="width:80px">Ҳайдовчи:</span><select id="as-driver" style="flex:1">${opts(ppl.drivers)}</select><button class="btn sm" data-assign="driver" data-no="${o.no}">Тайинлаш</button></div>
+    <p class="mu" style="font-size:13px">Алмаштиришда сабаб сўралади, эски ва янги одамга Telegram'да хабар боради.</p></div>` : "";
+  const hist = (d.history || []).length ? `<div class="card"><h2>Ўзгаришлар тарихи</h2>${d.history.map(h => `<div style="padding:8px 0;border-top:1px solid #eee"><div class="mu" style="font-size:12.5px">${dt(h.at)} · ${esc(h.who || "")}</div><div><b>${esc(actT(h.action))}</b>${h.new ? ` <span class="mu">${esc(valT(h.new))}</span>` : ""}</div>${h.reason ? `<div class="mu" style="font-size:12.5px">Сабаб: ${esc(h.reason)}</div>` : ""}</div>`).join("")}</div>` : "";
+  const EVF = { stage:"Босқич", pay_status:"Тўлов ҳолати", picker_id:"Йиғувчи", driver_id:"Ҳайдовчи" };
+  const evTxt = e => e.field === "created" ? "Буюртма яратилди" : e.field === "stage" ? `Босқич: ${(Number(e.old) || 0) + 1} → ${(Number(e.new) || 0) + 1}` : e.field === "received_ok" ? `Мижоз: ${e.new === "true" ? "«Олдим»" : "«Етишмади»"}` : e.field === "received_at" ? "Мижоз буюртмани қабул қилди" : e.field === "cancelled_at" ? (e.new ? "Бекор қилинди" : "Бекор қилиш қайтарилди") : `${EVF[e.field] || e.field}: ${esc(e.old || "—")} → ${esc(e.new || "—")}`;
+  const evbox = (evs || []).length ? `<div class="card"><h2>Ҳолатлар журнали</h2>${evs.map(e => `<div style="padding:6px 0;border-top:1px solid #eee"><div class="mu" style="font-size:12.5px">${dt(e.at)} · ${esc(e.who || e.actor)}</div><div>${evTxt(e)}</div></div>`).join("")}</div>` : "";
+  const bx = document.createElement("div"); bx.className = "sheet"; bx.id = "sheet";
+  bx.innerHTML = `<div class="sbox"><div class="row"><h2 style="margin:0;flex:1">Буюртма №${o.no} ${payPill(o)}</h2><button class="btn alt sm" data-x>Ёпиш</button></div>
+  <div class="card"><div class="kv">${kv([["Мижоз", esc(o.customer_name)], ["Телефон", `<a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>`], ["Манзил", esc(o.address || "")], ["Вақт", esc(o.slot || "")], ["Тури", esc(o.mode)], ["Босқич", `${o.stage + 1}/${stMax(o) + 1} · ${esc(stName(o))}`], ["Йиғувчи", esc(d.picker || "")], ["Ҳайдовчи", esc(d.driver || "")], ["Яратилган", dt(o.created_at)]])}</div>
+    ${can("orders_edit") && o.stage < stMax(o) && ["paid", "none"].includes(o.pay_status) ? `<p><button class="btn" data-adv="${o.no}" data-max="${stMax(o)}">Кейинги босқич: ${esc((STAGE[o.mode] || STAGE.delivery)[o.stage + 1])}</button></p>` : ""}</div>
+  <div class="card"><h2>Сумма</h2><div class="kv">${kv([["Товар", o.goods_sum != null ? sum(o.goods_sum) : ""], ["Етказиш", o.delivery_sum != null ? sum(o.delivery_sum) : ""], ["Хизмат ҳақи", o.service_fee != null ? sum(o.service_fee) : ""], ["Захира", o.reserve_sum ? sum(o.reserve_sum) : ""], ["Мижоз тўлайди", sum(o.pay_amount || o.total)], ["Йиғувчи ҳақи", o.collector_fee != null ? sum(o.collector_fee) : ""], ["Ҳайдовчи ҳақи", o.delivery_sum != null ? sum((o.delivery_sum || 0) - (o.driver_fee || 0)) : ""], ["Тўлов тизими ҳақи", o.gateway_fee != null ? sum(o.gateway_fee) : ""], ["Платформа даромади", o.platform_income != null ? sum(o.platform_income) : ""]])}</div></div>
+  ${assign}
+  <div class="card tw"><h2>Товарлар</h2><table>${items || '<tr><td class="mu">—</td></tr>'}</table></div>
+  ${d.payments.length ? `<div class="card tw"><h2>Тўловлар</h2><table>${pays}</table></div>` : ""}
+  ${d.ledger.length ? `<div class="card tw"><h2>Пул журнали</h2><table>${led}</table><p class="mu" style="font-size:13px">Йиғинди: ${fmt(d.ledger.reduce((a, l) => a + Number(l.amount), 0))} (0 бўлиши керак)</p></div>` : ""}
+  <div class="card tw"><h2>Қайтаришлар</h2>${rfs ? `<table>${rfs}</table>` : '<p class="mu">Йўқ</p>'}
+  ${o.cancelled_at ? `<div style="margin-top:10px"><span class="pill r">Бекор қилинган</span> <span class="mu">${esc(o.cancel_reason || "")}</span></div>` : can("orders_edit") && o.stage < (o.mode === "pickup" ? 3 : 4) ? `<div class="row" style="margin-top:10px"><input id="cr" placeholder="Бекор қилиш сабаби" style="flex:1"><button class="btn sm" data-ocancel="${o.no}">🚫 Бекор қилиш</button></div>` : ""}
+  ${o.pay_status === "paid" && can("refund") ? `<div class="row" style="margin-top:10px"><select id="rk"><option value="reserve">Захирани қайтариш</option><option value="item">Топилмаган товар</option><option value="cancel">Бекор қилиш</option><option value="other">Бошқа</option></select><input id="ra" inputmode="numeric" placeholder="Сумма" style="width:120px"><input id="rr" placeholder="Сабаб" style="flex:1"><button class="btn sm" data-rnew="${o.no}">Яратиш</button></div>` : ""}</div>${hist}${evbox}${notesBox("order", o.no, onotes)}</div>`;
+  document.body.appendChild(bx);
+}
+function closeSheet(){ const s = $("sheet"); if (s) s.remove(); }
+
+/* ---------- Ҳодисалар ---------- */
+async function act(fn, okMsg){ try { await fn(); if (okMsg) toast(okMsg); } catch(e){ toast(errText(e)); } }
+function bind(){
+  const m = $("main");
+  m.querySelectorAll("[data-days]").forEach(b => b.onclick = async () => { S.days = +b.dataset.days; await reload(); });
+  m.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; draw(); });
+  const pqe = $("pq"); if (pqe) pqe.oninput = () => { S.pq = pqe.value; clearTimeout(pqe._t); pqe._t = setTimeout(() => { const p = pqe.selectionStart; draw(); const n = $("pq"); n.focus(); n.setSelectionRange(p, p); }, 200); };
+  const oq = $("oq"); if (oq) oq.oninput = () => { S.q = oq.value; clearTimeout(oq._t); oq._t = setTimeout(() => { const p = oq.selectionStart; draw(); const n = $("oq"); n.focus(); n.setSelectionRange(p, p); }, 200); };
+  const c = $("csv"); if (c) c.onclick = csv;
+  m.querySelectorAll("[data-saveapp]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.saveapp; await rpc("admin_set_app", { p_key:k, p_value:m.querySelector(`[data-app="${k}"]`).value.trim() }); await reloadSet(); draw(); }, "Сақланди"));
+  m.querySelectorAll("[data-savefee]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.savefee; await rpc("admin_set_fee", { p_key:k, p_value:Number(m.querySelector(`[data-fee="${k}"]`).value.replace(",", ".")) }); await reloadSet(); draw(); }, "Сақланди"));
+  m.querySelectorAll("[data-savepp]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.savepp; await rpc("admin_set_provider", { p_pcode:k, p_pct:Number(m.querySelector(`[data-pp="${k}"]`).value.replace(",", ".")), p_enabled:m.querySelector(`[data-pe="${k}"]`).checked }); await reloadSet(); draw(); }, "Сақланди"));
+  m.querySelectorAll("[data-savet]").forEach(b => b.onclick = () => act(async () => { const k = b.dataset.savet, g = a => Number(m.querySelector(`[data-${a}="${k}"]`).value.replace(/\s/g, "")); await rpc("admin_set_tariff", { p_id:k, p_near:g("tn"), p_mid:g("tm"), p_far:g("tf") }); await reloadSet(); draw(); }, "Сақланди"));
+}
+document.addEventListener("click", async e => {
+  const t = e.target.closest("button,[data-open],a[data-open],[data-go],[data-pdet],[data-cdet],[data-tkdet]"); if (!t) return;
+  if (t.dataset.open) { e.preventDefault(); closeSheet(); openOrder(t.dataset.open); return; }
+  if ("x" in t.dataset) { closeSheet(); return; }
+  if (t.dataset.go) { S.tab = t.dataset.go; await tabData(); draw(); return; }
+  if (t.dataset.npd) { const ok = t.dataset.ok === "1", id = Number(t.dataset.npd);
+    let reason = null; const patch = {};
+    if (!ok) { reason = prompt("Рад этиш сабаби (таклиф қилганга боради). Унинг нархлари ўчади:", ""); if (reason === null) return; if (reason.trim().length < 3) { alert("Сабабни ёзинг (камида 3 ҳарф)."); return; } }
+    else { const x = (S.props || []).find(p => p.id === id), card = t.closest("[data-np]");
+      if (x && card) card.querySelectorAll("[data-npf]").forEach(f => { const k = f.dataset.npf, v = f.value.trim(); if (v !== String(x[k] ?? "")) patch[k] = v; }); }
+    await act(async () => { await rpc("admin_product_decide", { p_id:id, p_ok:ok, p_reason:reason, p_patch:patch }); S.props = await rpc("admin_product_proposals"); S.prices = await rpc("admin_prices"); draw(); }, ok ? "Каталогга қўшилди" : "Рад этилди"); return; }
+  if (t.dataset.pay) { const ok = t.dataset.ok === "1"; let note = null;
+    if (!ok) { note = prompt("Рад этиш сабаби:"); if (!note) return; } else if (!confirm("Пулни дўкон картасига ўтказдингизми?")) return;
+    await act(async () => { await rpc("admin_payout_decide", { p_id:Number(t.dataset.pay), p_ok:ok, p_note:note }); await new Promise(r => setTimeout(r, 1500)); await load(); S.pay = await rpc("admin_payouts"); draw(); }, ok ? "Белгиланди" : "Рад этилди"); return; }
+  if (t.dataset.scard) { const c = prompt("Дўкон картаси (16 та рақам):"); if (c === null) return; const d = c.replace(/\D/g, "");
+    if (d.length !== 16) { toast("Карта рақами 16 та рақам бўлиши керак"); return; }
+    const h = prompt("Карта эгасининг исм-фамилияси (картада ёзилганидек):"); if (h === null) return;
+    await act(async () => { await rpc("admin_shop_card", { p_id:Number(t.dataset.scard), p_card:d, p_holder:h.trim() }); S.people = await rpc("admin_people"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.mbsave) { const id = t.dataset.mbsave, inp = document.querySelector(`[data-mbl="${id}"]`), bl = (inp ? inp.value : "").split(/[,;\n]/).map(x => x.trim()).filter(Boolean);
+    await act(async () => { await rpc("admin_market_blocks", { p_id:Number(id), p_blocks:bl }); S.people = await rpc("admin_people"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.prn) { const v = prompt("Янги исм:", t.dataset.nm || ""); if (v === null) return; const nm = v.trim(); if (nm.length < 2) { toast("Исм камида 2 белги"); return; }
+    await act(async () => { await rpc("admin_person_rename", { p_id:Number(t.dataset.prn), p_name:nm }); S.people = await rpc("admin_people"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.pset) { const st = t.dataset.st; let why = null;
+    if (st === "blocked") { why = prompt("Сабаб:"); if (!why) return; }
+    await act(async () => { await rpc("admin_person_set", { p_id:Number(t.dataset.pset), p_status:st, p_reason:why }); await load(); S.people = await rpc("admin_people"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.assign) { const role = t.dataset.assign, no = Number(t.dataset.no), v = $("as-" + role).value; let why = null;
+    if (!v) { if (!confirm("Тайинлашни олиб ташлайсизми?")) return; }
+    why = prompt("Сабаб (мас. «йиғувчи жавоб бермади»):"); if (!why) return;
+    await act(async () => { await rpc("admin_assign", { p_no:no, p_role:role, p_seller_id:v ? Number(v) : null, p_reason:why }); await load(); closeSheet(); draw(); openOrder(no); }, "Сақланди"); return; }
+  if (t.id === "ptpl") { tplCsv(); return; }
+  if (t.id === "pcancel") { S.prev = null; draw(); return; }
+  if (t.id === "papply") { const pv = S.prev; if (!pv) return;
+    await act(async () => { const r = await rpc("admin_prices_apply", { p_seller:Number(pv.seller), p_rows:pv.rows, p_note:"Excel/CSV" }); S.prev = null; S.prices = await rpc("admin_prices"); draw(); toast(`Сақланди: ${r.saved} та` + (r.skipped ? `, ўтказиб юборилди: ${r.skipped}` : "")); }); return; }
+  if (t.dataset.shpay) { const due = Number(t.dataset.due), v = prompt("Қанча сўм ўтказдингиз?", String(due)); if (!v) return; const amt = Number(String(v).replace(/\s/g, ""));
+    if (!amt || amt <= 0) { toast("Сумма нотўғри"); return; } if (amt > due) { toast("Қолдиқдан кўп"); return; }
+    await act(async () => { await rpc("admin_shop_pay", { p_seller:Number(t.dataset.shpay), p_amount:amt, p_note:"картага ўтказма" }); S.shops = await rpc("admin_shop_queue"); draw(); }, "Белгиланди"); return; }
+  if (t.dataset.spay) { const due = Number(t.dataset.due), v = prompt("Қанча сўм тўладингиз?", String(due)); if (!v) return; const amt = Number(String(v).replace(/\s/g, ""));
+    if (!amt || amt <= 0) { toast("Сумма нотўғри"); return; } if (amt > due) { toast("Қолдиқдан кўп"); return; }
+    await act(async () => { await rpc("admin_staff_pay", { p_seller:Number(t.dataset.spay), p_amount:amt, p_note:"ҳафталик тўлов" }); S.staff = await rpc("admin_staff"); draw(); }, "Белгиланди"); return; }
+  if (t.dataset.revert) { if (!confirm("Олдинги қийматга қайтарилсинми?")) return;
+    await act(async () => { await rpc("admin_revert_setting", { p_audit_id:Number(t.dataset.revert) }); S.settings = await rpc("admin_settings"); S.shist = await rpc("admin_settings_history"); draw(); }, "Қайтарилди"); return; }
+  if (t.dataset.andays) { S.andays = Number(t.dataset.andays); await tabData(); draw(); return; }
+  if (t.dataset.view) { S.view = t.dataset.view; draw(); return; }
+  if (t.dataset.cdet) { openCust(t.dataset.cdet); return; }
+  if (t.dataset.cdef !== undefined && t.hasAttribute("data-cdef")) { const v = Number(($("cdef").value || "").replace(",", ".").replace(/\s/g, ""));
+    if (!Number.isFinite(v) || v < 0 || v > 30) { toast("Фоиз 0 дан 30 гача бўлсин"); return; } const why = prompt("Сабаб (мас. «пилотдан кейин ёқдик»):"); if (!why) return;
+    await act(async () => { await rpc("admin_set_commission", { p_seller:null, p_pct:v, p_reason:why }); S.comm = await rpc("admin_commissions"); draw(); }, "Сақланди"); return; }
+  if (t.hasAttribute("data-cfreesave")) { const v = Number(($("cfree").value || "").replace(/\s/g, ""));
+    if (!Number.isInteger(v) || v < 0 || v > 1000) { toast("0 дан 1000 гача бутун сон"); return; } const why = prompt("Сабаб:"); if (!why) return;
+    await act(async () => { await rpc("admin_set_commission_free", { p_n:v, p_reason:why }); S.comm = await rpc("admin_commissions"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.cshop) { const id = Number(t.dataset.cshop), raw = (document.querySelector(`[data-cown="${id}"]`).value || "").replace(",", ".").replace(/\s/g, ""), v = raw === "" ? null : Number(raw);
+    if (v !== null && (!Number.isFinite(v) || v < 0 || v > 30)) { toast("Фоиз 0 дан 30 гача бўлсин"); return; } const why = prompt("Сабаб (мас. «катта дўкон, келишув»):"); if (!why) return;
+    await act(async () => { await rpc("admin_set_commission", { p_seller:id, p_pct:v, p_reason:why }); S.comm = await rpc("admin_commissions"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.tkf) { S.tkf = t.dataset.tkf; await tabData(); draw(); return; }
+  if (t.dataset.tkdet) { openTix(t.dataset.tkdet); return; }
+  if (t.dataset.trep) { const b = $("trep").value.trim(); if (!b) return; const id = Number(t.dataset.trep);
+    await act(async () => { await rpc("admin_ticket_reply", { p_id:id, p_body:b }); closeSheet(); await reload(); openTix(id); }, "Юборилди"); return; }
+  if (t.dataset.tclose) { const id = Number(t.dataset.tclose), dec = $("tdec").value, amt = Number(($("tamt").value || "").replace(/\s/g, "")) || null, note = $("tnote").value.trim();
+    if (note.length < 3) { toast("Сабабни ёзинг"); return; } if (dec !== "reject" && !amt) { toast("Суммани киритинг"); return; }
+    if (!confirm("Қарор қабул қилинсин? Бекор қилиб бўлмайди.")) return;
+    await act(async () => { await rpc("admin_ticket_close", { p_id:id, p_decision:dec, p_amount:dec === "reject" ? null : amt, p_note:note }); closeSheet(); await reload(); }, "Ёпилди"); return; }
+  if (t.id === "cqgo") { S.cq = $("cq").value; await tabData(); draw(); return; }
+  if (t.dataset.csave) { const tags = [...document.querySelectorAll("[data-ctag]")].filter(x => x.checked).map(x => x.dataset.ctag); let why = null;
+    if (tags.includes("blacklist")) { why = prompt("Қора рўйхат сабаби:"); if (!why) return; }
+    const id = Number(t.dataset.csave); await act(async () => { await rpc("admin_customer_set", { p_id:id, p_tags:"{" + tags.join(",") + "}", p_reason:why }); S.custs = await rpc("admin_customers", { p_q:S.cq || null, p_limit:100 }); closeSheet(); draw(); openCust(id); }, "Сақланди"); return; }
+  if (t.dataset.nadd) { const body = $("nbody").value.trim(); if (!body) return; const kind = t.dataset.nadd, ref = t.dataset.nref;
+    await act(async () => { await rpc("admin_note_add", { p_kind:kind, p_ref:String(ref), p_body:body }); closeSheet(); if (kind === "order") openOrder(ref); else openCust(ref); }, "Қўшилди"); return; }
+  if (t.dataset.pf) { S.pf = t.dataset.pf; draw(); return; }
+  if (t.dataset.prel) { const r = prompt("Сабаб (нима ҳал бўлди?):"); if (!r || !r.trim()) return;
+    await act(async () => { await rpc("admin_release_payout", { p_no:Number(t.dataset.prel), p_reason:r.trim() }); S.staff = await rpc("admin_staff"); draw(); }, "Қўйиб юборилди"); return; }
+  if (t.hasAttribute("data-fadd")) { const nm = $("fnm").value.trim(); if (!nm) { toast("Парк номини ёзинг"); return; }
+    await act(async () => { await rpc("admin_fleet_save", { p_id:null, p_name:nm, p_market:Number($("fmk").value), p_phone:$("fph").value.trim() || null, p_active:true }); S.fleets = await rpc("admin_fleets"); draw(); }, "Парк қўшилди"); return; }
+  if (t.dataset.ftog) { const x = S.fleets.fleets.find(z => z.id === Number(t.dataset.ftog)); if (!x) return;
+    await act(async () => { await rpc("admin_fleet_save", { p_id:x.id, p_name:x.name, p_market:x.market_id, p_phone:x.phone, p_active:!x.active }); S.fleets = await rpc("admin_fleets"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.fedit) { const x = S.fleets.fleets.find(z => z.id === Number(t.dataset.fedit)); if (!x) return;
+    const nm = prompt("Парк номи:", x.name); if (!nm || !nm.trim()) return; const ph = prompt("Телефон:", x.phone || "");
+    await act(async () => { await rpc("admin_fleet_save", { p_id:x.id, p_name:nm.trim(), p_market:x.market_id, p_phone:(ph || "").trim() || null, p_active:x.active }); S.fleets = await rpc("admin_fleets"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.psave) { const sid = t.dataset.psave, pid = Number(t.dataset.pid);
+    const seller = sid === "new" ? Number($("pnew").value) : Number(sid), price = Number((sid === "new" ? $("pnewp").value : document.querySelector(`[data-pp2="${sid}"]`).value).replace(/\s/g, ""));
+    await act(async () => { await rpc("admin_price_set", { p_seller:seller, p_product:pid, p_price:price, p_in_stock:true }); S.prices = await rpc("admin_prices"); closeSheet(); draw(); openPrice(pid); }, "Сақланди"); return; }
+  if (t.dataset.pdet) { openPrice(t.dataset.pdet); return; }
+  if (t.id === "aqgo") { S.aq = $("aq").value; await tabData(); draw(); return; }
+  if (t.id === "aadd") { await act(async () => { await rpc("admin_admin_add", { p_phone:$("ap").value.trim(), p_roles:"{" + $("ar").value + "}", p_name:null }); S.admins = await rpc("admin_admins"); draw(); }, "Қўшилди"); return; }
+  if (t.dataset.aset) { const id = Number(t.dataset.aset), st = t.dataset.ast; if (st === "blocked" && !confirm("Блоклайсизми?")) return;
+    await act(async () => { await rpc("admin_admin_set", { p_id:id, p_roles:null, p_status:st }); S.admins = await rpc("admin_admins"); draw(); }, "Сақланди"); return; }
+  if (t.dataset.adv) { await act(async () => { await rpc("admin_advance", { p_no:Number(t.dataset.adv), p_max:Number(t.dataset.max) }); await load(); closeSheet(); draw(); openOrder(t.dataset.adv); }, "Босқич ўзгарди"); return; }
+  if (t.dataset.rdone) { if (!confirm("Пулни мижозга қайтардингизми?")) return; await act(async () => { await rpc("admin_refund_done", { p_id:Number(t.dataset.rdone) }); await load(); closeSheet(); draw(); }, "Белгиланди"); return; }
+  if (t.dataset.ocancel) { const no = Number(t.dataset.ocancel), why = ($("cr").value || "").trim();
+    if (why.length < 3) { toast("Сабабни ёзинг"); return; }
+    if (!confirm("№" + no + " буюртма бекор қилинсинми? Тўланган бўлса, қайтариш яратилади, йиғувчи ва ҳайдовчига хабар кетади.")) return;
+    await act(async () => { await rpc("admin_order_cancel", { p_no:no, p_reason:why }); await load(); closeSheet(); draw(); openOrder(no); }, "Бекор қилинди"); return; }
+  if (t.dataset.rnew) { const no = Number(t.dataset.rnew), amt = Number(($("ra").value || "").replace(/\s/g, ""));
+    if (!amt) { toast("Суммани киритинг"); return; }
+    await act(async () => { await rpc("admin_refund_create", { p_no:no, p_kind:$("rk").value, p_amount:amt, p_reason:$("rr").value.trim() || null }); await load(); closeSheet(); draw(); openOrder(no); }, "Қайтариш яратилди"); return; }
+});
+document.addEventListener("click", e => { if (e.target.id === "sheet") closeSheet(); });
+document.addEventListener("change", async e => { const t = e.target;
+  if (t.id === "rcprov") { S.rcprov = t.value; return; }
+  if (t.dataset.fas) { await act(async () => { await rpc("admin_fleet_assign", { p_seller:Number(t.dataset.fas), p_fleet:t.value ? Number(t.value) : null }); S.fleets = await rpc("admin_fleets"); draw(); }, "Сақланди"); return; }
+  if (t.id === "rcfile" && t.files && t.files[0]) {
+    try { const rows = await parseStatement(t.files[0], $("rctiyin").checked); if (!rows.length) { toast("Файлда тўловлар топилмади"); return; }
+      S.rc = await rpc("admin_recon", { p_provider:S.rcprov, p_rows:rows }); draw(); toast("Солиштирилди: " + rows.length + " қатор"); }
+    catch(err){ sessErr(err); } return; }
+  if (t.id === "pshop") { S.pshop = t.value; S.prev = null; return; }
+  if (t.id === "pfile" && t.files && t.files[0]) {
+    try { const rows = await parsePriceFile(t.files[0]); if (!rows.length) { toast("Файлда нарх топилмади (4-устун)"); return; }
+      const data = await rpc("admin_prices_preview", { p_seller:Number(S.pshop), p_rows:rows }); S.prev = { seller:S.pshop, rows, data:Array.isArray(data) ? data : (data ? [data] : []) }; draw(); }
+    catch(err){ sessErr(err); } return; } if (t.dataset && t.dataset.arole) act(async () => { await rpc("admin_admin_set", { p_id:Number(t.dataset.arole), p_roles:"{" + t.value + "}", p_status:null }); S.admins = await rpc("admin_admins"); draw(); }, "Рол ўзгарди"); });
+setInterval(bgRefresh, 30000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) bgRefresh(); });
+setTimeout(() => { try { const x = document.createElement("script"); x.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"; x.async = true; document.head.appendChild(x); } catch(_){} }, 2500);
+init();

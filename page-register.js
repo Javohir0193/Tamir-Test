@@ -1,0 +1,167 @@
+// Ходим аризаси (дўкон, йиғувчи, ҳайдовчи). Ботда телефон рақами юборилгач «📝 Аризани тўлдириш» тугмаси орқали очилади.
+const API = (window.TAMIR_CONFIG || {}).botApi || "https://agajmytkjpkihvaurqij.supabase.co/functions/v1/tg-bot";
+const TG = window.Telegram && window.Telegram.WebApp;
+const ROLE = new URLSearchParams(location.search).get("role") || "";
+const RT = new URLSearchParams(location.search).get("rt") || "";
+let SSES = ""; try { SSES = localStorage.getItem("sel_ses") || ""; } catch (e) {}   // сайтга Telegram орқали кирилган бўлса, шу сессия билан ариза очилади   // браузерда очилганда ботдаги ҳаволадан келган токен
+const T = {
+  uz: {
+    seller:"Дўкон аризаси", collector:"Йиғувчи аризаси", driver:"Ҳайдовчи аризаси", sub:"Маълумотларни тўлдиринг ва юборинг",
+    phone:"Телефон", name:"Фамилия, исм, отасининг исми", nameEx:"Масалан: Каримов Азиз Рустамович",
+    shop:"Дўкон номи", shopEx:"Масалан: Азиз Строй", market:"Бозор", marketPick:"Бозорни танланг", marketNone:"❓ Бозорим рўйхатда йўқ",
+    workMarket:"Қайси бозорда ишлайсиз?", row:"Бозордаги жойингиз", rowEx:"Масалан: 7-қатор, 15-дўкон",
+    block:"Бозор ичидаги блок ёки бино", blockPick:"Блокни танланг", blockEx:"Масалан: А блок", line:"Нечанчи қатор", lineEx:"Масалан: 7", shopNo:"Нечанчи дўкон", shopNoEx:"Масалан: 15",
+    card:"Карта рақами", cardSub:"Платформа материал пулини шу картага ўтказади. Карта сизнинг номингизда бўлиши керак.", cardEx:"8600 0000 0000 0000",
+    holder:"Карта эгасининг исм-фамилияси", holderEx:"Картада ёзилганидек: AZIZ KARIMOV",
+    extra:"Қўшимча (ихтиёрий)", shopOpt:"Дўкон номи", innL:"СТИР (ИНН) ёки ЖШШИР", innEx:"9 ёки 14 та рақам",
+    groups:"Нималар сотасиз?", groupsSub:"Ихтиёрий. Белгиласангиз, «Нархларим» да фақат шу бўлимлар товарлари кўринади. Белгиламасангиз, ҳаммаси кўринади.",
+    car:"Машина русуми ва рақами", carEx:"Масалан: Damas, 01 A 123 BC", lic:"Ҳайдовчилик гувоҳномаси рақами", licEx:"Масалан: AB 1234567",
+    photo:"Гувоҳнома қўлингизда бўлган селфи", photoSub:"Юзингиз ва гувоҳнома рақами аниқ кўринсин.", photoBtn:"📷 Расм юклаш", photoAgain:"📷 Бошқа расм",
+    send:"Аризани юбориш", sending:"Юборилмоқда…", doneT:"Аризангиз юборилди", doneS:"Тасдиқлангач, ботга хабар келади. Бу ойнани ёпишингиз мумкин.",
+    doneWait:"Тасдиқлангач, бу саҳифа ўзи кабинетга ўтади. Саҳифани ёпманг.", approvedT:"Аризангиз тасдиқланди", approvedS:"Кабинетга ўтилмоқда…",
+    phoneFirst:"Аввал ботда телефон рақамингизни юборинг: «📱 Рақамни юбориш» тугмаси.", already:"Аризангиз аллақачон юборилган.",
+    active:"Сиз аллақачон тасдиқлангансиз.", tgOnly:"Бу саҳифа Telegram ботдаги «📝 Аризани тўлдириш» тугмаси орқали очилади.",
+    badRole:"Нотўғри ҳавола.", photoErr:"Расмни ўқиб бўлмади. Бошқа расм танланг.", err:"Хато. Қайта уриниб кўринг."
+  },
+  ru: {
+    seller:"Заявка магазина", collector:"Заявка сборщика", driver:"Заявка водителя", sub:"Заполните данные и отправьте",
+    phone:"Телефон", name:"Фамилия, имя, отчество", nameEx:"Например: Каримов Азиз Рустамович",
+    shop:"Название магазина", shopEx:"Например: Азиз Строй", market:"Рынок", marketPick:"Выберите рынок", marketNone:"❓ Моего рынка нет в списке",
+    workMarket:"На каком рынке вы работаете?", row:"Ваше место на рынке", rowEx:"Например: 7-й ряд, магазин 15",
+    block:"Блок или здание на рынке", blockPick:"Выберите блок", blockEx:"Например: блок А", line:"Номер ряда", lineEx:"Например: 7", shopNo:"Номер магазина", shopNoEx:"Например: 15",
+    card:"Номер карты", cardSub:"На эту карту платформа переводит деньги за материалы. Карта должна быть на ваше имя.", cardEx:"8600 0000 0000 0000",
+    holder:"Имя и фамилия владельца карты", holderEx:"Как на карте: AZIZ KARIMOV",
+    extra:"Дополнительно (необязательно)", shopOpt:"Название магазина", innL:"ИНН или ПИНФЛ", innEx:"9 или 14 цифр",
+    groups:"Что вы продаёте?", groupsSub:"Необязательно. Если отметите, в «Мои цены» будут видны только товары этих разделов. Если нет, видно всё.",
+    car:"Марка и номер машины", carEx:"Например: Damas, 01 A 123 BC", lic:"Номер водительских прав", licEx:"Например: AB 1234567",
+    photo:"Селфи с правами в руке", photoSub:"Лицо и номер прав должны быть хорошо видны.", photoBtn:"📷 Загрузить фото", photoAgain:"📷 Другое фото",
+    send:"Отправить заявку", sending:"Отправка…", doneT:"Заявка отправлена", doneS:"После подтверждения придёт сообщение в бот. Окно можно закрыть.",
+    doneWait:"После подтверждения страница сама перейдёт в кабинет. Не закрывайте её.", approvedT:"Заявка подтверждена", approvedS:"Переходим в кабинет…",
+    phoneFirst:"Сначала отправьте номер телефона в боте: кнопка «📱 Отправить номер».", already:"Ваша заявка уже отправлена.",
+    active:"Вы уже подтверждены.", tgOnly:"Эта страница открывается кнопкой «📝 Заполнить заявку» в Telegram-боте.",
+    badRole:"Неверная ссылка.", photoErr:"Не удалось прочитать фото. Выберите другое.", err:"Ошибка. Попробуйте ещё раз."
+  }
+};
+const GROUP_RU = { g1:"🧱 Фундамент и стены", g2:"🏠 Кровля", g3:"⚡ Электрика", g4:"🚿 Сантехника и отопление", g5:"📐 Выравнивание и изоляция", g6:"🎨 Отделка", g7:"🔨 Инструмент и крепёж" };
+const IN_TG = !!(TG && TG.initData);
+const hap = k => { try { if (TG && TG.HapticFeedback) TG.HapticFeedback.notificationOccurred(k); } catch (e) {} };
+const HOME = { seller:"seller.html", collector:"collector.html", driver:"driver.html" };
+// браузерда: ариза юборилгач, админ тасдиқлашини кутамиз ва тасдиқланса кабинетга ўтамиз
+function waitApproval(){
+  const tick = async () => {
+    try { const d = await call({ action:"r_load" }); if (d.status === "active") { msg(t("approvedT"), t("approvedS")); setTimeout(() => { location.href = HOME[ROLE] || "seller.html"; }, 1500); return; } } catch (e) {}
+    setTimeout(tick, 4000);
+  };
+  setTimeout(tick, 4000);
+}
+const S = { lang:"uz", d:null, f:{}, photo:"", busy:false };
+const t = k => T[S.lang][k] || T.uz[k] || k;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const $ = id => document.getElementById(id);
+
+async function call(body){
+  const r = await fetch(API, { method:"POST", headers:Object.assign({ "content-type":"application/json" }, TG && TG.initData ? { "x-init-data":TG.initData } : RT ? { "x-reg-token":RT } : { "x-sel-session":SSES }), body:JSON.stringify(Object.assign({ role:ROLE, lang:S.lang }, body)) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || t("err"));
+  return j;
+}
+function msg(title, sub){ $("app").innerHTML = `<div class="msg"><b>${esc(title)}</b>${sub ? esc(sub) : ""}</div>`; }
+
+function field(id, label, ex, val, sub, num){
+  return `<div class="field"><label for="${id}">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ""}</label><input type="text" id="${id}" value="${esc(val)}" placeholder="${esc(ex)}" autocomplete="off"${num ? ' inputmode="numeric"' : ""}></div>`;
+}
+const cardFmt = v => String(v || "").replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+// дўкон жойи: бозорда блоклар рўйхати бўлса танланади, бўлмаса қўлда ёзилади
+function blockField(){
+  const m = S.d.markets.find(x => String(x.id) === String(S.f.market)), bl = (m && m.blocks) || [];
+  if (!bl.length) return field("blk", t("block"), t("blockEx"), S.f.block);
+  return `<div class="field"><label for="blk">${esc(t("block"))}</label><select id="blk"><option value="">${esc(t("blockPick"))}</option>${bl.map(b => `<option ${S.f.block === b ? "selected" : ""}>${esc(b)}</option>`).join("")}</select></div>`;
+}
+function draw(){
+  const d = S.d, f = S.f;
+  const mk = d.markets.length && ROLE !== "driver" ? `<div class="field"><label for="mk">${esc(ROLE === "collector" ? t("workMarket") : t("market"))}</label>
+    <select id="mk"><option value="">${esc(t("marketPick"))}</option>${d.markets.map(m => `<option value="${m.id}" ${String(f.market) === String(m.id) ? "selected" : ""}>🏬 ${esc(m.name)}</option>`).join("")}
+    ${ROLE === "seller" ? `<option value="0" ${f.market === "0" ? "selected" : ""}>${esc(t("marketNone"))}</option>` : ""}</select></div>` : "";
+  let body = field("name", t("name"), t("nameEx"), f.name);
+  if (ROLE === "seller") body += mk + blockField() + field("line", t("line"), t("lineEx"), f.line, "", 1) + field("sno", t("shopNo"), t("shopNoEx"), f.sno) +
+    field("card", t("card"), t("cardEx"), cardFmt(f.card), t("cardSub"), 1) + field("holder", t("holder"), t("holderEx"), f.holder) +
+    `</div><div class="card"><h2 class="sec">${esc(t("extra"))}</h2>` + field("shop", t("shopOpt"), t("shopEx"), f.shop) + field("inn", t("innL"), t("innEx"), f.inn, "", 1) +
+    `<div class="field"><label>${esc(t("groups"))}<small>${esc(t("groupsSub"))}</small></label><div class="groups">${d.groups.map(g =>
+      `<label class="grp ${f.groups.has(g.id) ? "on" : ""}" data-g="${g.id}"><input type="checkbox" ${f.groups.has(g.id) ? "checked" : ""}> ${esc(S.lang === "ru" ? GROUP_RU[g.id] || g.name : g.name)}</label>`).join("")}</div></div>`;
+  if (ROLE === "collector") body += mk;
+  if (ROLE === "driver") body += field("car", t("car"), t("carEx"), f.car) + field("lic", t("lic"), t("licEx"), f.lic) +
+    `<div class="field"><label>${esc(t("photo"))}<small>${esc(t("photoSub"))}</small></label><div class="photo">
+      ${S.photo ? `<img src="${S.photo}" alt="">` : ""}<button type="button" class="btn2" id="pbtn">${esc(S.photo || d.has_photo ? t("photoAgain") : t("photoBtn"))}</button>
+      <input type="file" id="pfile" accept="image/*" capture="user" hidden></div></div>`;
+  $("app").innerHTML = `<header><div><h1>${esc(t(ROLE))}</h1><small>${esc(t("sub"))}</small></div>
+    <div class="lang"><button data-l="uz" class="${S.lang === "uz" ? "on" : ""}">ЎЗ</button><button data-l="ru" class="${S.lang === "ru" ? "on" : ""}">РУ</button></div></header>
+    <div class="card"><div class="field phone">${esc(t("phone"))}: <b>${esc(d.phone || "—")}</b></div>${body}<div class="err" id="err"></div></div>
+    <div class="submit"><button id="go" ${S.busy ? "disabled" : ""}>${esc(S.busy ? t("sending") : t("send"))}</button></div>`;
+}
+function grab(){
+  const v = id => ($(id) ? $(id).value : undefined);
+  [["name", "name"], ["shop", "shop"], ["row", "row"], ["car", "car"], ["lic", "lic"], ["blk", "block"], ["line", "line"], ["sno", "sno"], ["card", "card"], ["holder", "holder"], ["inn", "inn"]]
+    .forEach(([id, k]) => { if (v(id) !== undefined) S.f[k] = v(id); });
+  if ($("mk")) S.f.market = $("mk").value;
+}
+// расмни телефонда кичрайтириш (энг катта томони 1600px, JPEG): тез юкланади
+function shrink(file){
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", 0.85)); };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error(t("photoErr"))); };
+    img.src = url;
+  });
+}
+
+document.addEventListener("click", async e => {
+  const el = e.target.closest("[data-l],[data-g],#pbtn,#go");
+  if (!el) return;
+  if (el.dataset.l) { grab(); S.lang = el.dataset.l; draw(); return; }
+  if (el.dataset.g) { e.preventDefault(); grab(); const g = el.dataset.g; S.f.groups.has(g) ? S.f.groups.delete(g) : S.f.groups.add(g); draw(); return; }
+  if (el.id === "pbtn") { $("pfile").click(); return; }
+  if (el.id === "go" && !S.busy) {
+    grab();
+    const f = S.f, body = { action:"r_submit", name:f.name };
+    if (ROLE !== "driver" && S.d.markets.length) body.market_id = f.market === "" || f.market === undefined ? null : Number(f.market);
+    if (ROLE === "seller") Object.assign(body, { block:f.block, row_line:f.line, shop_no:f.sno, card:String(f.card || "").replace(/\D/g, ""), card_holder:f.holder, shop:f.shop, inn:f.inn, groups:[...f.groups] });
+    if (ROLE === "driver") Object.assign(body, { car:f.car, license_no:f.lic, photo:S.photo });
+    S.busy = true; draw();
+    try { await call(body); } catch (err) { S.busy = false; draw(); $("err").textContent = err.message; hap("error"); return; }
+    hap("success");
+    if (IN_TG) { msg(t("doneT"), t("doneS")); setTimeout(() => { try { TG.close(); } catch (e) {} }, 2500); }
+    else { msg(t("doneT"), t("doneWait")); waitApproval(); }
+  }
+});
+document.addEventListener("input", e => {          // карта рақамини 4 тадан гуруҳлаш
+  if (e.target.id !== "card") return;
+  const el = e.target, f = cardFmt(el.value); if (f !== el.value) el.value = f;
+});
+document.addEventListener("change", async e => {
+  if (e.target.id === "mk" && ROLE === "seller") { grab(); S.f.block = ""; draw(); return; }   // бозор алмашса, блоклар рўйхати янгиланади
+  if (e.target.id !== "pfile" || !e.target.files[0]) return;
+  grab();
+  try { S.photo = await shrink(e.target.files[0]); draw(); }
+  catch (err) { $("err").textContent = err.message; }
+});
+
+(async () => {
+  const inTg = IN_TG;
+  if (!inTg && !RT && !SSES) { msg(T.uz.tgOnly, ""); return; }
+  if (inTg) { TG.ready(); TG.expand(); }
+  const lc = inTg ? (((TG.initDataUnsafe || {}).user || {}).language_code || "") : (navigator.language || "");
+  S.lang = /^(ru|be|kk|ky|tg)/.test(lc) ? "ru" : "uz";
+  if (!["seller", "collector", "driver"].includes(ROLE)) { msg(t("badRole"), ""); return; }
+  try {
+    const d = await call({ action:"r_load" });
+    if (d.step === "r_phone") { msg(t("phoneFirst"), ""); return; }
+    if (d.step !== "r_form") { msg(d.status === "active" ? t("active") : t("already"), ""); return; }
+    S.d = d;
+    S.f = { name:d.name || "", shop:d.shop || "", row:d.row || "", car:d.car || "", lic:d.license_no || "",
+            block:d.block || "", line:d.row_line || "", sno:d.shop_no || "", card:d.card || "", holder:d.card_holder || "", inn:d.inn || "",
+            market:d.market_id == null ? "" : String(d.market_id), groups:new Set(d.groups.filter(g => g.on).map(g => g.id)) };
+    draw();
+  } catch (err) { msg(err.message, ""); }
+})();
