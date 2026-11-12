@@ -31,6 +31,10 @@ test("дўкон файлда топилмаган товарни таклиф �
   await expect(page.getByText("2 қатор:")).toContainText("2 топилмади");
   await page.getByRole("button", { name: /Топилмаганларни таклиф қилиш \(2\)/ }).click();
   await expect(page.locator("[data-pmunit]").first()).toHaveValue("м²");   // файлдаги «Ўлчов» устуни
+  await page.locator("[data-pmunit]").first().fill("5");                   // рақам ўлчов эмас — юборилмайди
+  await page.getByRole("button", { name: "Админга юбориш" }).click();
+  await expect(page.locator("#toast")).toContainText("ўлчов сўз билан");
+  await page.locator("[data-pmunit]").first().fill("м²");
   await page.getByRole("button", { name: "Админга юбориш" }).click();
   await expect(page.locator("#toast")).toContainText("2 та товар админга юборилди");
 

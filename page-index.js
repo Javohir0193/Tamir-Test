@@ -933,7 +933,7 @@ function renderCart(){
   const linesH = ids.map(id => { const p = byId(+id); return `
         <div class="line">
           <div class="lpic" style="--c:${catColor(p.cat)}" aria-hidden="true">${p.e}</div>
-          <div class="lmain"><div class="t">${p.n}</div><div class="s">${p.nop ? p.s : `${p.s} · ${esc(p.shop)} · ${fmt(p.p)} ${CURRENCY} / ${p.u}`}</div></div>
+          <div class="lmain"><div class="t">${p.n}</div><div class="s">${p.nop ? p.s : [p.s, esc(p.shop), `${fmt(p.p)} ${CURRENCY} / ${p.u}`].filter(Boolean).join(" · ")}</div></div>
           <div class="sum">${p.nop ? `<span class="nop">цена уточняется</span>` : fmt(p.p * qty(p.id))}</div>
           ${stepper(p.id)}
           <button class="ldel" data-del="${p.id}" aria-label="Удалить"><svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -1621,7 +1621,7 @@ function homeResHTML(){
   if (!items.length) return `<div class="hsempty">Ничего не найдено. Попробуйте другое слово.</div>`;
   return items.slice(0, 8).map(p => `<div class="hsrow">
     <span class="hse" style="--c:${catColor(p.cat)}">${p.e}</span>
-    <div class="hsm"><b>${p.n}</b><small>${p.s}${p.nop ? "" : " · " + fmt(p.p) + " " + CURRENCY + " / " + p.u}</small></div>
+    <div class="hsm"><b>${p.n}</b><small>${p.nop ? p.s : [p.s, fmt(p.p) + " " + CURRENCY + " / " + p.u].filter(Boolean).join(" · ")}</small></div>
     ${qty(p.id) ? stepper(p.id) : `<button class="btn hsadd" data-add="${p.id}">+ В корзину</button>`}
   </div>`).join("") + (items.length > 8 ? `<button class="lnk hsall" data-hsall>Все результаты (${items.length}) ›</button>` : "");
 }
