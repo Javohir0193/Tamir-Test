@@ -350,6 +350,7 @@ document.addEventListener("click", async e => {
     const idx = [...w.querySelectorAll("[data-pmck]")].filter(x => x.checked).map(x => +x.dataset.pmck);
     if (!idx.length) { toast("Ҳеч нарса белгиланмаган"); return; }
     const rows = idx.map(i => { const r = S.imp.rows[i]; return { name:r.nm || r.name, spec:r.sp || "", unit:(w.querySelector(`[data-pmunit="${i}"]`).value || "дона").trim(), price:r.price }; });
+    const nu = rows.find(r => !/\p{L}/u.test(r.unit)); if (nu) { toast(`«${nu.name}»: ўлчов сўз билан (дона, қоп, кг, м²…)`); return; }
     t.disabled = true;
     try {
       const res = await call({ action:"propose_many", cat:$("pm_cat").value, rows });
@@ -396,6 +397,7 @@ document.addEventListener("click", async e => {
   else if (t.hasAttribute("data-npsend")){
     const body = { action:"propose", name:$("npn_name").value.trim(), spec:$("npn_spec").value.trim(), cat:$("npn_cat").value, unit:$("npn_unit").value.trim(), price:num($("npn_price").value) };
     if (!body.name || !body.unit) { toast("Номи ва ўлчовини ёзинг"); return; }
+    if (!/\p{L}/u.test(body.unit)) { toast("Ўлчов сўз билан: дона, қоп, кг, м²…"); return; }
     t.disabled = true;
     try { await call(body); w.remove(); toast("✓ Админга юборилди. Тасдиқлангач каталогда чиқади."); }
     catch (err) { t.disabled = false; toast(err.message); }

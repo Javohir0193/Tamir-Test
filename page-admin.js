@@ -102,7 +102,7 @@ async function tabData(){
     if (S.tab === "pay") { S.pay = await rpc("admin_payouts"); try { S.staff = await rpc("admin_staff"); } catch(e){ S.staff = null; } try { S.shops = await rpc("admin_shop_queue"); } catch(e){ S.shops = null; } try { S.comm = await rpc("admin_commissions"); } catch(e){ S.comm = null; } }
     if (S.tab === "audit") S.audit = await rpc("admin_audit", { p_limit:150, p_offset:0, p_q:S.aq || null });
     if (S.tab === "admins") S.admins = await rpc("admin_admins");
-    if (S.tab === "prices") { S.prices = await rpc("admin_prices"); try { S.props = await rpc("admin_product_proposals"); } catch(e){ S.props = null; } }
+    if (S.tab === "prices") { S.prices = await rpc("admin_prices"); S.propErr = ""; try { S.props = await rpc("admin_product_proposals"); } catch(e){ S.props = null; S.propErr = (e && e.message) || "хато"; } }
     if (S.tab === "an") S.an = await rpc("admin_analytics", { p_days:S.andays });
     if (S.tab === "tix") S.tks = await rpc("admin_tickets", { p_status:S.tkf === "all" ? null : S.tkf });
     if (S.tab === "frd") S.frd = await rpc("admin_fraud", { p_status:S.frdf === "all" ? null : S.frdf, p_limit:200 });
@@ -366,7 +366,7 @@ function pricesView(){
   const okN = pv ? pv.data.filter(r => r.st === "ok" || r.st === "warn").length : 0;
   const pr = S.props || [];
   const pcats = [...new Set((d.products || []).map(p => p.cat))].sort();
-  return `${pr.length ? `<div class="card"><h2>🆕 Янги товар таклифлари (${pr.length})</h2><p class="mu" style="font-size:13px">Дўкон ёки йиғувчи каталогда йўқ товарни таклиф қилган. Қўшишдан олдин номи, тавсифи, ўлчови ва тоифасини тузатиш мумкин. Рад этишда сабабини ёзинг: таклиф қилганга Telegram'да боради. Ботдаги тугмалар ҳам шу қоида билан ишлайди.</p>
+  return `${S.propErr ? `<div class="card"><h2>🆕 Янги товар таклифлари</h2><p class="err">Таклифларни юклаб бўлмади: ${esc(S.propErr)}</p></div>` : ""}${pr.length ? `<div class="card"><h2>🆕 Янги товар таклифлари (${pr.length})</h2><p class="mu" style="font-size:13px">Дўкон ёки йиғувчи каталогда йўқ товарни таклиф қилган. Қўшишдан олдин номи, тавсифи, ўлчови ва тоифасини тузатиш мумкин. Рад этишда сабабини ёзинг: таклиф қилганга Telegram'да боради. Ботдаги тугмалар ҳам шу қоида билан ишлайди.</p>
     ${pr.map(x => `<div class="card" style="border:1px solid var(--ln)" data-np="${x.id}">
       <div class="mu" style="font-size:12px">${x.by ? esc(x.by) : "—"}${x.at ? " · " + dt(x.at) : ""}</div>
       <div class="row"><input data-npf="name" value="${esc(x.name)}" maxlength="80" style="flex:2" aria-label="Номи"><input data-npf="spec" value="${esc(x.spec || "")}" maxlength="80" style="flex:2" aria-label="Тавсиф" placeholder="тавсиф"></div>

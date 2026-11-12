@@ -179,6 +179,11 @@ grant execute on function public.product_propose(bigint, bigint, text, text, tex
 grant execute on function public.product_decide(integer, boolean, text, jsonb, text) to service_role;
 grant execute on function public.seller_proposals(bigint) to service_role;
 grant execute on function public.admin_product_decide(text, integer, boolean, text, jsonb) to authenticated;
+-- 16-миграция ишламаган базада (test) бу иккиси шу ерда янгидан яратилади, стандарт ҳуқуқ йўқ (02-миграция) — ҳуқуқни шу ерда ҳам берамиз.
+revoke all on function public.admin_product_proposals(text) from public, anon;
+revoke all on function public.admin_product_decide(text, integer, boolean) from public, anon;
+grant execute on function public.admin_product_proposals(text) to authenticated;
+grant execute on function public.admin_product_decide(text, integer, boolean) to authenticated;
 
 commit;
 

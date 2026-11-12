@@ -232,6 +232,7 @@ document.addEventListener("click", async e => {
     S.form = null; if (S.open) { S.shop = String(r.shop.id); S.shopOffers = {}; }
   }, "Дўкон қўшилди");
   else if ("npsave" in ds) act(async () => {
+    if (!/\p{L}/u.test($("np_unit").value)) throw new Error("Ўлчов сўз билан: дона, қоп, кг, м²…");
     await call({ action:"c_newproduct", cat:$("np_cat").value, name:$("np_name").value, spec:$("np_spec").value, unit:$("np_unit").value, price:num($("np_price").value), shop_id:+S.pshop });
     S.form = null;
   }, "Админга юборилди");
