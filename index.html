@@ -415,6 +415,10 @@ html{overflow-x:hidden}body{overflow-x:clip}
 .ack{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .acknote{display:grid;gap:8px;margin-top:8px}
 .acknote textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px}
+.rate{margin:6px 0}.rate .rt{display:grid;gap:6px;padding:10px 0;border-top:1px solid var(--line)}.rate .rt:first-of-type{border-top:0}
+.stars{display:flex;gap:2px}.stars button{background:none;border:0;padding:4px 2px;font-size:26px;line-height:1;cursor:pointer;color:#CBD5E1;min-width:36px;min-height:36px}
+.stars button.on{color:#F59E0B}.stars button:focus-visible{outline:2px solid #F97316;border-radius:6px}
+.rtg{color:#B45309;font-weight:600;white-space:nowrap}
 .pick{position:fixed;inset:0;z-index:50;background:#fff;display:flex;flex-direction:column}
 .pick-top{display:flex;justify-content:space-between;align-items:center;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;font-size:17px}
 .pick-top .x{border:0;background:#F0F2F5;border-radius:10px;width:40px;height:40px;font-size:18px}

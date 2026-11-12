@@ -1,6 +1,6 @@
 -- Ta'mir: TEST базани ТЎЛИҚ тозалаш (Б вариант). ФАҚАТ test лойиҳада (ta'mir test)!
 -- Мақсад: ҳамма қайтадан рўйхатдан ўтади (дўкон, йиғувчи, ҳайдовчи, мижоз).
--- Ўчади: test_reset_data.sql даги ҳамма нарса (буюртмалар, тўловлар, пул журнали, тикетлар, ҳодисалар, огоҳлантиришлар)
+-- Ўчади: test_reset_data.sql даги ҳамма нарса (буюртмалар, тўловлар, пул журнали, тикетлар, ҳодисалар, огоҳлантиришлар, баҳолар, антифрод белгилари)
 --        + админдан бошқа ҳамма ходимлар (sellers: seller/collector/driver) ва уларнинг сессиялари,
 --        дўкон нархлари (offers) ва нарх тарихи, админ бўлмаган мижоз профиллари ва қурилмалари.
 -- Қолади: админлар (sellers.role = 'admin', admin_users, admin_sessions ва админ профили), PIN ва кириш,
@@ -21,7 +21,8 @@ declare t text;
 begin
   foreach t in array array['orders','order_lines','order_msgs','purchases','payments','refunds','ledger','staff_payouts',
                            'tickets','ticket_msgs','events','admin_alerts','login_tokens','driver_login','collector_login',
-                           'driver_sessions','collector_sessions','offers','price_history','sellers','profiles','profile_devices'] loop
+                           'driver_sessions','collector_sessions','offers','price_history','sellers','profiles','profile_devices','reviews','fraud_flags'] loop
+    continue when to_regclass('public.' || t) is null;     -- reviews (32), fraud_flags (33): миграциядан кейин бор
     execute format('drop table if exists ops.bk_full_%s', t);
     execute format('create table ops.bk_full_%s as table public.%I', t, t);
   end loop;
@@ -30,9 +31,13 @@ end $$;
 -- 1. Буюртмалар ва пул (test_reset_data.sql билан бир хил)
 alter table public.ledger disable trigger ledger_no_truncate;
 alter table public.ledger disable trigger ledger_no_change;
-truncate public.orders, public.order_lines, public.order_msgs, public.purchases, public.payments, public.refunds, public.ledger,
-         public.staff_payouts, public.tickets, public.ticket_msgs, public.events, public.admin_alerts,
-         public.login_tokens, public.driver_login, public.collector_login;
+do $$ begin   -- reviews (32), fraud_flags (33) буюртмага боғланган: бор бўлса бир вақтда тозаланади
+  execute 'truncate public.orders, public.order_lines, public.order_msgs, public.purchases, public.payments, public.refunds, public.ledger,'
+       || ' public.staff_payouts, public.tickets, public.ticket_msgs, public.events, public.admin_alerts,'
+       || ' public.login_tokens, public.driver_login, public.collector_login'
+       || case when to_regclass('public.reviews') is not null then ', public.reviews' else '' end
+       || case when to_regclass('public.fraud_flags') is not null then ', public.fraud_flags' else '' end;
+end $$;
 alter table public.ledger enable trigger ledger_no_truncate;
 alter table public.ledger enable trigger ledger_no_change;
 

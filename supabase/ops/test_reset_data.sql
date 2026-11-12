@@ -1,6 +1,6 @@
 -- Ta'mir: TEST базани тозалаш (А вариант). ФАҚАТ test лойиҳада (ta'mir test)!
 -- Ўчади: буюртмалар ва уларга боғлиқ ҳамма нарса (қаторлар, харидлар, тўловлар, қайтаришлар, пул журнали),
---        ходимга тўловлар (баланслар шундан ҳисобланади, демак 0 бўлади), тикетлар, ҳодисалар, админ огоҳлантиришлари,
+--        ходимга тўловлар (баланслар шундан ҳисобланади, демак 0 бўлади), тикетлар, ҳодисалар, админ огоҳлантиришлари, баҳолар, антифрод белгилари,
 --        вақтинчалик кириш токенлари, ботга юборилган сўровлар жавоблари.
 -- Қолади: каталог, нархлар ва нарх тарихи, бозорлар, парклар, тарифлар, сотувчи/йиғувчи/ҳайдовчилар ва уларнинг
 --        Telegram боғланиши, мижоз профиллари, админлар ва PIN, созламалар (bot_secret ҳам), аудит журнали, изоҳлар,
@@ -17,7 +17,8 @@ do $$
 declare t text;
 begin
   foreach t in array array['orders','order_lines','order_msgs','purchases','payments','refunds','ledger','staff_payouts',
-                           'tickets','ticket_msgs','events','admin_alerts','login_tokens','driver_login','collector_login'] loop
+                           'tickets','ticket_msgs','events','admin_alerts','login_tokens','driver_login','collector_login','reviews','fraud_flags'] loop
+    continue when to_regclass('public.' || t) is null;     -- reviews (32), fraud_flags (33): миграциядан кейин бор
     execute format('drop table if exists ops.bk_reset_%s', t);
     execute format('create table ops.bk_reset_%s as table public.%I', t, t);
   end loop;
@@ -25,9 +26,13 @@ end $$;
 
 alter table public.ledger disable trigger ledger_no_truncate;
 alter table public.ledger disable trigger ledger_no_change;
-truncate public.orders, public.order_lines, public.order_msgs, public.purchases, public.payments, public.refunds, public.ledger,
-         public.staff_payouts, public.tickets, public.ticket_msgs, public.events, public.admin_alerts,
-         public.login_tokens, public.driver_login, public.collector_login;
+do $$ begin   -- reviews (32), fraud_flags (33) буюртмага боғланган: бор бўлса бир вақтда тозаланади
+  execute 'truncate public.orders, public.order_lines, public.order_msgs, public.purchases, public.payments, public.refunds, public.ledger,'
+       || ' public.staff_payouts, public.tickets, public.ticket_msgs, public.events, public.admin_alerts,'
+       || ' public.login_tokens, public.driver_login, public.collector_login'
+       || case when to_regclass('public.reviews') is not null then ', public.reviews' else '' end
+       || case when to_regclass('public.fraud_flags') is not null then ', public.fraud_flags' else '' end;
+end $$;
 alter table public.ledger enable trigger ledger_no_truncate;
 alter table public.ledger enable trigger ledger_no_change;
 
@@ -56,5 +61,6 @@ commit;
 -- insert into public.ticket_msgs select * from ops.bk_reset_ticket_msgs;
 -- insert into public.events select * from ops.bk_reset_events;
 -- insert into public.admin_alerts select * from ops.bk_reset_admin_alerts;
+-- insert into public.reviews select * from ops.bk_reset_reviews;            -- 32-миграциядан кейин
 -- alter table public.ledger enable trigger ledger_no_change;
 -- commit;

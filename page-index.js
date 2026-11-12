@@ -261,6 +261,11 @@ const catName = id => (CATS.find(c => c.id === id) || {}).name || "";
 const grpOf = cat => (GROUPS.find(g => g.cats.includes(cat)) || {}).id || "all";
 const addBtn = id => `<button class="btn addb" data-add="${id}" aria-label="В корзину">${ic("plus")}<span class="t">В корзину</span></button>`;
 const goodsN = () => P.filter(p => p.cat !== "work").length;
+// ⭐ ўртача баҳо: [ўртача, сони] (ratings_summary, 32-миграция). Баҳо йўқ бўлса ҳеч нарса чиқмайди.
+const rtTag = r => r && r[1] ? `<span class="rtg" title="Средняя оценка покупателей">⭐ ${Number(r[0]).toFixed(1)} <small>(${r[1]})</small></span>` : "";
+async function loadRatings(){
+  try { const r = await sb.rpc("ratings_summary"); if (!r.error && r.data) { S.rt = { p:r.data.p || {}, s:r.data.s || {} }; rerender(); } } catch(e){}
+}
 function pcard(p){
   return `<article class="card" data-pid="${p.id}">
       <div class="pic" style="--c:${catColor(p.cat)}" aria-hidden="true">${p.e}</div>
@@ -273,6 +278,7 @@ function pcard(p){
           ${qty(p.id) ? stepper(p.id) : addBtn(p.id)}
         </div>
         ${p.nop ? "" : `<p class="spec shopl">Самая низкая цена · ${esc(p.shop)}</p>`}
+        ${rtTag(S.rt && S.rt.p[p.id])}
       </div>
     </article>`;
 }
@@ -407,7 +413,7 @@ function orderHTML(o, closable){
         return `<li class="${cls}"><i></i>${s[0]}${sub ? `<small>${sub}</small>` : ""}</li>`;
       }).join("")}</ol>`}
     </div>
-    <div class="o-aside">${orderSide(o)}${helpBox(o)}
+    <div class="o-aside">${orderSide(o)}${rateBox(o)}${helpBox(o)}
       ${S.seller && !last && !unp && !exp ? `<button class="btn dark" data-advance="${o.no}">Перевести в статус «${st[o.stage + 1][0]}»</button>` : ""}</div>
   </section>`;
 }
@@ -1024,7 +1030,7 @@ async function loadOrders(quiet){
     tkSig = JSON.stringify((S.tickets || []).map(t => [t.id, t.status, t.msgs.length]));
     const same = prev === JSON.stringify(S.orders.map(o => [o.no, o.status, o.payStatus, o.payDue])) && tkSig === S.tkSig && payOptSig() === S.poSig; S.poSig = payOptSig(); S.tkSig = tkSig;
     if (quiet && same) return;
-    const ae = document.activeElement; if (ae && /^(helpt|ackt)/.test(ae.id || "")) return;
+    const ae = document.activeElement; if (ae && (/^(helpt|ackt)/.test(ae.id || "") || (ae.dataset && ae.dataset.ratet))) return;
     if (S.tab === "orders") { const y = window.scrollY; renderOrders(); window.scrollTo(0, y); }
     else if (S.tab === "home" && S.view === "home") renderHome();
   } catch(e){ console.error("loadOrders", e); }
@@ -1055,6 +1061,7 @@ async function loadCatalog(){
     });
     S.liveCatalog = true;
     rerender();
+    loadRatings();
   } catch(e){ console.error("loadCatalog", e); }
 }
 function rerender(){
@@ -1078,7 +1085,7 @@ const place = x => [x.market, x.row && x.row !== x.shop ? x.row : ""].filter(Boo
 function cmpHTML(d){
   const sh = (d && d.shops) || []; if (sh.length < 2) return "";
   const miss = ids => ids.map(i => { const p = byId(i); return p ? p.n : "#" + i; }).slice(0, 4).join(", ") + (ids.length > 4 ? "…" : "");
-  const rows = sh.map(x => `<div class="cmpw"><button type="button" class="cmprow ${x.have === x.need ? "full" : ""} ${S.shopSel === x.id ? "on" : ""}" data-shop="${x.id}" aria-pressed="${S.shopSel === x.id}"><span class="cs"><b>${esc(x.shop)}</b>${place(x) ? `<small>📍 ${esc(place(x))}</small>` : ""}<small>${x.have === x.need ? "Все товары есть" : `${x.have} из ${x.need} товаров · Не хватает: ${esc(miss(x.missing))}`}</small></span><span class="cp">${fmt(x.total)} ${CURRENCY}</span></button>${telLink(x.phone)}</div>`).join("");
+  const rows = sh.map(x => `<div class="cmpw"><button type="button" class="cmprow ${x.have === x.need ? "full" : ""} ${S.shopSel === x.id ? "on" : ""}" data-shop="${x.id}" aria-pressed="${S.shopSel === x.id}"><span class="cs"><b>${esc(x.shop)}</b> ${rtTag(S.rt && S.rt.s[x.id])}${place(x) ? `<small>📍 ${esc(place(x))}</small>` : ""}<small>${x.have === x.need ? "Все товары есть" : `${x.have} из ${x.need} товаров · Не хватает: ${esc(miss(x.missing))}`}</small></span><span class="cp">${fmt(x.total)} ${CURRENCY}</span></button>${telLink(x.phone)}</div>`).join("");
   const mix = d.mix || {};
   return `<section class="panel cmp"><h2>Выберите магазин</h2>${rows}
     <button type="button" class="cmprow mix ${!S.shopSel ? "on" : ""}" data-shop="0" aria-pressed="${!S.shopSel}"><span class="cs"><b>Каждый товар — в самом дешёвом магазине</b><small>Несколько магазинов, цена ниже или такая же</small></span><span class="cp">${fmt(mix.total || 0)} ${CURRENCY}</span></button></section>`;
@@ -1275,7 +1282,7 @@ async function initDB(){
   } catch(e){ console.error("initDB", e); dbReady = false; }
 }
 // Заказ создаёт СЕРВЕР (create_order): цены, доставку и сумму считает база. Телефон присылает только товары и количество.
-const ORDER_ERR = { login_required:"Сначала войдите через Telegram.", too_many:"Слишком много заказов за час. Попробуйте позже.",
+const ORDER_ERR = { account_blocked:"Аккаунт заблокирован. Напишите в поддержку.", login_required:"Сначала войдите через Telegram.", too_many:"Слишком много заказов за час. Попробуйте позже.",
   market_required:"Выберите рынок, где собрать заказ (вверху страницы).", address_required:"Укажите адрес объекта.",
   phone_required:"Укажите телефон, чтобы мы могли связаться.", name_required:"Укажите имя.", empty_cart:"Корзина пуста.",
   min_order:"Сумма товаров меньше минимальной для заказа.",
@@ -1398,6 +1405,50 @@ function helpBox(o){
   return `<div class="help">${thr}<button class="btn alt" data-helpopen="${o.no}" style="margin:6px 0">💬 Помощь по заказу</button>
     <div id="helpf${o.no}" class="acknote" ${HELP.open[o.no] ? "" : "hidden"}><textarea id="helpt${o.no}" rows="3" maxlength="1000" placeholder="Опишите, что случилось">${esc(HELP.draft[o.no] || "")}</textarea><button class="btn dark" data-helpsend="${o.no}">Отправить</button></div></div>`;
 }
+
+// ===== Оценка магазинов и товаров после получения заказа (review_targets / review_save, 32-миграция) =====
+// Ставить оценку можно только владельцу заказа, после доставки и в течение 30 дней. Все проверки — на сервере.
+const RATE = { open:{}, data:{}, pick:{}, text:{} };
+const RATE_ERR = { not_delivered:"Оценить можно после получения заказа", cancelled:"Заказ отменён", too_late:"Срок для оценки прошёл (30 дней)",
+  own_shop:"Нельзя оценивать свой магазин", account_blocked:"Аккаунт заблокирован. Напишите в поддержку.", too_fast:"Слишком много оценок. Попробуйте позже.", not_in_order:"Этого нет в заказе" };
+document.addEventListener("input", e => { const t = e.target; if (t && t.dataset && t.dataset.ratet) RATE.text[t.dataset.ratet] = t.value; });
+function rateBox(o){
+  if (S.seller || !S.profile || !dbReady || o.cancelled || o.payStatus === "expired" || o.stage < (o.mode === "pickup" ? 3 : 4)) return "";   // сервер (review_window) билан бир хил
+  const d = RATE.data[o.no];
+  if (!RATE.open[o.no]) return `<button class="btn alt" data-rateopen="${o.no}" style="margin:6px 0">⭐ ${d && d.done ? "Изменить оценку" : "Оценить заказ"}</button>`;
+  if (!d) return `<div class="rate"><p class="dnote">Загружаем…</p></div>`;
+  if (d.why) return `<div class="rate"><p class="dnote">${RATE_ERR[d.why] || "Оценить нельзя"}</p></div>`;
+  const stars = key => { const v = RATE.pick[key] || 0;
+    return `<div class="stars" role="radiogroup" aria-label="Оценка">${[1,2,3,4,5].map(i => `<button type="button" role="radio" aria-checked="${v === i}" aria-label="${i} из 5" class="${i <= v ? "on" : ""}" data-rstar="${key}:${i}">★</button>`).join("")}</div>`; };
+  const row = (kind, x, withText) => { const key = o.no + ":" + kind + ":" + x.id;
+    return `<div class="rt"><b>${kind === "shop" ? "🏪 " : "📦 "}${esc(x.name)}</b>${x.status === "hidden" ? `<small class="meta">Отзыв скрыт модератором</small>` : x.status === "pending" ? `<small class="meta">Отзыв на проверке</small>` : ""}${stars(key)}
+      ${withText ? `<textarea rows="2" maxlength="1000" data-ratet="${key}" placeholder="Что понравилось или нет (по желанию)">${esc(RATE.text[key] || "")}</textarea>` : ""}</div>`; };
+  return `<div class="rate acknote"><p class="dnote"><b>Оцените магазины</b> — это поможет другим покупателям.</p>
+    ${(d.shops || []).map(x => row("shop", x, true)).join("")}
+    ${(d.products || []).length ? `<p class="dnote"><b>Товары</b> (по желанию)</p>` + d.products.map(x => row("product", x, false)).join("") : ""}
+    <button class="btn dark" data-ratesend="${o.no}">Отправить оценку</button></div>`;
+}
+async function rateLoad(no){
+  const r = await sb.rpc("review_targets", { p_no:no });
+  if (r.error) { RATE.data[no] = { why:(String(r.error.message).match(/not_delivered|cancelled|too_late/) || ["x"])[0] }; return; }
+  const d = r.data || {}; RATE.data[no] = d;
+  [["shop", d.shops], ["product", d.products]].forEach(([k, a]) => (a || []).forEach(x => { const key = no + ":" + k + ":" + x.id;
+    if (x.rating) { d.done = true; if (RATE.pick[key] === undefined) RATE.pick[key] = x.rating; }
+    if (x.body && RATE.text[key] === undefined) RATE.text[key] = x.body; }));
+}
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-rateopen],[data-rstar],[data-ratesend]"); if (!t) return;
+  if (t.dataset.rateopen) { const no = +t.dataset.rateopen; RATE.open[no] = true; renderOrders(); if (!RATE.data[no]) { await rateLoad(no); renderOrders(); } return; }
+  if (t.dataset.rstar) { const i = t.dataset.rstar.lastIndexOf(":"), key = t.dataset.rstar.slice(0, i); RATE.pick[key] = +t.dataset.rstar.slice(i + 1); renderOrders(); return; }
+  if (t.dataset.ratesend) { const no = +t.dataset.ratesend, d = RATE.data[no]; if (!d) return;
+    const items = [];
+    [["shop", d.shops], ["product", d.products]].forEach(([k, a]) => (a || []).forEach(x => { const key = no + ":" + k + ":" + x.id;
+      if (RATE.pick[key]) items.push({ kind:k, id:x.id, rating:RATE.pick[key], body:k === "shop" ? (RATE.text[key] || "").trim() : "" }); }));
+    if (!items.length) { toast("Поставьте хотя бы одну звезду"); return; }
+    t.disabled = true; const r = await sb.rpc("review_save", { p_no:no, p_items:items }); t.disabled = false;
+    if (r.error) { const m = String(r.error.message || ""), k = Object.keys(RATE_ERR).find(x => m.includes(x)); toast(k ? RATE_ERR[k] : "Не удалось отправить. Проверьте интернет."); return; }
+    RATE.open[no] = false; delete RATE.data[no]; await rateLoad(no); loadRatings(); renderOrders(); toast("Спасибо за оценку!"); return; }
+});
 
 // ===== Доставка: машина на карте, время прибытия, подтверждение получения =====
 const LEAF = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/";
