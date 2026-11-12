@@ -4,7 +4,7 @@ const C = window.TAMIR_CONFIG || {}, BOT = C.env === "test" ? "tamir_test1_bot" 
 const $ = id => document.getElementById(id), esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
 const fmt = n => Math.round(Number(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 let SES = ""; try { SES = localStorage.getItem("drv_ses") || ""; } catch (e) {}
-const S = { tab:"open", d:null, seen:new Set(), first:true, busy:false };
+const S = { tab:"open", d:null, seen:new Set(), first:true, busy:false, gen:0 };
 function toast(t){ const e = $("toast"); e.textContent = t; e.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove("show"), 2600); }
 async function rpc(fn, args){
   const r = await fetch(C.supabaseUrl + "/rest/v1/rpc/" + fn, { method:"POST", headers:{ apikey:C.supabaseKey, Authorization:"Bearer " + C.supabaseKey, "content-type":"application/json" }, body:JSON.stringify(args || {}) });
@@ -23,8 +23,10 @@ function alertNew(n){ beep();
   try { if ("Notification" in window && Notification.permission === "granted") new Notification("Ta'mirDriver", { body:"Янги буюртма №" + n.no + " · ҳақ " + fmt(n.fee) + " сўм" }); } catch (e) {} }
 const splitHTML = (sp, who) => !sp ? "" : `<div class="card"><h2>${who === "driver" ? "Етказиш ҳақи тақсимоти" : "Хизмат ҳақи тақсимоти"}</h2><div class="kv"><span>${who === "driver" ? "Етказиш ҳақи (жами)" : "Хизмат ҳақи (жами)"}</span><b>${fmt(sp.gross)} сўм</b><span>Платформа ҳиссаси${who === "driver" && sp.pct ? " (" + sp.pct + "%)" : ""}</span><b>${sp.platform ? "−" : ""}${fmt(sp.platform)} сўм</b>${sp.accrued == null ? `<span>Сизга тушади</span><b>${fmt(sp.net)} сўм</b>` : `<span>Ҳисобланди</span><b>${fmt(sp.accrued)} сўм</b>${sp.confirmed == null ? "" : `<span>Мижоз тасдиғини кутмоқда</span><b>${fmt((sp.waiting || 0) + (sp.held || 0))} сўм</b><span>Тасдиқланди (ўтказилади)</span><b>${fmt(sp.due)} сўм</b>`}<span>Ўтказилди</span><b>${fmt(sp.paid)} сўм</b>`}</div><p class="${who === "driver" ? "mu" : "muted"}">${sp.orders} та якунланган буюртма бўйича. Тўловлар онлайн, мижоздан буюртма вақтида ечилади.</p></div>`;
 async function load(){
+  const g = S.gen;
   try { const nd = await rpc("drv_orders", { p_session:SES });
     if (S.tab === "earn") { try { S.sp = await rpc("drv_account", { p_session:SES }); } catch (e) {} }
+    if (g !== S.gen || LD.run) return;           // жавоб келгунча галочка босилди — эски ҳолат билан устидан чизмаймиз
     nd.split = S.sp || null;
     const raw = JSON.stringify(nd), same = raw === S.raw && S.d; S.raw = raw; S.d = nd;
     const open = S.d.open || [];
@@ -91,7 +93,21 @@ document.addEventListener("click", e => {
   if (t.id === "out") { SES = ""; try { localStorage.removeItem("drv_ses"); } catch (x) {} loginView(); return; }
   if (t.id === "notif") { try { Notification.requestPermission().then(p => toast(p === "granted" ? "Рухсат берилди" : "Рухсат берилмади")); } catch (x) { toast("Бу қурилмада ишламайди"); } return; }
 });
-document.addEventListener("change", e => { const t = e.target; if (t.dataset.ld) { const [no, ln] = t.dataset.ld.split(":"); act(() => rpc("drv_load", { p_session:SES, p_no:+no, p_line:+ln })); } });
+// Галочкалар: ҳар босиш навбатга тушади ва кетма-кет юборилади (drv_load — алмаштириш, шунинг учун ташлаб юбормаймиз ва параллел юбормаймиз).
+const LD = { q:[], run:false };
+function goBtn(o){ const b = document.querySelector(`button[data-go="${o.no}"]`); if (!b) return; const allL = o.lines.every(l => l.loaded);
+  b.disabled = !allL; b.innerHTML = `${IC.i("truck",20)} Йўлга чиқдим${allL ? "" : " (" + o.lines.filter(l => l.loaded).length + "/" + o.lines.length + ")"}`; }
+async function ldPump(){
+  if (LD.run) return; LD.run = true;
+  try { while (LD.q.length) { const [no, ln] = LD.q.shift(); try { await rpc("drv_load", { p_session:SES, p_no:no, p_line:ln }); } catch (e) { toast(e.message); } } }
+  finally { LD.run = false; S.gen++; S.raw = ""; }
+  await load();
+}
+document.addEventListener("change", e => { const t = e.target; if (!t.dataset.ld) return;
+  const [no, ln] = t.dataset.ld.split(":").map(Number);
+  const o = S.d && (S.d.mine || []).find(x => x.no === no), l = o && o.lines.find(x => x.line_no === ln);
+  if (l) { l.loaded = t.checked; goBtn(o); }     // дарҳол экранда — серверни кутмасдан
+  S.gen++; S.raw = ""; LD.q.push([no, ln]); ldPump(); });
 // ---------- жонли жойлашув: йўлдаги буюртма бўлса ----------
 let WID = null, LAST = 0, WAKE = null;
 document.addEventListener("click", e => {
@@ -147,7 +163,7 @@ async function boot(){
   TamirPush.init({ app:"driver", base:"uz", token:() => SES, lang:() => LG.lang(), tr:s => LG.tr(s) });
   load();
 }
-setInterval(() => { if (SES && !document.hidden && !S.busy) load(); }, 3000);
+setInterval(() => { if (SES && !document.hidden && !S.busy && !LD.run) load(); }, 3000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden && SES) load(); });
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 boot();
