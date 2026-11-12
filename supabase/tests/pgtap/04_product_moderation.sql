@@ -2,7 +2,7 @@
 -- рад этишда сабаб шарт ва нархлар ўчади, тасдиқлашда тузатиш, қайта ҳал қилиб бўлмайди, ҳуқуқлар. Охирида rollback.
 begin;
 \ir 00_helpers.sql
-select plan(30);
+select plan(32);
 
 create temp table t (k text primary key, v text);
 do $$
@@ -26,6 +26,8 @@ select ok(not has_function_privilege('authenticated', 'public.product_decide(int
 select ok(not has_function_privilege('authenticated', 'public.seller_proposals(bigint)', 'execute'), 'seller_proposals: сайтга ёпиқ');
 select ok(    has_function_privilege('authenticated', 'public.admin_product_decide(text,integer,boolean,text,jsonb)', 'execute'), 'admin_product_decide (янги): панель чақиради (admin_check билан)');
 select ok(not has_function_privilege('anon',          'public.admin_product_decide(text,integer,boolean,text,jsonb)', 'execute'), 'admin_product_decide (янги): anon эмас');
+select ok(    has_function_privilege('authenticated', 'public.admin_product_proposals(text)', 'execute'), 'admin_product_proposals: панель чақиради (16 ишламаган базада ҳам)');
+select ok(not has_function_privilege('anon',          'public.admin_product_proposals(text)', 'execute'), 'admin_product_proposals: anon эмас');
 select has_function('public', 'admin_product_decide', array['text', 'integer', 'boolean'], 'эски 3 аргументли имзо сақланган');
 
 -- 2) Таклиф: id 1000+, нофаол, нарх дўконга ёзилди
