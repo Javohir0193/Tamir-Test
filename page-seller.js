@@ -281,13 +281,14 @@ function impHTML(){
         <input type="checkbox" data-impck="${i}" ${r.on ? "checked" : ""} ${r.m ? "" : "disabled"}>
         <span>${esc(r.name)}<small>${r.m ? "→ " + esc(nameOf(r.m.p)) + " · " + esc(specOf(r.m.p)) : r.note ? esc(r.note) : r.price ? "каталогдан топилмади: янги товар сифатида таклиф қилишингиз мумкин" : "нарх ёзилмаган (ўтказиб юборилади)"}${r.chk && r.chk.st === "warn" ? `<br><span style="color:var(--warn)">⚠ Бозорда ~${fmt(r.chk.med)} сўм, сизники ${r.chk.dev > 0 ? "+" : ""}${r.chk.dev}%</span>` : ""}${r.m && r.stock === false ? " · йўқ" : ""}</small></span>
         <b class="${r.st || "no"}">${r.price ? fmt(r.price) : ""}</b></label>`).join("")}</div>
-      <div class="acts"><button class="main" data-impapply ${on ? "" : "disabled"}>Нархларга қўйиш (${on})</button>
+      <div class="acts"><button class="main" data-impapply ${on && !I.checking ? "" : "disabled"}>${I.checking ? "Бозор нархи текширилмоқда…" : `Нархларга қўйиш (${on})`}</button>
         ${rows.some(r => !r.m && r.price && !r.sent) ? `<button data-impprop>➕ Топилмаганларни таклиф қилиш (${rows.filter(r => !r.m && r.price && !r.sent).length})</button>` : ""}</div>
       <p class="hint">Бу фақат рўйхатга қўяди; ёзиш учун кейин пастдаги «Сақлаш» тугмасини босасиз.</p>` : ""}
   </div></div>`;
 }
 function openImp(){ S.imp = { rows:[], text:"" }; showImp(); }
-async function impChecked(){ showImp(); await checkImp(); if (S.imp) showImp(); }
+// Сервер текшируви (бозор нархи) тугагунча «Нархларга қўйиш» ёпиқ: акс ҳолда шубҳали нарх белгиланган ҳолда кетиб қолади
+async function impChecked(){ const I = S.imp; I.checking = (I.checking || 0) + 1; showImp(); try { await checkImp(); } finally { I.checking--; } if (S.imp === I) showImp(); }
 function showImp(){ let el = $("impwrap"); if (!el){ el = document.createElement("div"); el.id = "impwrap"; document.body.appendChild(el); } el.innerHTML = impHTML(); }
 function closeImp(){ const el = $("impwrap"); if (el) el.remove(); S.imp = null; }
 document.addEventListener("click", e => {
@@ -297,13 +298,15 @@ document.addEventListener("click", e => {
   else if (t.hasAttribute("data-impprop")) openPropMany();
   else if (t.hasAttribute("data-impgo")){ const ta = $("imptxt"); S.imp.text = ta.value; S.imp.rows = buildImp(ta.value); if (!S.imp.rows.length) toast("Қатор топилмади: ном ва нарх устунлари керак"); impChecked(); }
   else if (t.hasAttribute("data-impapply")){
-    let n = 0; for (const r of S.imp.rows) if (r.on && r.m){ setEdit(r.m.p.id, { price:r.price, in_stock:r.stock !== false }); if (S.edits[r.m.p.id]) S.fromFile[r.m.p.id] = true; n++; }
+    if (S.imp.checking) return;
+    // шубҳали нарх (бозордан кескин фарқ) фақат дўкон ўзи белгилаган бўлса ўтади
+    let n = 0; for (const r of S.imp.rows) if (r.on && r.m && !(r.chk && r.chk.st === "warn" && !r.byHand)){ setEdit(r.m.p.id, { price:r.price, in_stock:r.stock !== false }); if (S.edits[r.m.p.id]) S.fromFile[r.m.p.id] = true; n++; }
     closeImp(); render(); toast(`✓ ${n} та нарх рўйхатга қўйилди. Текшириб «Сақлаш» ни босинг.`);
   }
 });
 document.addEventListener("change", e => {
   if (!S.imp) return; const t = e.target;
-  if (t.dataset.impck !== undefined){ S.imp.rows[+t.dataset.impck].on = t.checked; S.imp.text = $("imptxt").value; showImp(); }
+  if (t.dataset.impck !== undefined){ const r = S.imp.rows[+t.dataset.impck]; r.on = t.checked; r.byHand = t.checked; S.imp.text = $("imptxt").value; showImp(); }
   else if (t.id === "impfile" && t.files[0]){
     const f = t.files[0];
     if (f.size > 5 * 1024 * 1024) { toast("Файл жуда катта (5 МБ гача)"); return; }
