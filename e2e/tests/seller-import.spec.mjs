@@ -54,3 +54,27 @@ test("дўкон Excel файлдан нарх юклайди, бозордан 
   expect(hist).toEqual([{ product_id: 202, source: "seller_file" }, { product_id: 203, source: "seller_file" }]);
   expect(errors).toEqual([]);
 });
+
+// Хато (TEST, 2026-11-12): бозор нархи текшируви секин келганда «Нархларга қўйиш» олдинроқ босилса,
+// 10 баравар қиммат нарх ҳам сақланиб кетарди. Энди текширув тугагунча тугма ёпиқ.
+test("секин текширув: шубҳали нарх текширув тугамасдан рўйхатга тушмайди", async ({ page, context }) => {
+  await context.route("**/functions/v1/tg-bot", async (route) => {
+    const b = route.request().postData() || "";
+    if (b.includes('"imp_check"')) await new Promise((ok) => setTimeout(ok, 1500));
+    return route.fallback();
+  });
+  await page.goto("seller.html");
+  await page.locator("[data-tab=prices]").click();
+  await page.getByRole("button", { name: /Excel \/ CSV файлдан нарх юклаш/ }).click();
+  await page.locator("#impfile").setInputFiles({ name: "narxlar.xlsx", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: makeXlsx([["ID", "Номи", "Нарх"], [202, "Песок мытый", 31000], [204, "Пескобетон М300", 1000000]]) });
+  const apply = page.locator("[data-impapply]");
+  await expect(apply).toBeDisabled();
+  await expect(apply).toContainText("текширилмоқда");
+  await expect(apply).toContainText("Нархларга қўйиш (1)");   // текширувдан кейин: фақат 202
+  await apply.click();
+  await page.locator("#save").click();
+  await expect(page.locator("#toast")).toContainText("1 та нарх сақланди");
+  const offers = (await gw.query("select product_id from public.offers where seller_id = $1 and product_id = any($2) order by 1", [E2E_SELLER_ID, PIDS])).rows;
+  expect(offers.map((r) => r.product_id)).toEqual([202]);
+});
