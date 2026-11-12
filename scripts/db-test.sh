@@ -21,6 +21,7 @@ run supabase/tests/05_pref_shop_checks.sql
 run supabase/tests/06_app_actions_checks.sql
 run supabase/tests/07_push_checks.sql
 run supabase/tests/08_pay_test_lock_checks.sql
+run supabase/tests/09_notify_chain_checks.sql
 # pgTAP: API шартномаси ва асосий оқим (буюртма → «Тестовая оплата»). Ҳар файл ўзи rollback қилади.
 # Керак: pgtap кенгайтмаси базада (postgresql-16-pgtap) ва pg_prove (libtap-parser-sourcehandler-pgtap-perl).
 echo "→ pgTAP (supabase/tests/pgtap)"
