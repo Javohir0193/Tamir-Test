@@ -304,7 +304,7 @@ function renderCatalogDk(){
   const items = catItems(), q = S.q.trim(), g = q ? null : GROUPS.find(x => x.id === S.grp);
   const gcnt = gg => P.filter(p => gg.cats.includes(p.cat)).length;
   const sorts = [["pop", "Рекомендуемые"], ["name", "По названию"], ["cheap", "Сначала дешевле"], ["dear", "Сначала дороже"]];
-  document.getElementById("view").innerHTML = `<div class="wide dkc">
+  paint(document.getElementById("view"), `<div class="wide dkc">
     <aside class="flt"><div class="fbox">
       <div class="fl">Разделы</div>
       <button class="fopt2 ${!g && !q ? "on" : ""}" data-grp="all"><span class="fe">📦</span><span>Все товары</span><em>${goodsN()}</em></button>
@@ -317,7 +317,7 @@ function renderCatalogDk(){
           <label class="sortb"><span>Сортировка:</span><select data-sort aria-label="Сортировка">${sorts.map(o => `<option value="${o[0]}" ${(S.sort || "pop") === o[0] ? "selected" : ""}>${o[1]}</option>`).join("")}</select></label></div></div>
       ${g ? `<div class="chips dkchips" role="group" aria-label="Категории">${[{ id:"all", name:"Всё" }, ...CATS.filter(c => g.cats.includes(c.id))].map(c => `<button class="chip" data-cat="${c.id}" aria-pressed="${S.cat === c.id}">${c.name}</button>`).join("")}</div>` : ""}
       <div id="list">${listHTML()}</div>
-    </div></div>`;
+    </div></div>`);
 }
 function openProduct(id){ if (!byId(id)) return; S.pid = id; S.pq = 1; show("catalog"); }
 function updPq(setInput = true){
@@ -329,7 +329,7 @@ function renderProduct(){
   const p = byId(S.pid), g = GROUPS.find(x => x.cats.includes(p.cat)), m = curMk(), inC = qty(p.id);
   S.pq = S.pq || 1;
   const row = (a, b, cls) => `<div><span>${a}</span><b class="${cls || ""}">${b}</b></div>`;
-  document.getElementById("view").innerHTML = `<div class="wide pdp">
+  paint(document.getElementById("view"), `<div class="wide pdp">
     <div class="crumbs" role="navigation" aria-label="Навигация"><button data-tab="home">Главная</button>${ic("chev")}<button data-gocat="${p.cat}">${catName(p.cat)}</button>${ic("chev")}<span>${p.n}</span></div>
     <div class="pdp-g">
       <div class="pdp-img">
@@ -351,7 +351,7 @@ function renderProduct(){
           ${row("Категория", catName(p.cat))}${g ? row("Раздел", g.n) : ""}${row("Фасовка", p.s)}${row("Единица", p.u)}${m ? row("Рынок", esc(mkName(m))) : ""}${row("Доставка", `от ${LEAD_HOURS} часов`, "g")}
         </div>
       </div>
-    </div></div>`;
+    </div></div>`);
 }
 function renderHomeDk(){
   S.view = "home";
@@ -363,7 +363,7 @@ function renderHomeDk(){
   const emo = id => (goods.find(p => p.cat === id) || {}).e || "📦";
   const minCar = Math.min(...CARS.map(c => c.p)), car = (CARS.find(c => c.id === "l") || CARS[0] || {}).id;
   const pick = !m || S.mkOpen;
-  document.getElementById("view").innerHTML = `<div class="wide dkh shp">
+  paint(document.getElementById("view"), `<div class="wide dkh shp">
     <section class="sh-hero"><i class="glow g1"></i>
       <h1>Стройматериалы с рынка —<br><span class="gt">прямо к вам</span></h1>
       <p>Выберите товары — сборщик купит их на рынке по самой низкой цене и привезёт.</p>
@@ -390,7 +390,7 @@ function renderHomeDk(){
         <div><span class="n">3</span><div><b>Получите доставку</b><small>Сборщик купит всё на рынке, машина привезёт</small></div></div>
       </div>
     </section>
-  </div>`;
+  </div>`);
 }
 function orderSide(o){
   return `<aside class="o-side"><h3>Состав заказа</h3>${(o.items || []).map(i => { const p = P.find(x => x.n === i.n);
@@ -399,7 +399,7 @@ function orderSide(o){
 }
 function orderHTML(o, closable){
   const st = stagesFor(o), last = o.stage >= st.length - 1, unp = o.payStatus === "unpaid", exp = o.payStatus === "expired" || !!o.cancelled;
-  return `<section class="order">
+  return `<section class="order" data-ord="${o.no}">
     <div class="o-main">
       <div class="top"><h2>Заказ №${o.no}</h2><span class="pill ${last ? "done" : exp ? "can" : ""}">${unp ? "Ожидает оплаты" : exp ? (o.cancelled ? "Отменён" : "Не оплачен") : st[o.stage][0]}</span>${closable ? `<button class="o-x" data-oopen="0" aria-label="Свернуть">${ic("x")}</button>` : ""}</div>
       ${payHtml(o)}
@@ -432,7 +432,7 @@ function renderOrdersDk(){
       <small><span>${(o.items || []).length}</span> <span>товаров</span> · ${dt(o.ts)}</small></span>
       <span class="ors"><b>${fmt(o.total)}</b><small>${CURRENCY}</small></span>${ic("chev")}</button>`; };
   const tabs = [["all", "Все"], ["act", "Активные"], ["done", "Завершённые"]];
-  v.innerHTML = `<div class="wide prof">
+  paint(v, `<div class="wide prof">
     <aside class="pf-side">
       <div class="pf-card"><div class="pf-av">${esc(ini)}</div><h3>${esc(nm)}</h3><p>${esc(pr.phone || S.form.phone || "")}</p>
         <span class="pf-badge">${S.profile ? "Telegram подтверждён" : "Гость"}</span>
@@ -448,7 +448,7 @@ function renderOrdersDk(){
       ${list.length ? list.map(o => o.no === S.oOpen ? orderHTML(o, true) : rowH(o)).join("")
         : `<div class="empty"><p>${S.orders.length ? "В этом разделе заказов нет." : "Заказов пока нет. Здесь появится статус каждого заказа."}</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>`}
       ${sellerBox()}
-    </div></div>`;
+    </div></div>`);
   mountMaps(keep);
 }
 matchMedia("(min-width:1024px)").addEventListener("change", () => { try { show(S.tab); } catch(e){} });
@@ -471,11 +471,11 @@ function renderCatalog(){
   if (S.pid && byId(S.pid)) return renderProduct();
   S.pid = null;
   if (DK()) return renderCatalogDk();
-  document.getElementById("view").innerHTML = `<div class="wide">
+  paint(document.getElementById("view"), `<div class="wide">
     <h2 class="big">Каталог</h2>
     ${mkBar()}
     <form class="csearch" id="hsearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="hq" type="search" placeholder="Найти: цемент, кабель, смеситель…" aria-label="Поиск по каталогу"></form>
-    <div id="catbody">${catBody()}</div></div>`;
+    <div id="catbody">${catBody()}</div></div>`);
   const hq = document.getElementById("hq"); if (hq) hq.value = S.q;
 }
 
@@ -636,7 +636,7 @@ function renderHome(){
   const m = curMk();
   const ap = (id) => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${t.e}</span>${t.name}</button>`; };
   const active = (S.orders || []).filter(o => !o.cancelled && o.stage < stagesFor(o).length - 1).length;
-  document.getElementById("view").innerHTML = `<div class="app wide">
+  paint(document.getElementById("view"), `<div class="app wide">
     <section class="qx-hero">
       <span class="qx-tag"><i></i>Доставка от ${LEAD_HOURS} часов</span>
       <h1>Стройматериалы <span class="gt">с рынка</span> — прямо к вам</h1>
@@ -654,7 +654,7 @@ function renderHome(){
     <div class="cars">${CARS.map(c => `<button class="car" data-car="${c.id}"><span class="e">${carSvg(c.id)}</span><b>${c.cap}</b><span class="cp">от ${fmt(c.p / 1000)} тыс.</span></button>`).join("")}</div>
     ${myRepairCard(active)}
     ${cheapCard()}
-  </div>`;
+  </div>`);
 }
 // Самый дешёвый рынок — под «Мой ремонт»
 function cheapCard(){
@@ -669,7 +669,7 @@ function cheapCard(){
 function renderHome_old(){
   S.view = "home";
   const room = (id, bg) => { const t = TASKS.find(x => x.id === id); return `<button class="tile" data-task="${t.id}" style="background:${bg}">${t.name}<small>${t.sub}</small><span class="emo">${t.e}</span></button>`; };
-  document.getElementById("view").innerHTML = `<div class="wide">
+  paint(document.getElementById("view"), `<div class="wide">
     <section class="hero">
       <div class="hero-img"><span class="bigtxt">м²</span><span class="badge3">🛠️</span></div>
       <div class="hero-text"><div><h2>Ремонт без хлопот</h2><p>Выберите комнату — мы посчитаем материалы, этапы работы и цену. Заказ — в несколько нажатий.</p></div>
@@ -685,13 +685,13 @@ function renderHome_old(){
       <div class="st3"><span class="n">2</span><div><b>Получите план</b><br><span class="hint">материалы по порядку работ и самая низкая цена</span></div></div>
       <div class="st3"><span class="n">3</span><div><b>Закажите</b><br><span class="hint">всё сразу или по этапам, доставим в удобное время</span></div></div>
     </div>
-  </div>`;
+  </div>`);
 }
 function renderSize(){
   const t = curTask(); S.view = "size";
   const fieldsHTML = t.fields.map(f => `<label>${f[1]}<input inputmode="decimal" data-sz="${f[0]}" placeholder="например 3" value="${esc(S.size[f[0]] ?? "")}"></label>`).join("") +
     (t.extra || []).map(x => `<label class="full">${x[1]}<input inputmode="decimal" data-sz="${x[0]}" value="${esc(S.size[x[0]] ?? x[2])}"></label>`).join("");
-  document.getElementById("view").innerHTML = `
+  paint(document.getElementById("view"), `
     <button class="back" data-back="home">← Назад</button>
     <h2 class="big">${t.e} ${t.name}</h2>
     <p class="hint">Какого размера? Нажмите на подходящий вариант — или введите свой размер ниже.</p>
@@ -701,19 +701,19 @@ function renderSize(){
       <div class="fields" style="margin-top:8px">${fieldsHTML}</div>
       <p class="msg" id="szmsg"></p>
       <button class="btn lg" data-calc>Дальше</button>
-    </section>`;
+    </section>`);
 }
 function renderJobs(){
   const t = curTask(); S.view = "jobs"; const sel = S.jobs[t.id] || {};
   const n = t.jobs.filter(j => sel[j]).length;
-  document.getElementById("view").innerHTML = `
+  paint(document.getElementById("view"), `
     <button class="back" data-back="size">← Изменить размер</button>
     <h2 class="big">${t.e} ${t.name} · ${sizeLabel(t)}</h2>
     <p class="hint">Что нужно сделать? Отметьте галочками. Или нажмите «Весь ремонт» — мы подберём всё нужное сами.</p>
     <button class="btn lg" data-full style="margin-bottom:14px">Весь ремонт комнаты</button>
     ${t.jobs.map(j => `<label class="job"><input type="checkbox" data-job="${j}" ${sel[j] ? "checked" : ""}><span><b>${JOBS[j].name}</b><small>${JOBS[j].desc}</small></span></label>`).join("")}
     ${t.jobs.some(j => ALT[j]) ? `<p class="note">Стены выравниваем гипсокартоном или штукатуркой — на выбор одно.</p>` : ""}
-    <div class="cta"><button class="btn lg" data-plan ${n ? "" : "disabled"}>Показать план и цену${n ? " (" + n + ")" : ""}</button></div>`;
+    <div class="cta"><button class="btn lg" data-plan ${n ? "" : "disabled"}>Показать план и цену${n ? " (" + n + ")" : ""}</button></div>`);
 }
 function rowHTML(it){
   const p = byId(it.id);
@@ -737,7 +737,7 @@ function renderResult(){
         <button data-sm="${i}:2" aria-pressed="${m === 2}">Не нужно</button>
       </div></section>`;
   }).join("");
-  document.getElementById("view").innerHTML = `
+  paint(document.getElementById("view"), `
     <button class="back" data-back="${t.jobs ? "jobs" : "size"}">← ${t.jobs ? "Изменить работы" : "Изменить размер"}</button>
     <h2 class="big">${t.e} ${t.name}</h2>
     <p class="hint">${summary}</p>
@@ -748,7 +748,7 @@ function renderResult(){
     <p class="hint">Ниже — этапы по порядку. Если какой-то этап вам не нужен — нажмите «Не нужно».</p>
     ${cards}
     <p class="note"><span>Цены — самые низкие</span> ${curMk() ? `<span>на рынке</span> «<span>${esc(curMk().name)}</span>»` : "<span>из предложений продавцов</span>"}.${nop && nop < cnt ? ` <span>Без учёта товаров, у которых цена уточняется:</span> ${nop}.` : ""}</p>
-    <div class="cta"><button class="btn lg" data-tolist ${cnt ? "" : "disabled"}>${mat ? `Дальше: чек-лист заказа · ${fmt(mat + work)} ${CURRENCY}` : "Дальше: чек-лист заказа"}</button></div>`;
+    <div class="cta"><button class="btn lg" data-tolist ${cnt ? "" : "disabled"}>${mat ? `Дальше: чек-лист заказа · ${fmt(mat + work)} ${CURRENCY}` : "Дальше: чек-лист заказа"}</button></div>`);
 }
 const skey = (t, st) => t.id + "|" + (st.grp || "") + "|" + st.name;
 function stageRows(t, st){
@@ -780,7 +780,7 @@ function renderChecklist(){
       ${locked ? "" : `<button class="btn" data-stage="${i}" ${sel.length ? "" : "disabled"} style="margin-top:12px">${sum ? `Заказать этот этап · ${fmt(sum)} ${CURRENCY}` : "Заказать этот этап"}</button>`}
     </section>`;
   }).join("");
-  document.getElementById("view").innerHTML = `
+  paint(document.getElementById("view"), `
     <button class="back" data-back="result">← К плану</button>
     <h2 class="big">Чек-лист заказа</h2>
     <p class="hint">Материалы идут по порядку работ. Можно заказать всё сразу или этап за этапом — по мере ремонта. Бренд выбирать не нужно: мы берём самую низкую цену из предложений продавцов.</p>
@@ -790,7 +790,7 @@ function renderChecklist(){
     </div>
     ${blocks}
     <button class="btn alt" data-resetplan>Сбросить отметки заказа</button>
-    ${left ? `<div class="cta"><button class="btn lg" data-stageall>${total ? `Заказать всё выбранное · ${fmt(total)} ${CURRENCY}` : "Заказать всё выбранное"}</button></div>` : ""}`;
+    ${left ? `<div class="cta"><button class="btn lg" data-stageall>${total ? `Заказать всё выбранное · ${fmt(total)} ${CURRENCY}` : "Заказать всё выбранное"}</button></div>` : ""}`);
 }
 function nextAfterSize(){ logEvent("calc", { t:S.task }); if (curTask().jobs) renderJobs(); else renderResult(); window.scrollTo(0, 0); }
 function renderCalc(){
@@ -798,7 +798,7 @@ function renderCalc(){
   const tk = id => TASKS.find(x => x.id === id);
   const tile = id => { const t = tk(id); return `<button class="ap" data-task="${t.id}"><span class="e">${t.e}</span>${t.name}</button>`; };
   const m = curMk();
-  document.getElementById("view").innerHTML = `<div class="app wide">
+  paint(document.getElementById("view"), `<div class="app wide">
     ${m && !S.mkOpen ? `<div class="th"><h2 class="t">Считаем по ценам рынка</h2><button class="lnk" data-mkopen>Другой рынок ›</button></div>
     <div class="mkl">${mkCard(m)}</div>`
     : `<h2 class="t">Выберите рынок</h2>
@@ -806,13 +806,13 @@ function renderCalc(){
     <div class="mkl" id="mkl">${S.markets.map(mkCard).join("")}</div>`}
     <h2 class="t">Что ремонтируете?</h2>
     <div class="calc6 big">${tile("bath")}${tile("kitchen")}${tile("room")}${tile("balcony")}${tile("brick")}${tile("gkl")}</div>
-  </div>`;
+  </div>`);
 }
 function renderCar(){
   S.view = "car"; fixSlot();
   const f = S.form, c = CARS.find(x => x.id === S.car) || CARS[1];
   if (!S.carMk) S.carMk = S.mk || 0;
-  document.getElementById("view").innerHTML = `
+  paint(document.getElementById("view"), `
     <button class="back" data-carback>← Назад</button>
     <h2 class="big">Заказать машину</h2>
     <p class="hint">Вы сами выбрали и купили товар на рынке — машина заберёт покупки и привезёт к вам.</p>
@@ -857,7 +857,7 @@ function renderCar(){
       <div class="total"><span>Итого</span><span><span id="qTotal">…</span> ${CURRENCY}</span></div>
       <p class="msg" id="msg"></p>
       <div class="actions"><button class="btn lg" id="carOrder">Заказать машину</button></div>
-    </section>`;
+    </section>`);
   applyQuote(); refreshQuote();
 }
 function carValidate(){
@@ -888,7 +888,7 @@ function renderHomeTab(){
 function renderSpend(){
   const v = document.getElementById("view"), os = S.orders || [];
   if (!os.length){
-    v.innerHTML = `<h2 class="big">Расходы на ремонт</h2><div class="empty"><p>Здесь будет вся история покупок: сколько вы потратили на ремонт и что купили в каждом заказе.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>`;
+    paint(v, `<h2 class="big">Расходы на ремонт</h2><div class="empty"><p>Здесь будет вся история покупок: сколько вы потратили на ремонт и что купили в каждом заказе.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>`);
     return;
   }
   const sumIt = (o, w) => (o.items || []).filter(i => !!i.w === w).reduce((a, i) => a + i.price * i.q, 0);
@@ -909,13 +909,13 @@ function renderSpend(){
       ${f ? `<div class="sp-i"><div>Доставка</div><b>${fmt(f)}</b></div>` : ""}
       <div class="sp-i tot"><div>Итого</div><b>${fmt(o.total)} ${CURRENCY}</b></div></div></details>`;
   };
-  v.innerHTML = `<h2 class="big">Расходы на ремонт</h2>
+  paint(v, `<h2 class="big">Расходы на ремонт</h2>
     ${S.seller ? `<p class="hint">Режим продавца: здесь все заказы всех клиентов.</p>` : ""}
     <section class="sp-top"><small>Всего потрачено</small><div class="sp-total">${fmt(tot)} <span>${CURRENCY}</span></div>
       <div class="sp-row"><div><small>Материалы</small><b>${fmt(mat)}</b></div><div><small>Доставка</small><b>${fmt(fee)}</b></div></div>
       <small>Заказов: ${os.length}</small></section>
     <p class="hint">Нажмите на заказ, чтобы увидеть, что купили и по какой цене.</p>
-    ${groups.map(g => `<h3 class="sp-day"><span>${g.k}</span><span>${fmt(g.sum)} ${CURRENCY}</span></h3>${g.list.map(orderHTML).join("")}`).join("")}`;
+    ${groups.map(g => `<h3 class="sp-day"><span>${g.k}</span><span>${fmt(g.sum)} ${CURRENCY}</span></h3>${g.list.map(orderHTML).join("")}`).join("")}`);
 }
 
 // ===== Корзина и заказ =====
@@ -923,7 +923,7 @@ function renderCart(){
   const v = document.getElementById("view");
   const ids = Object.keys(S.cart).sort((a, b) => (byId(+a).cat === "work") - (byId(+b).cat === "work"));
   if (!ids.length){
-    v.innerHTML = `<div class="empty"><p>Корзина пуста.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>`;
+    paint(v, `<div class="empty"><p>Корзина пуста.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>`);
     return;
   }
   fixSlot();
@@ -966,16 +966,16 @@ function renderCart(){
       </div>`;
   const btnH = `<button class="btn lg" id="copyOrder">${needLogin() ? "Войти и оформить заказ" : `Оформить заказ · ${fmt(t.total)} ${CURRENCY}`}</button>`;
   if (!dk){
-    v.innerHTML = `
+    paint(v, `
     ${t.n > 0 ? mkBar() : ""}
     <section class="panel"><h2>1. Ваш заказ</h2>${linesH}<div id="cmpBox"></div>${sumH}${totH}<div id="carBox"></div><div id="zoneBox"></div>${noteH}</section>
     <section class="panel"><h2>2. ${whenLabel}</h2>${whenH}</section>
     <section class="panel"><h2>3. Ваши данные</h2>${dataH}
       <p class="msg" id="msg"></p>
       <div class="actions">${btnH}<p class="note" style="text-align:center;margin:6px 0 0">Ничего никуда отправлять не нужно: сборщик получит заказ сам.</p></div>
-    </section>`;
+    </section>`);
   } else {
-    v.innerHTML = `<div class="wide ck">
+    paint(v, `<div class="wide ck">
       <div class="ck-g">
         <div class="ck-l">
           <h1 class="big">Корзина <span class="mut">(${ids.length})</span></h1>
@@ -993,7 +993,7 @@ function renderCart(){
           ${btnH}
           <p class="note sb-safe"><span>Оплатить можно в разделе «Заказы» сразу после оформления.</span></p>
         </div></aside>
-      </div></div>`;
+      </div></div>`);
   }
   applyQuote(); refreshQuote();
 }
@@ -1017,16 +1017,31 @@ const fromRow = r => ({ no:Number(r.no), ts:Date.parse(r.created_at), mode:r.mod
   picker:r.picker_info || null, picked:r.picked || 0, pickTotal:r.pick_total || 0,
   cancelled:!!r.cancelled_at, cancelReason:r.cancel_reason || "", payStatus:r.pay_status || "none", payDue:r.pay_due ? Date.parse(r.pay_due) : 0, payAmount:Number(r.pay_amount) || 0, reserve:Number(r.reserve_sum) || 0, payBy:r.pay_provider || null,
   paidAt:r.paid_at ? Date.parse(r.paid_at) : 0, goodsSum:r.goods_sum == null ? null : Number(r.goods_sum), deliverySum:Number(r.delivery_sum) || 0, serviceFee:Number(r.service_fee) || 0 });
-async function loadOrders(quiet){
-  if (!dbReady) return;
+// Бир вақтда фақат битта юклаш: 4 с / 15 с текширув, realtime ва тугмалар бир-бирининг устига тушса, кетидан келганлари
+// битта навбатдаги юклашга бирлашади (секин интернетда сўровлар уюлиб, телефон қотмайди).
+let ordRun = null, ordNext = null, ordLoud = false;
+function loadOrders(quiet){
+  if (!dbReady) return Promise.resolve();
+  if (!ordRun) { ordRun = loadOrdersNow(quiet).finally(() => { ordRun = null; }); return ordRun; }
+  if (!quiet) ordLoud = true;
+  if (!ordNext) ordNext = ordRun.then(() => { ordNext = null; const q = !ordLoud; ordLoud = false; return loadOrders(q); });
+  return ordNext;
+}
+async function loadOrdersNow(quiet){
   try {
     const q = await sb.from("orders").select("*").order("no", { ascending:false });
     if (q.error) throw q.error;
     const prev = JSON.stringify((S.orders || []).map(o => [o.no, o.status, o.payStatus, o.payDue]));
     S.orders = q.data.map(fromRow);
     let tkSig = "";
-    if (S.profile && !S.seller) { try { const tq = await sb.rpc("my_tickets"); if (!tq.error && Array.isArray(tq.data)) S.tickets = tq.data; } catch(e){} }
-    if (!S.seller) { S.payOpts = S.payOpts || {}; for (const o of S.orders) if (o.payStatus === "unpaid") { try { const pq = await sb.rpc("pay_options", { p_no:o.no }); if (!pq.error && Array.isArray(pq.data) && pq.data.length) S.payOpts[o.no] = pq.data; } catch(e){} } }
+    // мурожаатлар ва ҳар тўланмаган буюртманинг тўлов вариантлари — кетма-кет эмас, параллел сўралади
+    const jobs = [];
+    if (S.profile && !S.seller) jobs.push(sb.rpc("my_tickets").then(tq => { if (!tq.error && Array.isArray(tq.data)) S.tickets = tq.data; }, () => {}));
+    // тўлов вариантлари фақат буюртма ўзгарганда (ёки ҳали олинмаган бўлса) қайта сўралади, ҳар 4 сонияда эмас
+    if (!S.seller) { S.payOpts = S.payOpts || {}; S.poKey = S.poKey || {}; for (const o of S.orders) if (o.payStatus === "unpaid") {
+      const k = [o.total, o.payAmount, o.payDue, o.stage].join("|"); if (S.poKey[o.no] === k) continue;
+      jobs.push(sb.rpc("pay_options", { p_no:o.no }).then(pq => { if (pq.error) return; S.poKey[o.no] = k; if (Array.isArray(pq.data) && pq.data.length) S.payOpts[o.no] = pq.data; }, () => {})); } }
+    await Promise.all(jobs);
     tkSig = JSON.stringify((S.tickets || []).map(t => [t.id, t.status, t.msgs.length]));
     const same = prev === JSON.stringify(S.orders.map(o => [o.no, o.status, o.payStatus, o.payDue])) && tkSig === S.tkSig && payOptSig() === S.poSig; S.poSig = payOptSig(); S.tkSig = tkSig;
     if (quiet && same) return;
@@ -1094,17 +1109,17 @@ function loadCompare(){
   clearTimeout(cmpTimer);
   const box = document.getElementById("cmpBox"); if (!box || !dbReady || !S.mk) return;
   const items = Object.entries(S.cart).filter(([id]) => { const p = byId(+id); return p && p.cat !== "work"; }).map(([id, q]) => ({ id:+id, q }));
-  if (!items.length) { box.innerHTML = ""; return; }
+  if (!items.length) { paint(box, ""); return; }
   cmpTimer = setTimeout(async () => {
     const seq = ++cmpSeq;
     try {
       const r = await sb.rpc("cart_compare", { p:{ market_id:S.mk, items } });
       const b = document.getElementById("cmpBox"); if (seq !== cmpSeq || !b) return;
-      if (r.error || !r.data) { b.innerHTML = ""; return; }
+      if (r.error || !r.data) { paint(b, ""); return; }
       const sh = r.data.shops || [], before = S.shopSel || 0;
       // танланган дўкон рўйхатдан чиқиб кетса ёки ҳали танланмаган бўлса — биринчи ТЎЛИҚ дўкон (мумкин қадар битта дўкондан), бўлмаса аралаш
       if (!sh.some(x => x.id === S.shopSel)) { const full = sh.find(x => x.have === x.need); S.shopSel = S.shopTouched ? 0 : (full ? full.id : 0); }
-      S.cmpData = r.data; b.innerHTML = cmpHTML(r.data);
+      S.cmpData = r.data; paint(b, cmpHTML(r.data));
       if ((S.shopSel || 0) !== before) refreshQuote(true);
     } catch(e){}
   }, 300);
@@ -1145,9 +1160,9 @@ function applyQuote(){
   const ok = q && q.mode === mode;
   const set = (id, v) => { const el = document.getElementById(id); if (el) { el.textContent = v; el.classList.remove("stale"); } };
   const zb = document.getElementById("zoneBox");
-  if (zb && (mode === "delivery" || mode === "car")) zb.innerHTML = zoneHtml(ok ? q : null); else if (zb) zb.innerHTML = "";
+  if (zb && (mode === "delivery" || mode === "car")) paint(zb, zoneHtml(ok ? q : null)); else if (zb) paint(zb, "");
   const cb = document.getElementById("carBox");
-  if (cb) cb.innerHTML = (ok && mode === "delivery" && q.body) ? carBoxHtml(q) : "";
+  if (cb) paint(cb, (ok && mode === "delivery" && q.body) ? carBoxHtml(q) : "");
   const dr = document.getElementById("qDelRow"); if (dr) dr.hidden = mode === "pickup";
   if (!ok) return;
   set("qDel", fmt(q.delivery)); set("qSvc", fmt(q.service)); set("qTotal", fmt(q.total));
@@ -1277,7 +1292,8 @@ async function initDB(){
       lang:() => (window.getLang && getLang() === "uz") ? "uz" : "ru", tr:s => (window.getLang && getLang() === "uz" && window.tUz) ? tUz(s) : s });
     await loadOrders();
     sb.channel("orders-live").on("postgres_changes", { event:"*", schema:"public", table:"orders" }, loadOrders).subscribe();
-    setInterval(() => loadOrders(true), 15000);
+    setInterval(() => { if (!document.hidden) loadOrders(true); }, 15000);   // илова ёпиқ/фонда бўлса текширмаймиз
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) loadOrders(true); });
     if (S.tab === "orders") renderOrders();
   } catch(e){ console.error("initDB", e); dbReady = false; }
 }
@@ -1377,21 +1393,22 @@ async function payNow(no, prov){
   logEvent("pay_start", { no, prov }); location.href = d.url;
 }
 setInterval(() => {
+  if (document.hidden) return;
   document.querySelectorAll("[data-due]").forEach(el => {
     const ms = Number(el.dataset.due) - Date.now(), s = Math.max(0, Math.floor(ms / 1000));
-    el.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+    const v = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); if (el.textContent !== v) el.textContent = v;
   });
 }, 1000);
-setInterval(() => { if (dbReady && S.orders && S.orders.some(o => o.payStatus === "unpaid")) loadOrders(true); }, 4000);
+setInterval(() => { if (dbReady && !document.hidden && S.orders && S.orders.some(o => o.payStatus === "unpaid")) loadOrders(true); }, 4000);
 function renderOrders(){
   if (DK()) return renderOrdersDk();
   const v = document.getElementById("view");
   if (!S.orders.length){
-    v.innerHTML = syncNote() + accountBar() + pushBar() + `<div class="empty"><p>Заказов пока нет. Здесь появится статус каждого заказа.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>` + sellerBox();
+    paint(v, syncNote() + accountBar() + pushBar() + `<div class="empty"><p>Заказов пока нет. Здесь появится статус каждого заказа.</p><button class="btn" data-tab="calc" style="max-width:280px">Посчитать ремонт</button></div>` + sellerBox());
     return;
   }
   const keep = new Map(); document.querySelectorAll(".mapbox[data-map]").forEach(el => keep.set(el.dataset.map, el));
-  v.innerHTML = syncNote() + accountBar() + pushBar() + S.orders.map(o => orderHTML(o)).join("") + sellerBox();
+  paint(v, syncNote() + accountBar() + pushBar() + S.orders.map(o => orderHTML(o)).join("") + sellerBox());
   mountMaps(keep);
 }
 
@@ -1498,7 +1515,7 @@ async function mountMaps(keep){
     const no = +box.dataset.map, o = S.orders.find(x => x.no === no); if (!o || !o.dlat) continue;
     let m = MAPS.get(no);
     const old = keep && keep.get(String(no));
-    if (m && old){ box.replaceWith(old); m.el = old; }
+    if (m && old){ if (old !== box) box.replaceWith(old); m.el = old; }
     else {
       const map = L.map(box, { zoomControl:false, attributionControl:true }); tiles(map);
       const home = o.lat ? L.marker([o.lat, o.lng], { icon:icon(IC.marker("B"), "home") }).addTo(map) : null;
@@ -1608,7 +1625,7 @@ function fzSearch(){
       if (r.error) r = await sb.rpc("search_products", { p_q:q, p_limit:60 });
       if (r.error || !Array.isArray(r.data) || (S.q || "").trim() !== q) return;
       S.fz = { q, ids:new Set(r.data.map(x => x.id)) };
-      if (S.tab === "catalog" && !S.pid){ if (DK()) renderCatalog(); else { const b = document.getElementById("catbody"); if (b) b.innerHTML = catBody(); } }
+      if (S.tab === "catalog" && !S.pid){ if (DK()) renderCatalog(); else { const b = document.getElementById("catbody"); if (b) paint(b, catBody()); } }
       else homeRes();
     } catch(e){}
   }, 350);
@@ -1627,7 +1644,7 @@ function homeResHTML(){
 }
 function homeRes(){
   const box = document.getElementById("hsres"); if (!box) return;
-  const h = homeResHTML(); box.innerHTML = h; box.hidden = !h;
+  const h = homeResHTML(); paint(box, h); box.hidden = !h;
 }
 // Каталогда фақат ўзгарган карточканинг тугмасини янгилаймиз (бутун рўйхатни қайта чизмаймиз).
 function patchCard(id){
@@ -1644,7 +1661,7 @@ function patchCard(id){
 function refresh(id){
   updateBadge();
   if (S.tab === "home") { homeRes(); if (id != null) patchCard(id); }
-  if (S.tab === "catalog"){ if (S.pid) { renderProduct(); return; } if (id != null && patchCard(id)) return; const l = document.getElementById("list"); if (l) l.innerHTML = listHTML(); }
+  if (S.tab === "catalog"){ if (S.pid) { renderProduct(); return; } if (id != null && patchCard(id)) return; const l = document.getElementById("list"); if (l) paint(l, listHTML()); }
   else if (S.tab === "cart") renderCart();
 }
 function show(tab){
@@ -1666,7 +1683,7 @@ document.addEventListener("click", e => {
   if (t.hasAttribute("data-closelogin")) { closeLogin(); return; }
   if (t.hasAttribute("data-logout")) { doLogout(); return; }
   if (t.hasAttribute("data-soon")) { toast("Скоро будет доступно"); return; }
-  { const sb2 = t.closest && t.closest("[data-shop]"); if (sb2) { S.shopSel = +sb2.dataset.shop || 0; S.shopTouched = true; const b = document.getElementById("cmpBox"); if (b && S.cmpData) b.innerHTML = cmpHTML(S.cmpData); refreshQuote(true); return; } }
+  { const sb2 = t.closest && t.closest("[data-shop]"); if (sb2) { S.shopSel = +sb2.dataset.shop || 0; S.shopTouched = true; const b = document.getElementById("cmpBox"); if (b && S.cmpData) paint(b, cmpHTML(S.cmpData)); refreshQuote(true); return; } }
   if (t.dataset.gocat) { S.cat = t.dataset.gocat; S.grp = grpOf(S.cat); S.q = ""; S.pid = null; S.page = 1; const h = document.getElementById("hdq"); if (h) h.value = ""; show("catalog"); return; }
   if (t.dataset.open) { openProduct(+t.dataset.open); return; }
   if (t.dataset.page) { S.page = +t.dataset.page; const y = window.scrollY; renderCatalog(); window.scrollTo(0, y); return; }
@@ -1685,8 +1702,8 @@ document.addEventListener("click", e => {
   if (t.dataset.inc) { setQty(+t.dataset.inc, qty(+t.dataset.inc) + 1); return; }
   if (t.dataset.dec) { setQty(+t.dataset.dec, qty(+t.dataset.dec) - 1); return; }
   if (t.dataset.del) { setQty(+t.dataset.del, 0); return; }
-  if (t.dataset.grp) { S.grp = t.dataset.grp; S.cat = "all"; const b = document.getElementById("catbody"); if (b) b.innerHTML = catBody(); window.scrollTo(0, 0); return; }
-  if (t.dataset.cat) { S.cat = t.dataset.cat; document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cat === S.cat)); document.getElementById("list").innerHTML = listHTML(); return; }
+  if (t.dataset.grp) { S.grp = t.dataset.grp; S.cat = "all"; const b = document.getElementById("catbody"); if (b) paint(b, catBody()); window.scrollTo(0, 0); return; }
+  if (t.dataset.cat) { S.cat = t.dataset.cat; document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cat === S.cat)); paint(document.getElementById("list"), listHTML()); return; }
   if (t.dataset.task) { if (S.tab !== "calc") show("calc"); document.getElementById("view").classList.remove("home"); S.task = t.dataset.task; S.size = {}; renderSize(); window.scrollTo(0, 0); return; }
   if (t.dataset.back) { const b = t.dataset.back; if (b === "home") { S.task = null; renderCalc(); document.getElementById("view").classList.add("home"); } else if (b === "size") renderSize(); else if (b === "result") renderResult(); else renderJobs(); window.scrollTo(0, 0); return; }
   if (t.dataset.preset) { S.size = Object.assign({}, curTask().presets[+t.dataset.preset][1]); nextAfterSize(); return; }
@@ -1744,13 +1761,15 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("submit", e => { if (e.target.id === "hdsearch" || e.target.id === "bigsearch") { e.preventDefault(); const h = document.getElementById(e.target.id === "bigsearch" ? "bigq" : "hdq"); S.q = h.value.trim(); const hq = document.getElementById("hdq"); if (hq) hq.value = S.q; S.cat = "all"; S.grp = "all"; S.pid = null; S.page = 1; show("catalog"); logSearch(); } });
 document.addEventListener("submit", e => { if (e.target.id === "homesearch") { e.preventDefault(); S.q = document.getElementById("homeq").value.trim(); S.cat = "all"; S.grp = "all"; show("catalog"); logSearch(); const q = document.getElementById("hq"); if (q) q.value = S.q; return; } });
-document.addEventListener("submit", e => { if (e.target.id === "hsearch") { e.preventDefault(); S.q = document.getElementById("hq").value; S.cat = "all"; document.getElementById("hq").blur(); logSearch(); const b = document.getElementById("catbody"); if (b) b.innerHTML = catBody(); } });
+document.addEventListener("submit", e => { if (e.target.id === "hsearch") { e.preventDefault(); S.q = document.getElementById("hq").value; S.cat = "all"; document.getElementById("hq").blur(); logSearch(); const b = document.getElementById("catbody"); if (b) paint(b, catBody()); } });
+// Қидирувда ҳар ҳарфда рўйхатни қайта чизмаймиз: ёзиш тўхтаганидан 120 мс кейин бир марта (тез ёзганда телефон қотмайди)
+function later(k, fn, ms){ clearTimeout(S[k]); S[k] = setTimeout(fn, ms || 120); }
 document.addEventListener("input", e => {
   const t = e.target;
-  if (t.id === "homeq") { S.q = t.value; homeRes(); fzSearch(); return; }
-  if (t.id === "hdq") { S.q = t.value; S.page = 1; if (S.tab === "catalog") { S.pid = null; S.cat = "all"; S.grp = "all"; renderCatalog(); } clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); fzSearch(); return; }
+  if (t.id === "homeq") { S.q = t.value; later("rT", homeRes); fzSearch(); return; }
+  if (t.id === "hdq") { S.q = t.value; S.page = 1; if (S.tab === "catalog") { S.pid = null; S.cat = "all"; S.grp = "all"; later("rT", () => { if (S.tab === "catalog" && !S.pid) renderCatalog(); }); } clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); fzSearch(); return; }
   if (t.hasAttribute("data-pqin")) { S.pq = Math.max(1, Math.min(99999, parseInt(String(t.value).replace(/\D/g, "")) || 1)); updPq(false); return; }
-  if (t.id === "hq") { clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); S.q = t.value; fzSearch(); const b = document.getElementById("catbody"); if (S.tab === "catalog" && b) b.innerHTML = catBody(); return; }
+  if (t.id === "hq") { clearTimeout(S.sT); S.sT = setTimeout(logSearch, 1500); S.q = t.value; fzSearch(); later("rT", () => { const b = document.getElementById("catbody"); if (S.tab === "catalog" && b) paint(b, catBody()); }); return; }
   if (t.dataset.sz) { S.size[t.dataset.sz] = t.value; return; }
   if (t.dataset.form) S.form[t.dataset.form] = (t.dataset.form === "day" || t.dataset.form === "slot") ? +t.value : t.value;
   if (t.hasAttribute("data-carfrom")) S.carFrom = t.value;

@@ -577,6 +577,13 @@
   window.setLang = setLang;
   window.getLang = function () { return LANG; };
   window.tUz = function (s) { return T(s); };
+  // dom-patch.js (paint) учун: таржимадан олдинги асл матн/атрибут — шу билан солиштирилади, ўзгармаган жой қайта чизилмайди
+  window.__i18n = {
+    orig: function (n) { return origText.has(n) ? origText.get(n) : null; },
+    origAttr: function (el, a) { var o = origAttr.get(el); return o && Object.prototype.hasOwnProperty.call(o, a) ? o[a] : null; },
+    forget: function (n) { origText.delete(n); },
+    forgetAttr: function (el, a) { var o = origAttr.get(el); if (o) delete o[a]; }
+  };
   window.addUz = function (o) { for (var k in o) if (o[k]) UZ[k] = o[k]; if (LANG === "uz" && obs) apply(); };
 
   function init() {

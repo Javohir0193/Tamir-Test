@@ -1,6 +1,6 @@
 // Простой service worker: сначала сеть, при отсутствии интернета — последняя сохранённая версия страницы.
 // + Web Push: билдиришнома телефон блокда бўлса ҳам келади (push.js обуна қилади, tg-bot юборади).
-const CACHE = "tamir-v97";
+const CACHE = "tamir-v98";
 self.addEventListener("install", e => { self.skipWaiting(); });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

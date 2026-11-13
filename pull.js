@@ -1,7 +1,7 @@
 // Ta'mir: тепада пастга тортиб янгилаш. Фақат transform ишлатилади (GPU), шунинг учун силлиқ.
 (function () {
   "use strict";
-  var TH = 78, MAXV = 120, y0 = null, dy = 0, busy = false, bg, ring, els = [], SA = 0, raf = 0, cur = 0, band = null;
+  var TH = 78, MAXV = 120, y0 = null, dy = 0, busy = false, hold = false, bg, ring, els = [], SA = 0, raf = 0, cur = 0, band = null;
   var css = "html,body{overscroll-behavior-y:none}" +
     "#pullBg{position:fixed;left:0;right:0;top:0;height:260px;z-index:50;pointer-events:none;opacity:0;will-change:transform;transform:translate3d(0,-260px,0);background:linear-gradient(180deg,#FFB36B 0%,#FB923C 55%,#F97316 100%)}" +
     "#pullEl{position:fixed;left:50%;top:0;width:44px;height:44px;margin-left:-22px;z-index:51;pointer-events:none;opacity:0;will-change:transform,opacity;transform:translate3d(0,-60px,0) scale(.5)}" +
@@ -41,7 +41,11 @@
     if (busy) return;
     if ((window.scrollY || 0) > 0 || blocked(e.target) || document.querySelector(".pick,.sheet,#sheet")) { y0 = null; return; }
     collect(); y0 = e.touches[0].clientY; dy = 0; setTr(false);
+    // touchmove'ни фақат саҳифа энг тепада бўлганда «блокловчи» қиламиз. Олдин у доим уланган эди ва
+    // браузер ҳар скролда JS'ни кутарди — оддий скрол секинлашиб, «қотгандай» туюларди.
+    if (!hold) { hold = true; document.addEventListener("touchmove", move, { passive: false }); }
   }
+  function release() { if (hold) { hold = false; document.removeEventListener("touchmove", move, { passive: false }); } }
   function move(e) {
     if (y0 === null || busy) return;
     var d = e.touches[0].clientY - y0;
@@ -53,6 +57,7 @@
     frame(dy);
   }
   function end() {
+    release();
     if (y0 === null || busy) { y0 = null; return; }
     y0 = null;
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
@@ -78,7 +83,6 @@
     window.addEventListener("resize", measure);
     window.addEventListener("load", function () { band = document.getElementById("sabar"); });
     document.addEventListener("touchstart", start, { passive: true });
-    document.addEventListener("touchmove", move, { passive: false });
     document.addEventListener("touchend", end, { passive: true });
     document.addEventListener("touchcancel", end, { passive: true });
   }
