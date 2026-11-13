@@ -115,7 +115,7 @@ function stickyOrder(o){
   if (!o || S.tab !== "orders" || S.d.sc || !o.lines.some(l => l.status === "pending")) { el.hidden = true; return; }
   const sum = pend.reduce((a, l) => a + num(S.qty[l.line_no] ?? l.qty) * num(S.price[l.line_no] ?? curPrice(l)), 0);
   el.hidden = false;
-  el.innerHTML = `<button class="btn dark" data-buy ${!S.shop || S.shop === "new" || !pend.length ? "disabled" : ""}>💳 Тўловга юбориш${pend.length ? ` · ${pend.length} та · ${fmt(sum)} сўм` : ""}</button>`;
+  paint(el, `<button class="btn dark" data-buy ${!S.shop || S.shop === "new" || !pend.length ? "disabled" : ""}>💳 Тўловга юбориш${pend.length ? ` · ${pend.length} та · ${fmt(sum)} сўм` : ""}</button>`);
 }
 const curPrice = l => (l.product_id && S.shopOffers && S.shopOffers[l.product_id]) ? S.shopOffers[l.product_id].price : l.client_price;
 
@@ -173,7 +173,7 @@ function render(){
   if (S.form === "shop") h = newShopHTML(); else if (S.form === "product") h = newProductHTML();
   else if (S.tab === "orders") h = o ? orderHTML(o) : ordersHTML();
   else if (S.tab === "prices") h = pricesHTML(); else if (S.tab === "earn") h = earnHTML(); else h = shopsHTML();
-  $("app").innerHTML = h;
+  paint($("app"), h);   // фақат ўзгарган жой янгиланади (dom-patch.js)
   stickyOrder(S.tab === "orders" && !S.form ? o : null);
 }
 let RAW = "";
@@ -250,7 +250,8 @@ document.addEventListener("change", async e => {
     catch (er) { toast(er.message); }
   }
 });
-document.addEventListener("input", e => { if (e.target.id === "pq") { S.pq = e.target.value; const pos = e.target.selectionStart; render(); const q = $("pq"); q.focus(); q.setSelectionRange(pos, pos); } });
+// Қидирув: ҳар ҳарфда эмас, ёзиш тўхтагач 120 мс'дан кейин бир марта чизилади; майдон ўша-ўша қолади (клавиатура ёпилмайди)
+document.addEventListener("input", e => { if (e.target.id === "pq") { S.pq = e.target.value; clearTimeout(S.pqT); S.pqT = setTimeout(() => { render(); const q = $("pq"); if (q && document.activeElement !== q) { const n = q.value.length; q.focus(); q.setSelectionRange(n, n); } }, 120); } });
 
 let LASTSIG = null, SEEN = new Set(), PB = false, LASTFULL = Date.now();
 function beepC(){ if (window.SND) SND.play(); }

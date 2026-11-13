@@ -46,7 +46,7 @@
     var tag = a.tagName;
     if (tag === "INPUT") {
       if (a.type === "checkbox" || a.type === "radio") { var c = b.hasAttribute("checked"); if (a.checked !== c) a.checked = c; }
-      else if (a !== document.activeElement) { var v = b.getAttribute("value") || ""; if (a.value !== v) a.value = v; }
+      else if (a.type !== "file" && a !== document.activeElement) { var v = b.getAttribute("value") || ""; if (a.value !== v) a.value = v; }
     } else if (tag === "TEXTAREA") {
       if (a !== document.activeElement && a.value !== b.value) a.value = b.value;
     } else if (tag === "SELECT") {
@@ -59,7 +59,7 @@
   }
   function key(n) {
     if (n.nodeType !== 1) return null;
-    return n.getAttribute("data-map") || n.getAttribute("data-pid") || n.getAttribute("data-ord") || n.id || null;
+    return n.getAttribute("data-map") || n.getAttribute("data-pid") || n.getAttribute("data-ord") || n.getAttribute("data-item") || n.id || null;
   }
   function same(a, b) { return a.nodeType === b.nodeType && (a.nodeType !== 1 || a.tagName === b.tagName); }
 

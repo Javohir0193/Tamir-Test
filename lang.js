@@ -254,6 +254,13 @@
   function conv(s) { return LANG === "ru" ? ru(s) : s; }
   window.LG = { lang: function () { return LANG; }, tr: function (s) { return conv(String(s)); }, set: setLang };
   var origText = new WeakMap(), origAttr = new WeakMap(), ATTRS = ["placeholder", "title", "aria-label"];
+  // dom-patch.js (paint) учун: таржимадан олдинги асл матн/атрибут — шу билан солиштирилади, ўзгармаган жой қайта чизилмайди
+  window.__i18n = {
+    orig: function (n) { return origText.has(n) ? origText.get(n) : null; },
+    origAttr: function (el, a) { var o = origAttr.get(el); return o && Object.prototype.hasOwnProperty.call(o, a) ? o[a] : null; },
+    forget: function (n) { origText.delete(n); },
+    forgetAttr: function (el, a) { var o = origAttr.get(el); if (o) delete o[a]; }
+  };
   var obs = null, busy = false;
   function doText(n) { var cur = n.nodeValue, r = conv(cur); if (r !== cur) { origText.set(n, cur); n.nodeValue = r; } }
   function doEl(el) {
@@ -314,7 +321,7 @@
   });
   function init() {
     obs = new MutationObserver(onMut);
-    var st0 = document.createElement("style"); st0.textContent = "@keyframes lgp{0%,100%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 2px rgba(249,115,22,.55)}50%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 11px rgba(249,115,22,0)}}#lgBtn,#admLang,#langBtn{animation:lgp 1.8s ease-in-out infinite}@media(prefers-reduced-motion:reduce){#lgBtn,#admLang,#langBtn{animation:none}}"; document.head.appendChild(st0);
+    var st0 = document.createElement("style"); st0.textContent = "@keyframes lgp{0%,100%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 2px rgba(249,115,22,.55)}50%{box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff,0 0 0 11px rgba(249,115,22,0)}}#lgBtn,#admLang,#langBtn{animation:lgp 1.8s ease-in-out 3}@media(prefers-reduced-motion:reduce){#lgBtn,#admLang,#langBtn{animation:none}}"; document.head.appendChild(st0);
     var b = document.createElement("button");
     b.id = "lgBtn"; b.type = "button"; b.setAttribute("aria-label", "Til / Тил / Язык");
     b.style.cssText = "position:fixed;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:60;min-width:46px;height:34px;padding:0 10px;border:0;border-radius:16px;background:#F97316;color:#1B1F24;font:700 13px system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 2px #fff";
