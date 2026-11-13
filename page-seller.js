@@ -62,13 +62,13 @@ const hdr = (x, stat) => `<header><div class="hrow"><div class="hl">${LOGO}<smal
 function render(keepFocus){
   if (S.tab === "today") {
     const d = S.data;
-    $("app").innerHTML = `${hdr(d.seller)}<div id="today"><div class="msg">Юкланмоқда…</div></div>`;
+    paint($("app"), `${hdr(d.seller)}<div id="today"><div class="msg">Юкланмоқда…</div></div>`);
     updateBar(); return;
   }
   if (S.tab === "acct") {
     const d = S.data;
     const pb = TamirPush.btn("", "display:block;width:100%;margin:0 0 10px;padding:12px;border-radius:12px;background:#fff;border:1px solid rgba(31,36,48,.13);font:inherit;font-weight:600;color:#1F2430");
-    $("app").innerHTML = `${hdr(d.seller)}${pb}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`;
+    paint($("app"), `${hdr(d.seller)}${pb}<div id="acct"><div class="msg">Юкланмоқда…</div></div>`);
     updateBar(); acctLoad(); return;
   }
   renderPrices(keepFocus);
@@ -77,7 +77,7 @@ function renderPrices(keepFocus){
   const d = S.data, list = filtered(), priced = d.products.filter(p => cur(p)).length;
   const empty = list.filter(p => !cur(p)).length;
   const cats = [{ id:"all", name:"Ҳаммаси" }, ...d.cats.filter(c => d.products.some(p => p.cat === c.id))];
-  $("app").innerHTML = `
+  paint($("app"), `
     ${hdr(d.seller, `<div class="stat"><b>${priced} / ${d.products.length}</b>нархланган</div>`)}
     <button class="chip" data-imp style="margin:0 0 8px;background:var(--ink);color:#fff">📄 Excel / CSV файлдан нарх юклаш</button>
     <button class="chip" data-newp style="margin:0 0 8px;background:var(--card)">➕ Каталогда йўқ товарни таклиф қилиш</button>
@@ -92,9 +92,9 @@ function renderPrices(keepFocus){
       <button class="go" data-fill>Қўйиш (${empty})</button></div></div>` : ""}
     <p class="hint" style="margin:6px 2px 8px">Нарх ёзиб, «Кейинги» ни босинг — кейинги товарга ўтади. Сотмаган товарни бўш қолдиринг.</p>
     <div class="list">${list.slice(0, S.shown).map(itemHTML).join("") || `<div class="msg">Ҳеч нарса топилмади.</div>`}</div>
-    ${list.length > S.shown ? `<button class="more" data-more>Яна кўрсатиш (${list.length - S.shown})</button>` : ""}`;
+    ${list.length > S.shown ? `<button class="more" data-more>Яна кўрсатиш (${list.length - S.shown})</button>` : ""}`);
   updateBar();
-  if (keepFocus) { const q = $("q"); q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
+  if (keepFocus) { const q = $("q"); if (q && document.activeElement !== q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }
 }
 // обновляем строку на месте, не пересоздавая поле ввода (иначе на телефоне закрывается клавиатура)
 function refresh(id){
@@ -137,7 +137,8 @@ document.addEventListener("click", e => {
     render(); toast(`⚡ ${n} та товарга нарх қўйилди. Текширинг ва «Сақлаш» ни босинг.`);
   }
 });
-document.addEventListener("input", e => { if (e.target.id === "q") { S.q = e.target.value; S.shown = PAGE; render(true); } });
+// Қидирув: ҳар ҳарфда эмас, ёзиш тўхтагач 120 мс'дан кейин бир марта чизилади
+document.addEventListener("input", e => { if (e.target.id === "q") { S.q = e.target.value; S.shown = PAGE; clearTimeout(S.qT); S.qT = setTimeout(() => render(true), 120); } });
 document.addEventListener("change", e => { const id = e.target.dataset.id; if (!id) return; setEdit(+id, { price:num(e.target.value) }); refresh(+id); });
 document.addEventListener("keydown", e => {   // Enter / «Кейинги» → следующее поле цены
   const id = e.target.dataset && e.target.dataset.id; if (!id || e.key !== "Enter") return;
@@ -289,7 +290,7 @@ function impHTML(){
 function openImp(){ S.imp = { rows:[], text:"" }; showImp(); }
 // Сервер текшируви (бозор нархи) тугагунча «Нархларга қўйиш» ёпиқ: акс ҳолда шубҳали нарх белгиланган ҳолда кетиб қолади
 async function impChecked(){ const I = S.imp; I.checking = (I.checking || 0) + 1; showImp(); try { await checkImp(); } finally { I.checking--; } if (S.imp === I) showImp(); }
-function showImp(){ let el = $("impwrap"); if (!el){ el = document.createElement("div"); el.id = "impwrap"; document.body.appendChild(el); } el.innerHTML = impHTML(); }
+function showImp(){ let el = $("impwrap"); if (!el){ el = document.createElement("div"); el.id = "impwrap"; document.body.appendChild(el); } paint(el, impHTML()); }
 function closeImp(){ const el = $("impwrap"); if (el) el.remove(); S.imp = null; }
 document.addEventListener("click", e => {
   if (!S.imp) return; const t = e.target;
@@ -432,10 +433,20 @@ function ordCard(o){
     ${who ? `<div class="irow" style="grid-template-columns:1fr"><span>${who}</span></div>` : ""}
     ${acts ? `<div class="oacts">${acts}</div>` : ""}</div>`;
 }
+// Буюртмалар: сервердан олиш (todayLoad) ва чизиш (todayPaint) алоҳида. ☑️ белгиси сервер кутмасдан дарҳол чизилади,
+// 15 сониялик текширув илова фонда бўлса ўтказиб юборилади ва бир вақтда фақат битта сўров кетади.
 async function todayLoad(){
   const w = $("today"); if (!w || S.tab !== "today") return;
-  try {
-    const r = await call({ action:"s_orders" }), list = r.orders || [];
+  if (todayLoad.run) { todayLoad.again = true; return; }
+  todayLoad.run = true;
+  try { S.today = await call({ action:"s_orders" }); todayPaint(); }
+  catch (err) { const w2 = $("today"); if (w2) paint(w2, `<div class="msg">${esc(err.message)}</div>`); }
+  finally { todayLoad.run = false; if (todayLoad.again) { todayLoad.again = false; todayLoad(); } }
+}
+function todayPaint(){
+  const w = $("today"), r = S.today; if (!w || S.tab !== "today" || !r) return;
+  {
+    const list = r.orders || [];
     S.sc = !!r.sc;
     const isLoaded = o => { const a = o.lines.filter(l => l.says_yes !== false).length; return a > 0 && o.lines.filter(l => l.loaded).length === a; };
     const g = [
@@ -444,10 +455,10 @@ async function todayLoad(){
       [S.sc ? "🤝 Йиғувчига бериш" : "🚚 Машинага юклаш", list.filter(o => o.ready && !isLoaded(o))],
       [S.sc ? "✅ Берилган" : "✅ Юкланган", list.filter(o => o.ready && isLoaded(o))]];
     if (S.busy) return;
-    w.innerHTML = `<div class="kpi">${g.slice(0, 3).map(([n, a]) => `<div><b>${a.length}</b>${n.replace(/^\S+\s/, "")}</div>`).join("")}</div>
+    paint(w, `<div class="kpi">${g.slice(0, 3).map(([n, a]) => `<div><b>${a.length}</b>${n.replace(/^\S+\s/, "")}</div>`).join("")}</div>
       <div class="acts"><button data-ordreload>🔄 Янгилаш</button></div>
-      ${list.length ? g.map(([n, a]) => a.length ? `<h3 class="sec">${n} · ${a.length}</h3>${a.map(ordCard).join("")}` : "").join("") : `<div class="msg">Ҳозирча фаол буюртма йўқ. Янги буюртма келса, шу ерда ва ботда кўринади — қайси биридан жавоб берсангиз ҳам бўлади.</div>`}`;
-  } catch (err) { w.innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
+      ${list.length ? g.map(([n, a]) => a.length ? `<h3 class="sec">${n} · ${a.length}</h3>${a.map(ordCard).join("")}` : "").join("") : `<div class="msg">Ҳозирча фаол буюртма йўқ. Янги буюртма келса, шу ерда ва ботда кўринади — қайси биридан жавоб берсангиз ҳам бўлади.</div>`}`);
+  }
 }
 const PST = { paid:"Тўланди ✅", pending:"Тўлов кутилмоқда", rejected:"Рад этилган" };
 async function acctLoad(){
@@ -466,18 +477,18 @@ async function acctLoad(){
       <div class="irow" style="grid-template-columns:1fr auto"><span>✔️ Тасдиқланди (ўтказилади)</span><b>${fmt(hd.due != null ? hd.due : (hd.confirmed || 0))}</b></div>
       <div class="irow" style="grid-template-columns:1fr auto"><span>✅ Ўтказилди</span><b class="ok">${fmt(pd)}</b></div></div>
       ${hd.list.length ? `<h3 class="sec">Топширилган товарлар</h3><div class="list">${hd.list.map(r => `<div class="irow" style="grid-template-columns:1fr auto"><span><b>№${r.no}</b><small>${r.st === "free" ? "✔️ тасдиқланди" : r.st === "hold" ? "⚠️ эътироз" : "⏳ мижоз кутилмоқда"} · ${fmt(r.total)}${r.commission ? ` − комиссия ${r.pct}% (${fmt(r.commission)})` : ""}</small></span><b class="${r.st === "free" ? "ok" : "warn"}">${fmt(r.net)}</b></div>`).join("")}</div>` : ""}`;
-    w.innerHTML = `${hcard}${card("Шу ой (сўм)", a.month)}${card("Бутун давр (сўм)", a.all)}
+    paint(w, `${hcard}${card("Шу ой (сўм)", a.month)}${card("Бутун давр (сўм)", a.all)}
       ${a.pending.count ? `<div class="fast"><b>⏳ Тўлов кутилмоқда: ${a.pending.count} та</b><p>Материаллар ${fmt(a.pending.total == null ? a.pending.net : a.pending.total)} сўм${a.pending.commission ? `, платформага комиссия ${fmt(a.pending.commission)} сўм` : ""}. Админ тасдиқлагач ${fmt(a.pending.net)} сўм карталингизга тушади.</p></div>` : ""}
       <h3 class="sec">Тўловлар тарихи</h3>
-      <div class="list">${a.history.length ? a.history.map(r => `<div class="irow" style="grid-template-columns:1fr auto"><span><b>№${r.no}</b> · ${esc(PST[r.status] || r.status)}<small>${new Date(r.at).toLocaleDateString("ru-RU")} · ${fmt(r.total)}${r.commission ? ` − комиссия ${r.pct}% (${fmt(r.commission)})` : ""}</small></span><b class="${r.status === "paid" ? "ok" : "warn"}">${fmt(r.net)}</b></div>`).join("") : `<div class="msg">Ҳали тўловлар йўқ.</div>`}</div>`;
+      <div class="list">${a.history.length ? a.history.map(r => `<div class="irow" style="grid-template-columns:1fr auto"><span><b>№${r.no}</b> · ${esc(PST[r.status] || r.status)}<small>${new Date(r.at).toLocaleDateString("ru-RU")} · ${fmt(r.total)}${r.commission ? ` − комиссия ${r.pct}% (${fmt(r.commission)})` : ""}</small></span><b class="${r.status === "paid" ? "ok" : "warn"}">${fmt(r.net)}</b></div>`).join("") : `<div class="msg">Ҳали тўловлар йўқ.</div>`}</div>`);
   } catch (err) { w.innerHTML = `<div class="msg">${esc(err.message)}</div>`; }
 }
-function setTab(t){ S.tab = t; clearInterval(setTab.t); render(); if (t === "today") { todayLoad(); setTab.t = setInterval(todayLoad, 15000); } window.scrollTo(0, 0); }
+function setTab(t){ S.tab = t; clearInterval(setTab.t); render(); if (t === "today") { todayLoad(); setTab.t = setInterval(() => { if (!document.hidden) todayLoad(); }, 15000); } window.scrollTo(0, 0); }
 document.addEventListener("click", async e => {
   const t = e.target.closest("button"); if (!t) return;
   if (t.dataset.tab) setTab(t.dataset.tab);
   else if (t.hasAttribute("data-ordreload")) todayLoad();
-  else if (t.dataset.chk){ S.chk[t.dataset.chk] = !S.chk[t.dataset.chk]; if (TG && TG.HapticFeedback) TG.HapticFeedback.selectionChanged(); todayLoad(); }
+  else if (t.dataset.chk){ S.chk[t.dataset.chk] = !S.chk[t.dataset.chk]; if (TG && TG.HapticFeedback) TG.HapticFeedback.selectionChanged(); todayPaint(); }   // фақат шу экранда — серверга бормасдан
   else if (t.dataset.ordready || t.dataset.ordload || t.dataset.ocf || t.dataset.otg){
     if (S.busy) return; S.busy = true; t.disabled = true;
     const [mid, ln] = String(t.dataset.otg || "").split(":");
