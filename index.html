@@ -1241,6 +1241,10 @@ footer .f-bottom{display:flex;justify-content:space-between;align-items:center;g
 .cmp .cp{font-weight:700;white-space:nowrap}
 .cmp .cmprow.full .cp{color:#1E9E5A}
 .cmp .mix{background:#FFF4EA;border-radius:10px;padding:9px 10px;margin-top:6px}
+/* Тезлик: экрандан ташқаридаги товар карточкалари скролда яқинлашгунча чизилмайди (узун рўйхат қотмайди).
+   Телефонда тепадаги панелнинг «хира ойна» эффекти (blur) ўчирилади — у ҳар скрол кадрида бутун экранни қайта ҳисоблатарди. */
+.grid>.card{content-visibility:auto;contain-intrinsic-size:auto 300px}
+@media (pointer:coarse){header{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.97)!important}}
 </style>
 </head>
 <body>
@@ -1284,6 +1288,7 @@ footer .f-bottom{display:flex;justify-content:space-between;align-items:center;g
 <script src="maps.js"></script>
 <script src="catalog.js"></script>
 <script src="push.js"></script>
+<script src="dom-patch.js"></script>
 <script src="page-index.js"></script>
 <button class="langbtn" id="langBtn" type="button" aria-label="Язык">UZ</button>
 <script src="i18n.js"></script>

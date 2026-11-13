@@ -90,6 +90,7 @@
     var e = EMAP[m[2].replace(/\uFE0F/g, "")] || EMAP[m[2]]; if (!e) return;
     var prev = n.previousSibling; if (prev && prev.nodeType === 1 && prev.className === "sk") p.removeChild(prev);
     var el = sk(e[0], e[1]); if (!el) return;
+    if (!IC.orig.has(n)) IC.orig.set(n, v);   // dom-patch.js шу асл матн билан солиштиради
     n.nodeValue = v.slice(m[0].length);
     p.insertBefore(el, n);
     if (!n.nodeValue) el.style.marginRight = "0";
@@ -115,6 +116,7 @@
       if (pend.size && !raf) raf = requestAnimationFrame(flush);
     }).observe(document.body, { childList: true, subtree: true, characterData: true });
   }
+  IC.orig = new WeakMap();
   IC.ALT = keys.map(esc).join("|");
   IC.skin = skinTree;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
